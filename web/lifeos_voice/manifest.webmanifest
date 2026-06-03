@@ -1,0 +1,19 @@
+{
+  "name": "LifeOS AI — Synthetic Decision Intelligence",
+  "short_name": "LifeOS AI",
+  "description": "Premium synthetic decision intelligence with text, voice input, and spoken output.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#05060a",
+  "theme_color": "#05060a",
+  "icons": [
+    {
+      "src": "/icons/lifeos-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
