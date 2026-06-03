@@ -2,225 +2,502 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>LifeOS AI</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#07080d" />
+  <title>LifeOS AI — Synthetic Decision Intelligence</title>
+
   <style>
     :root {
-      --bg: #07080d;
-      --panel: rgba(255,255,255,0.08);
+      --bg: #05060a;
+      --panel: rgba(255,255,255,0.075);
+      --panel-strong: rgba(255,255,255,0.105);
       --line: rgba(255,255,255,0.14);
-      --text: #f6f3ea;
-      --muted: rgba(246,243,234,0.72);
-      --gold: #f2c75c;
-      --danger: #ff7b7b;
+      --line-strong: rgba(255,255,255,0.22);
+      --text: #f8f3e7;
+      --muted: rgba(248,243,231,0.68);
+      --soft: rgba(248,243,231,0.48);
+      --gold: #f3c969;
+      --gold-2: #fff0b0;
+      --green: #9df2b6;
+      --danger: #ff7f7f;
+      --shadow: rgba(0,0,0,0.55);
     }
 
     * {
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
 
     body {
       margin: 0;
       min-height: 100vh;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background:
-        radial-gradient(circle at top left, rgba(242,199,92,0.22), transparent 34%),
-        radial-gradient(circle at top right, rgba(86,118,255,0.18), transparent 28%),
-        linear-gradient(145deg, #07080d, #101421 60%, #06070b);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--text);
+      background:
+        radial-gradient(circle at 14% 8%, rgba(243,201,105,0.18), transparent 28%),
+        radial-gradient(circle at 88% 16%, rgba(109,95,255,0.20), transparent 30%),
+        radial-gradient(circle at 50% 108%, rgba(70,255,167,0.12), transparent 34%),
+        linear-gradient(145deg, #05060a, #0c1020 52%, #05060a);
+      display: flex;
+      justify-content: center;
+      padding: 18px;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 620px;
+      min-height: calc(100vh - 36px);
       display: flex;
       align-items: center;
-      justify-content: center;
-      padding: 22px;
     }
 
     .app {
       width: 100%;
-      max-width: 560px;
       border: 1px solid var(--line);
-      background: var(--panel);
-      border-radius: 30px;
-      padding: 24px;
-      box-shadow: 0 28px 90px rgba(0,0,0,0.52);
-      backdrop-filter: blur(20px);
+      border-radius: 34px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.105), rgba(255,255,255,0.045)),
+        rgba(7,8,13,0.78);
+      box-shadow: 0 30px 100px var(--shadow);
+      backdrop-filter: blur(24px);
+      overflow: hidden;
+      position: relative;
     }
 
-    .brand {
+    .app::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.08), transparent 28%),
+        radial-gradient(circle at top, rgba(243,201,105,0.10), transparent 42%);
+      pointer-events: none;
+    }
+
+    .inner {
+      position: relative;
+      padding: 22px;
+    }
+
+    .topbar {
       display: flex;
+      align-items: center;
       justify-content: space-between;
       gap: 12px;
+      margin-bottom: 26px;
+    }
+
+    .brand-lockup {
+      display: flex;
       align-items: center;
-      margin-bottom: 16px;
+      gap: 12px;
     }
 
-    .brand-name {
-      font-size: 13px;
-      letter-spacing: 0.18em;
+    .mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(145deg, rgba(243,201,105,0.95), rgba(255,240,176,0.72));
+      color: #111;
+      font-weight: 950;
+      letter-spacing: -0.08em;
+      box-shadow: 0 12px 30px rgba(243,201,105,0.18);
+    }
+
+    .brand-title {
+      font-size: 14px;
+      font-weight: 850;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: var(--muted);
     }
 
-    .badge {
+    .brand-sub {
+      margin-top: 2px;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .live-pill {
+      border: 1px solid rgba(157,242,182,0.28);
+      color: var(--green);
+      background: rgba(157,242,182,0.08);
       padding: 8px 10px;
       border-radius: 999px;
-      border: 1px solid var(--line);
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .hero {
+      margin-bottom: 18px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 1px solid rgba(243,201,105,0.22);
+      background: rgba(243,201,105,0.07);
+      color: var(--gold-2);
+      border-radius: 999px;
       font-size: 12px;
-      color: var(--gold);
-      background: rgba(0,0,0,0.22);
+      font-weight: 750;
+      margin-bottom: 14px;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--green);
+      box-shadow: 0 0 18px rgba(157,242,182,0.8);
     }
 
     h1 {
-      font-size: 36px;
-      line-height: 1.02;
-      margin: 0 0 12px;
-      letter-spacing: -0.04em;
+      margin: 0;
+      font-size: clamp(36px, 9vw, 56px);
+      line-height: 0.95;
+      letter-spacing: -0.07em;
+    }
+
+    .gold-text {
+      color: var(--gold);
     }
 
     .intro {
+      margin: 16px 0 0;
       color: var(--muted);
-      line-height: 1.55;
-      margin: 0 0 18px;
+      line-height: 1.58;
+      font-size: 15px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,0.24);
+      border-radius: 28px;
+      padding: 16px;
+      margin-top: 18px;
+    }
+
+    .label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .label {
+      font-size: 12px;
+      color: var(--soft);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 850;
+    }
+
+    .mode {
+      font-size: 12px;
+      color: var(--gold);
+      font-weight: 800;
     }
 
     textarea {
       width: 100%;
-      min-height: 120px;
+      min-height: 132px;
       border: 1px solid var(--line);
       border-radius: 22px;
       padding: 15px;
-      background: rgba(0,0,0,0.26);
+      background: rgba(255,255,255,0.055);
       color: var(--text);
       font-size: 15px;
+      line-height: 1.5;
       resize: vertical;
       outline: none;
     }
 
+    textarea::placeholder {
+      color: rgba(248,243,231,0.42);
+    }
+
     textarea:focus {
-      border-color: rgba(242,199,92,0.75);
+      border-color: rgba(243,201,105,0.72);
+      box-shadow: 0 0 0 4px rgba(243,201,105,0.10);
+    }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 12px;
     }
 
     button {
-      width: 100%;
       border: 0;
       border-radius: 20px;
       padding: 16px;
-      margin-top: 12px;
-      background: var(--gold);
-      color: #111;
-      font-weight: 800;
-      font-size: 16px;
+      font-size: 15px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease, border-color 0.15s ease;
     }
 
-    button.secondary {
-      background: rgba(255,255,255,0.10);
-      color: var(--text);
-      border: 1px solid var(--line);
+    button:active {
+      transform: scale(0.985);
+    }
+
+    button:disabled {
+      opacity: 0.48;
+      cursor: not-allowed;
+    }
+
+    .primary {
+      color: #111;
+      background:
+        linear-gradient(135deg, var(--gold), var(--gold-2));
+      box-shadow: 0 16px 38px rgba(243,201,105,0.16);
+    }
+
+    .voice {
+      color: #061009;
+      background:
+        linear-gradient(135deg, #9df2b6, #e7ffe9);
+      box-shadow: 0 16px 38px rgba(157,242,182,0.12);
+    }
+
+    .danger {
+      color: #ffdada;
+      border: 1px solid rgba(255,127,127,0.28);
+      background: rgba(255,127,127,0.10);
     }
 
     .status {
-      margin-top: 15px;
-      color: var(--gold);
-      font-size: 14px;
       min-height: 20px;
+      margin-top: 14px;
+      color: var(--gold);
+      font-size: 13px;
+      font-weight: 800;
     }
 
     .response {
-      margin-top: 16px;
+      margin-top: 14px;
       padding: 16px;
-      border-radius: 22px;
-      background: rgba(0,0,0,0.25);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: rgba(246,243,234,0.92);
+      border-radius: 24px;
+      min-height: 120px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.065), rgba(255,255,255,0.028));
+      color: rgba(248,243,231,0.92);
       white-space: pre-wrap;
-      line-height: 1.55;
-      min-height: 90px;
+      line-height: 1.58;
+      font-size: 15px;
     }
 
-    .footnote {
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
       margin-top: 14px;
-      font-size: 12px;
-      color: rgba(246,243,234,0.48);
-      line-height: 1.45;
     }
-  
-    #speakerBtn { display: none !important; }
+
+    .mini {
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.045);
+      border-radius: 20px;
+      padding: 12px;
+    }
+
+    .mini strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .mini span {
+      color: var(--soft);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .footer {
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255,255,255,0.10);
+      color: rgba(248,243,231,0.52);
+      font-size: 12px;
+      line-height: 1.55;
+      text-align: center;
+    }
+
+    .footer a {
+      color: var(--gold);
+      text-decoration: none;
+      font-weight: 800;
+    }
+
+    @media (min-width: 560px) {
+      .button-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .primary {
+        grid-column: 1 / -1;
+      }
+    }
   </style>
 </head>
+
 <body>
-  <main class="app">
-    <div class="brand">
-      <div class="brand-name">LifeOS AI</div>
-      <div class="badge">Premium Synthetic Artificial Intelligence</div>
-    </div>
+  <main class="shell">
+    <section class="app">
+      <div class="inner">
+        <header class="topbar">
+          <div class="brand-lockup">
+            <div class="mark">LO</div>
+            <div>
+              <div class="brand-title">LifeOS AI</div>
+              <div class="brand-sub">Synthetic Intelligence</div>
+            </div>
+          </div>
 
-    <h1>LifeOS AI</h1>
-    <p class="intro">
-      Speak or type your decision. LifeOS AI will audit it and answer with a premium voice response.
-      Microphone conversation comes in the next build step.
-    </p>
+          <div class="live-pill">● Public Live</div>
+        </header>
 
-    <textarea id="textInput" placeholder="Example: Audit this decision: I should organize my system before scaling my business."></textarea>
+        <section class="hero">
+          <div class="eyebrow"><span class="dot"></span> Premium Synthetic Artificial Intelligence</div>
+          <h1>Reveal the <span class="gold-text">future direction</span> of your decision.</h1>
+          <p class="intro">
+            Speak or type a decision. LifeOS AI analyzes the move, exposes the risk, and returns a clear future-facing answer.
+          </p>
+        </section>
 
-    <button id="sendBtn">Reveal Future Output</button>
-    <button id="speakerBtn" class="secondary" style="display:none;">Test Speaker</button>
+        <section class="panel">
+          <div class="label-row">
+            <div class="label">Decision Input</div>
+            <div class="mode">London Advisor Mode</div>
+          </div>
 
-    <div id="status" class="status">Synthetic Intelligence</div>
-    <div id="response" class="response">Your future direction will appear here — analyzed, spoken, and refined by synthetic intelligence.</div>
+          <textarea id="textInput" placeholder="Example: Audit this decision: I should launch LifeOS AI publicly before adding more features."></textarea>
 
-    <div class="footnote">
-      LifeOS Synthetic Artificial Intelligence analyzes your decisions into future directions. Powered by lifeosdaily.blogspot.com · Tecino’s Channel · © 2026
-    </div>
+          <div class="button-grid">
+            <button id="voiceBtn" class="voice">🎙️ Start Voice Conversation</button>
+            <button id="stopVoiceBtn" class="danger" disabled>Stop Listening</button>
+            <button id="sendBtn" class="primary">Reveal Future Output</button>
+          </div>
+
+          <div id="status" class="status">Synthetic Intelligence ready.</div>
+          <div id="response" class="response">Your future direction will appear here — analyzed, structured, and spoken with intelligence.</div>
+
+          <div class="meta-grid">
+            <div class="mini">
+              <strong>Decision Audit</strong>
+              <span>Sharper judgement before execution.</span>
+            </div>
+            <div class="mini">
+              <strong>Voice Output</strong>
+              <span>Server-generated spoken response.</span>
+            </div>
+          </div>
+        </section>
+
+        <footer class="footer">
+          LifeOS Synthetic Artificial Intelligence analyzes decisions into future directions.<br>
+          Powered by <a href="https://lifeosdaily.blogspot.com" target="_blank" rel="noopener">lifeosdaily.blogspot.com</a>
+          · Tecino’s Channel · © 2026
+        </footer>
+      </div>
+    </section>
   </main>
 
   <script>
     const textInput = document.getElementById("textInput");
     const sendBtn = document.getElementById("sendBtn");
-    const speakerBtn = document.getElementById("speakerBtn");
+    const voiceBtn = document.getElementById("voiceBtn");
+    const stopVoiceBtn = document.getElementById("stopVoiceBtn");
     const statusBox = document.getElementById("status");
     const responseBox = document.getElementById("response");
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    let listening = false;
+    let finalSpeechText = "";
 
     function setStatus(message) {
       statusBox.textContent = message;
     }
 
-    function speak(text) {
+    function setBusy(isBusy) {
+      sendBtn.disabled = isBusy;
+      voiceBtn.disabled = isBusy || !SpeechRecognition;
+      stopVoiceBtn.disabled = !listening;
+    }
+
+    function fallbackSpeak(text) {
       if (!("speechSynthesis" in window)) {
-        setStatus("Speech output is not supported in this browser.");
+        setStatus("Future output ready. Speech fallback is unavailable in this browser.");
         return;
       }
 
       window.speechSynthesis.cancel();
 
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.94;
-      utterance.pitch = 1.0;
+      const voices = window.speechSynthesis.getVoices();
+
+      const preferredVoice =
+        voices.find(v => /en-GB/i.test(v.lang) && /female|samantha|serena|kate|google/i.test(v.name)) ||
+        voices.find(v => /en-GB/i.test(v.lang)) ||
+        voices[0];
+
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+      }
+
+      utterance.lang = "en-GB";
+      utterance.rate = 0.92;
+      utterance.pitch = 1.02;
       utterance.volume = 1.0;
 
       window.speechSynthesis.speak(utterance);
     }
 
-    speakerBtn.onclick = () => {
-      speak("LifeOS AI voice output is working from this app.");
-      setStatus("Speaker test sent.");
-    };
-
-    sendBtn.onclick = async () => {
-      const text = textInput.value.trim();
-
-      if (!text) {
-        setStatus("Type a decision first.");
+    async function playServerAudio(audioUrl, fallbackText) {
+      if (!audioUrl) {
+        fallbackSpeak(fallbackText);
         return;
       }
 
-      sendBtn.disabled = true;
-      setStatus("Synthetic Intelligence loading");
+      try {
+        const audio = new Audio(audioUrl + "?t=" + Date.now());
+        audio.preload = "auto";
+        await audio.play();
+      } catch (err) {
+        fallbackSpeak(fallbackText);
+      }
+    }
+
+    async function runAudit(rawText) {
+      const cleanText = (rawText || "").trim();
+
+      if (!cleanText) {
+        setStatus("Speak or type a decision first.");
+        return;
+      }
+
+      listening = false;
+      setBusy(true);
+      setStatus("Synthetic Intelligence loading future output...");
       responseBox.textContent = "";
 
       try {
         const res = await fetch("/api/text-audit", {
           method: "POST",
           headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({ text })
+          body: JSON.stringify({ text: cleanText })
         });
 
         const data = await res.json();
@@ -229,175 +506,92 @@
           throw new Error(data.error || "Unknown server error");
         }
 
-        responseBox.textContent = data.voice || data.reply;
+        const displayText = data.reply || data.voice || "Future output generated.";
+        responseBox.textContent = displayText;
 
-        if (data.audio_url) {
-          setStatus("Future output ready. Playing now...");
-          const audio = new Audio(data.audio_url + "?t=" + Date.now());
-
-          audio.onended = () => {
-            setStatus("Premium voice complete.");
-          };
-
-          audio.onerror = () => {
-            setStatus("Premium audio could not play. Falling back to browser voice.");
-            speak(data.voice || data.reply);
-          };
-
-          audio.play().catch(() => {
-            setStatus("Tap Test Speaker if browser blocks autoplay. Falling back to browser voice.");
-            speak(data.voice || data.reply);
-          });
-        } else {
-          setStatus("Future output ready. Speaking now...");
-          speak(data.voice || data.reply);
-        }
+        setStatus("Future output ready. Speaking now...");
+        await playServerAudio(data.audio_url, displayText);
       } catch (err) {
         setStatus("Error: " + err.message);
-        responseBox.textContent = "The request failed. Check the Termux server log.";
+        responseBox.textContent = "The request failed. Please try again in a moment.";
       } finally {
-        sendBtn.disabled = false;
+        setBusy(false);
       }
+    }
+
+    sendBtn.onclick = () => {
+      runAudit(textInput.value);
     };
-  </script>
 
-<script id="LIFEOS_MIC_INPUT_PATCH_FINAL">
-(function () {
-  const textInput = document.getElementById("textInput");
-  const sendBtn = document.getElementById("sendBtn");
-  const statusBox = document.getElementById("status");
-
-  if (!textInput || !sendBtn || !statusBox) {
-    console.warn("LifeOS mic patch: required page elements not found.");
-    return;
-  }
-
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  const buttonWrap = document.createElement("div");
-  buttonWrap.style.display = "grid";
-  buttonWrap.style.gridTemplateColumns = "1fr";
-  buttonWrap.style.gap = "10px";
-  buttonWrap.style.marginTop = "12px";
-
-  const voiceBtn = document.createElement("button");
-  voiceBtn.id = "lifeosVoiceInputBtn";
-  voiceBtn.textContent = "🎙️ Start Voice Conversation";
-  voiceBtn.style.background = "#8ee6a3";
-  voiceBtn.style.color = "#07110a";
-
-  const stopBtn = document.createElement("button");
-  stopBtn.id = "lifeosStopVoiceBtn";
-  stopBtn.textContent = "Stop Listening";
-  stopBtn.disabled = true;
-  stopBtn.style.background = "rgba(255,123,123,0.14)";
-  stopBtn.style.color = "#ffd4d4";
-  stopBtn.style.border = "1px solid rgba(255,123,123,0.25)";
-
-  buttonWrap.appendChild(voiceBtn);
-  buttonWrap.appendChild(stopBtn);
-
-  textInput.insertAdjacentElement("afterend", buttonWrap);
-
-  function setStatus(message) {
-    statusBox.textContent = message;
-  }
-
-  if (!SpeechRecognition) {
-    voiceBtn.disabled = true;
-    setStatus("Voice input is not supported in this browser. Use Chrome or type your decision.");
-    return;
-  }
-
-  const recognition = new SpeechRecognition();
-  recognition.lang = "en-US";
-  recognition.interimResults = true;
-  recognition.continuous = false;
-
-  let listening = false;
-  let finalCapturedText = "";
-
-  recognition.onstart = function () {
-    listening = true;
-    finalCapturedText = "";
-    textInput.value = "";
-    voiceBtn.disabled = true;
-    stopBtn.disabled = false;
-    setStatus("Listening... speak your decision now.");
-  };
-
-  recognition.onresult = function (event) {
-    let interimText = "";
-    let finalText = "";
-
-    for (let i = event.resultIndex; i < event.results.length; i++) {
-      const transcript = event.results[i][0].transcript;
-
-      if (event.results[i].isFinal) {
-        finalText += transcript;
-      } else {
-        interimText += transcript;
-      }
-    }
-
-    const visibleText = (finalText || interimText).trim();
-
-    if (visibleText) {
-      textInput.value = visibleText;
-    }
-
-    if (finalText.trim()) {
-      finalCapturedText = finalText.trim();
-      setStatus("Synthetic Intelligence loading");
-      recognition.stop();
-    }
-  };
-
-  recognition.onerror = function (event) {
-    listening = false;
-    voiceBtn.disabled = false;
-    stopBtn.disabled = true;
-    setStatus("Voice input error: " + event.error + ". You can type instead.");
-  };
-
-  recognition.onend = function () {
-    listening = false;
-    voiceBtn.disabled = false;
-    stopBtn.disabled = true;
-
-    const text = finalCapturedText.trim() || textInput.value.trim();
-
-    if (text) {
-      textInput.value = text;
-      setStatus("Synthetic Intelligence loading");
-      sendBtn.click();
+    if (!SpeechRecognition) {
+      voiceBtn.disabled = true;
+      setStatus("Synthetic Intelligence ready. Voice input is not supported in this browser.");
     } else {
-      setStatus("Listening ended. No clear speech captured.");
+      recognition = new SpeechRecognition();
+      recognition.lang = "en-GB";
+      recognition.interimResults = true;
+      recognition.continuous = false;
+
+      recognition.onstart = () => {
+        listening = true;
+        finalSpeechText = "";
+        setBusy(false);
+        voiceBtn.disabled = true;
+        stopVoiceBtn.disabled = false;
+        setStatus("Listening. Speak your decision now.");
+      };
+
+      recognition.onresult = (event) => {
+        let interimText = "";
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+
+          if (event.results[i].isFinal) {
+            finalSpeechText += transcript + " ";
+          } else {
+            interimText += transcript;
+          }
+        }
+
+        textInput.value = (finalSpeechText + interimText).trim();
+      };
+
+      recognition.onerror = (event) => {
+        listening = false;
+        setBusy(false);
+        setStatus("Voice input error: " + event.error);
+      };
+
+      recognition.onend = () => {
+        const captured = textInput.value.trim();
+        listening = false;
+        stopVoiceBtn.disabled = true;
+        voiceBtn.disabled = false;
+
+        if (captured) {
+          runAudit(captured);
+        } else {
+          setStatus("No decision captured. Try speaking again.");
+        }
+      };
+
+      voiceBtn.onclick = () => {
+        try {
+          window.speechSynthesis && window.speechSynthesis.cancel();
+          recognition.start();
+        } catch (err) {
+          setStatus("Voice input could not start. Try again.");
+        }
+      };
+
+      stopVoiceBtn.onclick = () => {
+        if (recognition && listening) {
+          recognition.stop();
+          setStatus("Listening stopped.");
+        }
+      };
     }
-  };
-
-  voiceBtn.onclick = function () {
-    if (listening) return;
-
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-    }
-
-    try {
-      recognition.start();
-    } catch (err) {
-      setStatus("Could not start voice input: " + err.message);
-    }
-  };
-
-  stopBtn.onclick = function () {
-    if (listening) {
-      recognition.stop();
-      setStatus("Listening stopped.");
-    }
-  };
-})();
-</script>
-
+  </script>
 </body>
 </html>
