@@ -658,6 +658,50 @@
     height: 12px !important;
   }
 
+
+  /* LifeOS logo fit correction v5 */
+  .image-logo {
+    width: 76px !important;
+    height: 76px !important;
+    padding: 0 !important;
+    border-radius: 22px !important;
+    overflow: hidden !important;
+    background: #050505 !important;
+    border: 1px solid rgba(243,201,105,0.65) !important;
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.04),
+      0 14px 38px rgba(0,0,0,0.38),
+      0 0 24px rgba(243,201,105,0.10) !important;
+  }
+
+  .image-logo img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: center center !important;
+    display: block !important;
+    transform: scale(1.08);
+    transform-origin: center center;
+  }
+
+  @media (max-width: 560px) {
+    .image-logo {
+      width: 68px !important;
+      height: 68px !important;
+      border-radius: 20px !important;
+      flex: 0 0 68px !important;
+    }
+
+    .brand-title {
+      font-size: 17px !important;
+    }
+
+    .brand-sub {
+      font-size: 11px !important;
+      letter-spacing: 0.22em !important;
+    }
+  }
+
   </style>
 </head>
 
