@@ -131,6 +131,11 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
             self._serve_file(file_path)
             return
 
+        if path.startswith("/assets/"):
+            file_path = self._safe_file(WEB_DIR / "assets", path.replace("/assets/", "", 1))
+            self._serve_file(file_path)
+            return
+
         if path.startswith("/audio/"):
             file_path = self._safe_file(AUDIO_DIR, path.replace("/audio/", "", 1))
             self._serve_file(file_path)
