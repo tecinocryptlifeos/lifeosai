@@ -521,7 +521,7 @@
     inset: 0;
     background:
       linear-gradient(180deg, rgba(10,10,16,0.72), rgba(10,10,16,0.92)),
-      url("assets/lifeos-bg.png") center / cover no-repeat;
+      url("assets/lifeos-bg.jpg") center / cover no-repeat;
     opacity: 0.42;
     filter: saturate(1.15) contrast(1.06);
     z-index: 0;
@@ -601,6 +601,63 @@
     line-height: 1.45;
   }
 
+
+  /* LifeOS visual correction v3 */
+  .app {
+    background-image:
+      linear-gradient(180deg, rgba(8,8,12,0.28), rgba(8,8,12,0.74)),
+      url("assets/lifeos-bg.jpg") !important;
+    background-size: cover !important;
+    background-position: center top !important;
+    background-repeat: no-repeat !important;
+  }
+
+  .app::before {
+    background:
+      linear-gradient(180deg, rgba(8,8,12,0.18), rgba(8,8,12,0.70)),
+      url("assets/lifeos-bg.jpg") center top / cover no-repeat !important;
+    opacity: 0.95 !important;
+    filter: saturate(1.28) contrast(1.12) brightness(1.04) !important;
+  }
+
+  .image-logo {
+    width: 66px !important;
+    height: 66px !important;
+    padding: 3px !important;
+    border-radius: 18px !important;
+    background: rgba(0,0,0,0.88) !important;
+    border: 1px solid rgba(243,201,105,0.55) !important;
+  }
+
+  .image-logo img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    object-position: center !important;
+    display: block !important;
+  }
+
+  .voice-mini {
+    width: auto !important;
+    max-width: max-content !important;
+    padding: 5px 8px !important;
+    border-radius: 999px !important;
+    font-size: 10px !important;
+    line-height: 1 !important;
+    min-height: 26px !important;
+    box-shadow: 0 6px 14px rgba(129,255,174,0.10) !important;
+  }
+
+  .voice-mini .mic-icon {
+    width: 17px !important;
+    height: 17px !important;
+  }
+
+  .voice-mini svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
+
   </style>
 </head>
 
@@ -610,7 +667,7 @@
       <div class="inner">
         <header class="topbar">
           <div class="brand">
-            <div class="mark image-logo" aria-label="LifeOS logo"><img src="assets/lifeos-logo.png" alt="LifeOS logo"></div>
+            <div class="mark image-logo" aria-label="LifeOS logo"><img src="assets/lifeos-logo.jpg" alt="LifeOS logo"></div>
             <div>
               <div class="brand-title">LifeOS AI</div>
               <div class="brand-sub">Synthetic Intelligence</div>
