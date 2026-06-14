@@ -329,6 +329,86 @@
       .buttons { grid-template-columns: 1fr 1fr; }
       .primary, .install { grid-column: 1 / -1; }
     }
+
+  /* LifeOS topbar premium upgrade */
+  .logo-mark {
+    width: 54px;
+    height: 54px;
+    border-radius: 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    line-height: 0.9;
+    font-size: 10px;
+    letter-spacing: -0.04em;
+  }
+
+  .logo-mark strong {
+    font-size: 17px;
+    letter-spacing: -0.08em;
+  }
+
+  .top-actions {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .network.online {
+    color: var(--green);
+    border-color: rgba(157,242,182,0.30);
+    background: rgba(157,242,182,0.08);
+  }
+
+  .network.offline {
+    color: var(--danger);
+    border-color: rgba(255,137,137,0.35);
+    background: rgba(255,137,137,0.10);
+  }
+
+  .menu-button {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border-radius: 999px;
+    color: var(--text);
+    border: 1px solid rgba(255,255,255,0.16);
+    background: rgba(255,255,255,0.075);
+    font-size: 24px;
+    line-height: 1;
+    box-shadow: none;
+  }
+
+  .app-menu {
+    position: absolute;
+    top: 48px;
+    right: 0;
+    z-index: 20;
+    min-width: 185px;
+    padding: 8px;
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(12,14,24,0.96);
+    box-shadow: 0 22px 60px rgba(0,0,0,0.42);
+    backdrop-filter: blur(18px);
+  }
+
+  .app-menu button {
+    width: 100%;
+    padding: 11px 12px;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--text);
+    text-align: left;
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .app-menu button:hover {
+    background: rgba(255,255,255,0.08);
+  }
+
   </style>
 </head>
 
@@ -338,13 +418,22 @@
       <div class="inner">
         <header class="topbar">
           <div class="brand">
-            <div class="mark">LO</div>
+            <div class="mark logo-mark" aria-label="LifeOS logo"><span>Life</span><strong>OS</strong></div>
             <div>
               <div class="brand-title">LifeOS AI</div>
               <div class="brand-sub">Synthetic Intelligence</div>
             </div>
           </div>
-          <div class="live">● Public Live</div>
+          <div class="top-actions">
+              <div id="networkBadge" class="live network online">● Online</div>
+              <button id="menuBtn" class="menu-button" aria-label="Open LifeOS menu" aria-expanded="false">⋮</button>
+              <div id="appMenu" class="app-menu" hidden>
+                <button type="button">Profile</button>
+                <button type="button">Chat History</button>
+                <button type="button">Subscription</button>
+                <button type="button">Voice Changes</button>
+              </div>
+            </div>
         </header>
 
         <section>
@@ -409,6 +498,39 @@
     const installBtn = document.getElementById("installBtn");
     const statusBox = document.getElementById("status");
     const responseBox = document.getElementById("response");
+
+  const networkBadge = document.getElementById("networkBadge");
+  const menuBtn = document.getElementById("menuBtn");
+  const appMenu = document.getElementById("appMenu");
+
+  function updateNetworkBadge() {
+    if (!networkBadge) return;
+    const online = navigator.onLine;
+    networkBadge.textContent = online ? "● Online" : "● Offline";
+    networkBadge.classList.toggle("online", online);
+    networkBadge.classList.toggle("offline", !online);
+  }
+
+  updateNetworkBadge();
+  window.addEventListener("online", updateNetworkBadge);
+  window.addEventListener("offline", updateNetworkBadge);
+
+  if (menuBtn && appMenu) {
+    menuBtn.addEventListener("click", () => {
+      const opening = appMenu.hidden;
+      appMenu.hidden = !opening;
+      menuBtn.setAttribute("aria-expanded", String(opening));
+    });
+
+    document.addEventListener("click", (event) => {
+      if (!menuBtn.contains(event.target) && !appMenu.contains(event.target)) {
+        appMenu.hidden = true;
+        menuBtn.setAttribute("aria-expanded", "false");
+      }
+    });
+  }
+
+
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition = null;
