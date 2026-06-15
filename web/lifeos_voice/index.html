@@ -823,6 +823,48 @@
     }
   }
 
+
+  /* LifeOS free floating logo correction v8 */
+  .image-logo {
+    width: 88px !important;
+    height: 78px !important;
+    flex: 0 0 88px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .image-logo img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    object-position: center !important;
+    transform: scale(1.38) !important;
+    mix-blend-mode: screen !important;
+    filter:
+      drop-shadow(0 10px 22px rgba(0,0,0,0.55))
+      drop-shadow(0 0 10px rgba(243,201,105,0.18)) !important;
+  }
+
+  @media (max-width: 560px) {
+    .image-logo {
+      width: 82px !important;
+      height: 72px !important;
+      flex: 0 0 82px !important;
+    }
+
+    .image-logo img {
+      transform: scale(1.42) !important;
+    }
+  }
+
   </style>
 </head>
 
