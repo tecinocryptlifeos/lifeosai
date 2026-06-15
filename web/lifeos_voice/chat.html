@@ -377,10 +377,18 @@ async function sendMessage() {
   render();
 
   try {
+    const outgoingMessages = current
+      .filter(m => m && m.role && m.content && !m.content.includes("reviewing the decision thread"))
+      .slice(-8)
+      .map(m => ({
+        role: m.role,
+        content: String(m.content || "").slice(0, m.role === "assistant" ? 700 : 900)
+      }));
+
     const res = await fetch("/api/chat-decision", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: current.filter(m => !m.content.includes("reviewing the decision thread")) })
+      body: JSON.stringify({ messages: outgoingMessages })
     });
 
     const raw = await res.text();

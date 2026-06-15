@@ -155,7 +155,7 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
             if length <= 0:
                 raise ValueError("Request body is required")
 
-            if length > 80000:
+            if length > 60000:
                 raise ValueError("Request body is too large")
 
             raw = self.rfile.read(length)
@@ -166,58 +166,88 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
                 raise ValueError("Messages must be a list")
 
             cleaned = []
-            for item in messages[-12:]:
+            for item in messages[-8:]:
                 role = str(item.get("role", "")).strip().lower()
                 content = str(item.get("content", "")).strip()
+
                 if role not in ("user", "assistant"):
                     continue
+
                 if not content:
                     continue
-                cleaned.append((role, content[:1800]))
+
+                # Do not send old system failure messages back into the next prompt.
+                if "could not complete the continuation" in content.lower():
+                    continue
+                if "under high demand" in content.lower():
+                    continue
+                if "reviewing the decision thread" in content.lower():
+                    continue
+
+                limit = 900 if role == "user" else 700
+                cleaned.append((role, content[:limit]))
 
             if not cleaned:
                 raise ValueError("Message is required")
 
-            conversation = "\n".join(
+            latest_user = ""
+            for role, content in reversed(cleaned):
+                if role == "user":
+                    latest_user = content
+                    break
+
+            conversation = "
+".join(
                 f"{role.upper()}: {content}" for role, content in cleaned
             )
 
             prompt = f"""
 You are Sophia, the LifeOS AI decision intelligence assistant.
 
-Purpose:
-Help the user understand the future outcome of a decision, continue the same decision conversation, and give clearer explanation when the user is confused.
+The user is continuing one decision conversation.
 
-Conversation so far:
+Latest user message:
+{latest_user}
+
+Compact conversation context:
 {conversation}
 
+Your job:
+Continue the same decision thread clearly.
+
 Rules:
-- Continue the conversation. Do not restart unless the user clearly starts a new decision.
-- Explain unclear parts in simple, direct language.
-- If the user asks "why", explain the reasoning.
-- If the user asks "what should I do", give a next action.
-- If important facts are missing, ask one clear question.
-- Use LifeOS decision language: future outcome, main risk, hidden cost, better move, next action, final truth.
+- Do not restart the whole audit unless the user starts a new decision.
+- If the user says they do not understand, explain the previous answer in simpler language.
+- If the user asks what to do, give one practical next action.
+- If the user's latest message is short, use the previous context to understand it.
+- Use LifeOS language naturally: future outcome, main risk, hidden cost, better move, next action, final truth.
 - Do not use markdown symbols like **.
-- Keep the answer complete. Never stop mid-word or mid-sentence.
-- Keep it between 80 and 180 words unless the user asks for more detail.
+- Give a complete answer. Never stop mid-word or mid-sentence.
+- Keep it direct, clear, and useful.
+- Keep it between 70 and 150 words.
 """
 
             try:
                 client = GeminiClient()
-                reply = client.generate_text(prompt, timeout=18, retries=2).strip()
+                reply = client.generate_text(prompt, timeout=30, retries=2).strip()
             except Exception as e:
-                err = str(e)
-                if "503" in err or "UNAVAILABLE" in err or "high demand" in err:
-                    reply = (
-                        "LifeOS AI received your message, but the intelligence engine is under high demand right now. "
-                        "Do not rush the decision. Hold the action, keep the facts ready, and try again shortly so the future outcome can be reviewed properly."
-                    )
-                else:
-                    reply = (
-                        "LifeOS AI received your message, but could not complete the continuation at this moment. "
-                        "Please send the last question again in a shorter form."
-                    )
+                err = f"{type(e).__name__}: {e}"
+                reply = (
+                    "LifeOS AI received your follow-up, but the intelligence engine could not complete the continuation at this moment. "
+                    "The decision thread is still kept on this page. Wait briefly, then send the same follow-up again. "
+                    "Do not restart the decision unless you want a fresh audit."
+                )
+
+                self._send_json(
+                    200,
+                    {
+                        "ok": True,
+                        "reply": reply,
+                        "audio_url": None,
+                        "tts_error": err,
+                    },
+                )
+                return
 
             self._send_json(
                 200,
@@ -225,7 +255,7 @@ Rules:
                     "ok": True,
                     "reply": reply,
                     "audio_url": None,
-                    "tts_error": "Chat continuation uses text-first response for speed.",
+                    "tts_error": None,
                 },
             )
 
@@ -234,7 +264,7 @@ Rules:
                 200,
                 {
                     "ok": True,
-                    "reply": "LifeOS AI could not read that message properly. Please send it again in a shorter form.",
+                    "reply": "LifeOS AI could not read that message properly. Please type the question again.",
                     "audio_url": None,
                     "tts_error": f"{type(e).__name__}: {e}",
                 },
