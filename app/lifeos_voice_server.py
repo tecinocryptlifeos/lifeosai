@@ -209,6 +209,7 @@ Requirements:
 - Keep it under 85 words.
 - Make it sound natural, premium, and human.
 - The final text must be suitable to display on screen.
+- End with a complete sentence. Never stop mid-word, mid-line, or mid-thought.
 
 Audit:
 {audit}
@@ -221,7 +222,7 @@ Audit:
                     retries=2,
                 ).strip()
             except Exception:
-                voice = audit.strip()[:900]
+                voice = audit.strip()
 
             audio_url = None
             tts_error = "Server voice temporarily disabled to keep AI response fast and stable."
