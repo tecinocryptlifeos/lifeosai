@@ -174,11 +174,29 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
 
             audit_prompt = f"{SYSTEM_STYLE}\n\nUser decision:\n{user_text}"
 
-            audit = client.generate_text(
-                audit_prompt,
-                timeout=35,
-                retries=1,
-            )
+            try:
+                audit = client.generate_text(
+                    audit_prompt,
+                    timeout=45,
+                    retries=3,
+                )
+            except Exception as e:
+                error_text = str(e)
+                if "503" in error_text or "UNAVAILABLE" in error_text or "high demand" in error_text:
+                    self._send_json(
+                        200,
+                        {
+                            "ok": True,
+                            "reply": "LifeOS AI is temporarily experiencing high demand from the intelligence engine. Please try again in a moment. Your decision was received, but the future outcome audit could not be completed right now.",
+                            "voice": "LifeOS AI is temporarily experiencing high demand from the intelligence engine. Please try again in a moment.",
+                            "audit": "",
+                            "tone": tone,
+                            "audio_url": None,
+                            "tts_error": "Gemini model high demand: 503 UNAVAILABLE",
+                        },
+                    )
+                    return
+                raise
 
             voice_prompt = f"""
 Rewrite the audit below as the exact public response to show on screen.
@@ -199,8 +217,8 @@ Audit:
             try:
                 voice = client.generate_text(
                     voice_prompt,
-                    timeout=25,
-                    retries=1,
+                    timeout=35,
+                    retries=2,
                 ).strip()
             except Exception:
                 voice = audit.strip()[:900]
