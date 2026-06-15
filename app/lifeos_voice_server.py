@@ -118,6 +118,10 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
             self._serve_file(WEB_FILE)
             return
 
+        if path in ("/chat", "/chat.html"):
+            self._serve_file(WEB_DIR / "chat.html")
+            return
+
         if path in ("/manifest.webmanifest", "/manifest.json"):
             self._serve_file(WEB_DIR / "manifest.webmanifest")
             return
@@ -143,8 +147,106 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
 
         self._send_bytes(404, b"Not found")
 
+
+    def _handle_chat_decision(self):
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+
+            if length <= 0:
+                raise ValueError("Request body is required")
+
+            if length > 80000:
+                raise ValueError("Request body is too large")
+
+            raw = self.rfile.read(length)
+            data = json.loads(raw.decode("utf-8"))
+
+            messages = data.get("messages") or []
+            if not isinstance(messages, list):
+                raise ValueError("Messages must be a list")
+
+            cleaned = []
+            for item in messages[-12:]:
+                role = str(item.get("role", "")).strip().lower()
+                content = str(item.get("content", "")).strip()
+                if role not in ("user", "assistant"):
+                    continue
+                if not content:
+                    continue
+                cleaned.append((role, content[:1800]))
+
+            if not cleaned:
+                raise ValueError("Message is required")
+
+            conversation = "\n".join(
+                f"{role.upper()}: {content}" for role, content in cleaned
+            )
+
+            prompt = f"""
+You are Sophia, the LifeOS AI decision intelligence assistant.
+
+Purpose:
+Help the user understand the future outcome of a decision, continue the same decision conversation, and give clearer explanation when the user is confused.
+
+Conversation so far:
+{conversation}
+
+Rules:
+- Continue the conversation. Do not restart unless the user clearly starts a new decision.
+- Explain unclear parts in simple, direct language.
+- If the user asks "why", explain the reasoning.
+- If the user asks "what should I do", give a next action.
+- If important facts are missing, ask one clear question.
+- Use LifeOS decision language: future outcome, main risk, hidden cost, better move, next action, final truth.
+- Do not use markdown symbols like **.
+- Keep the answer complete. Never stop mid-word or mid-sentence.
+- Keep it between 80 and 180 words unless the user asks for more detail.
+"""
+
+            try:
+                client = GeminiClient()
+                reply = client.generate_text(prompt, timeout=18, retries=2).strip()
+            except Exception as e:
+                err = str(e)
+                if "503" in err or "UNAVAILABLE" in err or "high demand" in err:
+                    reply = (
+                        "LifeOS AI received your message, but the intelligence engine is under high demand right now. "
+                        "Do not rush the decision. Hold the action, keep the facts ready, and try again shortly so the future outcome can be reviewed properly."
+                    )
+                else:
+                    reply = (
+                        "LifeOS AI received your message, but could not complete the continuation at this moment. "
+                        "Please send the last question again in a shorter form."
+                    )
+
+            self._send_json(
+                200,
+                {
+                    "ok": True,
+                    "reply": reply,
+                    "audio_url": None,
+                    "tts_error": "Chat continuation uses text-first response for speed.",
+                },
+            )
+
+        except Exception as e:
+            self._send_json(
+                200,
+                {
+                    "ok": True,
+                    "reply": "LifeOS AI could not read that message properly. Please send it again in a shorter form.",
+                    "audio_url": None,
+                    "tts_error": f"{type(e).__name__}: {e}",
+                },
+            )
+
+
     def do_POST(self):
         path = self._path()
+
+        if path == "/api/chat-decision":
+            self._handle_chat_decision()
+            return
 
         if path != "/api/text-audit":
             self._send_json(404, {"ok": False, "error": "Not found"})

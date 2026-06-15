@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LifeOS AI — Decision Chat</title>
+  <style>
+    :root {
+      --bg: #050508;
+      --card: rgba(8, 9, 15, 0.86);
+      --card2: rgba(15, 16, 24, 0.82);
+      --text: #f6f0df;
+      --muted: rgba(246, 240, 223, 0.66);
+      --gold: #f3c969;
+      --green: #9df2b6;
+      --line: rgba(255,255,255,0.13);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      display: flex;
+      justify-content: center;
+      padding: 10px;
+    }
+
+    .app {
+      width: min(100%, 520px);
+      min-height: calc(100dvh - 20px);
+      position: relative;
+      overflow: hidden;
+      border-radius: 30px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: linear-gradient(180deg, rgba(5,5,8,0.92), rgba(5,5,8,0.98));
+      box-shadow: 0 24px 80px rgba(0,0,0,0.46);
+    }
+
+    .app::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(3,3,6,0.74), rgba(3,3,6,0.94)),
+        url("assets/lifeos-bg.jpg") center top / cover no-repeat;
+      opacity: 0.54;
+      filter: saturate(1.06) brightness(0.78);
+      z-index: 0;
+    }
+
+    .inner {
+      position: relative;
+      z-index: 2;
+      min-height: calc(100dvh - 20px);
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      gap: 12px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .logo {
+      width: 58px;
+      height: 58px;
+      flex: 0 0 58px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+    }
+
+    .logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 8px 18px rgba(0,0,0,0.58));
+      transform: scale(1.28);
+    }
+
+    .brand-title {
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .brand-sub {
+      margin-top: 4px;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .status {
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 900;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(157,242,182,0.28);
+      background: rgba(157,242,182,0.08);
+      white-space: nowrap;
+    }
+
+    .hero {
+      padding: 10px 2px 0;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.02;
+      letter-spacing: -0.07em;
+    }
+
+    .intro {
+      margin-top: 9px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .chat {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 0;
+      padding: 12px;
+      border-radius: 24px;
+      background: rgba(6,7,12,0.82);
+      border: 1px solid var(--line);
+      backdrop-filter: blur(18px);
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-right: 2px;
+      min-height: 300px;
+      max-height: 52dvh;
+    }
+
+    .msg {
+      width: fit-content;
+      max-width: 92%;
+      padding: 11px 12px;
+      border-radius: 18px;
+      font-size: 14px;
+      line-height: 1.48;
+      white-space: pre-wrap;
+    }
+
+    .user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, rgba(243,201,105,0.95), rgba(255,236,174,0.95));
+      color: #0c0b08;
+      border-bottom-right-radius: 6px;
+      font-weight: 650;
+    }
+
+    .assistant {
+      align-self: flex-start;
+      background: rgba(255,255,255,0.075);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-bottom-left-radius: 6px;
+    }
+
+    .composer {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      padding-top: 4px;
+    }
+
+    textarea {
+      flex: 1;
+      min-height: 48px;
+      max-height: 110px;
+      resize: none;
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 18px;
+      padding: 12px;
+      color: var(--text);
+      background: rgba(8,9,15,0.92);
+      outline: none;
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    button {
+      border: 0;
+      border-radius: 18px;
+      padding: 13px 14px;
+      font-weight: 900;
+      color: #0c0b08;
+      background: linear-gradient(135deg, var(--gold), #fff1b8);
+      min-height: 48px;
+    }
+
+    .tools {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tool {
+      min-height: auto;
+      padding: 9px 11px;
+      border-radius: 999px;
+      font-size: 11px;
+      color: var(--text);
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .history {
+      display: none;
+      padding: 10px;
+      border-radius: 18px;
+      background: rgba(0,0,0,0.22);
+      border: 1px solid rgba(255,255,255,0.10);
+      max-height: 130px;
+      overflow: auto;
+    }
+
+    .history.open { display: block; }
+
+    .history button {
+      width: 100%;
+      text-align: left;
+      margin-bottom: 6px;
+      color: var(--text);
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      min-height: auto;
+      padding: 9px;
+      font-size: 12px;
+    }
+
+    footer {
+      color: rgba(246,240,223,0.52);
+      font-size: 11px;
+      line-height: 1.45;
+      text-align: center;
+      padding: 3px 6px 0;
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="inner">
+      <header class="topbar">
+        <div class="brand">
+          <div class="logo"><img src="assets/lifeos-logo.jpg" alt="LifeOS logo"></div>
+          <div>
+            <div class="brand-title">LifeOS AI</div>
+            <div class="brand-sub">Decision Chat</div>
+          </div>
+        </div>
+        <div id="net" class="status">● Online</div>
+      </header>
+
+      <section class="hero">
+        <h1>Continue any decision until it becomes clear.</h1>
+        <div class="intro">
+          Ask for a future outcome, then continue the same conversation when you need explanation, clarity, hidden cost, or next action.
+        </div>
+      </section>
+
+      <section class="chat">
+        <div class="tools">
+          <button class="tool" id="newBtn">New Decision</button>
+          <button class="tool" id="historyBtn">Chat History</button>
+          <button class="tool" id="clearBtn">Clear Current</button>
+        </div>
+        <div id="history" class="history"></div>
+        <div id="messages" class="messages"></div>
+        <div class="composer">
+          <textarea id="input" placeholder="Type your decision or follow-up question..."></textarea>
+          <button id="sendBtn">Send</button>
+        </div>
+      </section>
+
+      <footer>
+        LifeOS Synthetic Artificial Intelligence (LOSAI) helps you see the future outcome of a decision before you act. Powered by Hansafrique LTD, LifeOS Daily, and Tecino’s Channel. © 2026
+      </footer>
+    </section>
+  </main>
+
+<script>
+const messagesBox = document.getElementById("messages");
+const input = document.getElementById("input");
+const sendBtn = document.getElementById("sendBtn");
+const newBtn = document.getElementById("newBtn");
+const clearBtn = document.getElementById("clearBtn");
+const historyBtn = document.getElementById("historyBtn");
+const historyBox = document.getElementById("history");
+const net = document.getElementById("net");
+
+const STORE = "lifeos_decision_chat_v1";
+const THREADS = "lifeos_decision_threads_v1";
+
+let current = JSON.parse(localStorage.getItem(STORE) || "[]");
+
+function updateNet() {
+  const on = navigator.onLine;
+  net.textContent = on ? "● Online" : "● Offline";
+  net.style.color = on ? "var(--green)" : "#ff8d8d";
+}
+window.addEventListener("online", updateNet);
+window.addEventListener("offline", updateNet);
+updateNet();
+
+function save() {
+  localStorage.setItem(STORE, JSON.stringify(current));
+}
+
+function saveThread() {
+  if (!current.length) return;
+  const threads = JSON.parse(localStorage.getItem(THREADS) || "[]");
+  const title = current.find(m => m.role === "user")?.content?.slice(0, 44) || "Decision chat";
+  threads.unshift({ title, messages: current, time: new Date().toISOString() });
+  localStorage.setItem(THREADS, JSON.stringify(threads.slice(0, 20)));
+}
+
+function render() {
+  messagesBox.innerHTML = "";
+  if (!current.length) {
+    const start = document.createElement("div");
+    start.className = "msg assistant";
+    start.textContent = "Start with a decision. After I answer, continue asking until the decision becomes clear.";
+    messagesBox.appendChild(start);
+  }
+  current.forEach(m => {
+    const div = document.createElement("div");
+    div.className = "msg " + (m.role === "user" ? "user" : "assistant");
+    div.textContent = m.content;
+    messagesBox.appendChild(div);
+  });
+  messagesBox.scrollTop = messagesBox.scrollHeight;
+}
+
+async function sendMessage() {
+  const text = input.value.trim();
+  if (!text) return;
+
+  current.push({ role: "user", content: text });
+  input.value = "";
+  save();
+  render();
+
+  const loading = { role: "assistant", content: "LifeOS AI is reviewing the decision thread..." };
+  current.push(loading);
+  render();
+
+  try {
+    const res = await fetch("/api/chat-decision", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: current.filter(m => !m.content.includes("reviewing the decision thread")) })
+    });
+
+    const raw = await res.text();
+    let data = {};
+    try { data = raw ? JSON.parse(raw) : {}; } catch (e) {}
+
+    loading.content = data.reply || "LifeOS AI could not complete the continuation. Please try again.";
+  } catch (e) {
+    loading.content = "LifeOS AI could not reach the intelligence server. Please try again.";
+  }
+
+  save();
+  render();
+}
+
+sendBtn.addEventListener("click", sendMessage);
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+newBtn.addEventListener("click", () => {
+  saveThread();
+  current = [];
+  save();
+  render();
+});
+
+clearBtn.addEventListener("click", () => {
+  current = [];
+  save();
+  render();
+});
+
+historyBtn.addEventListener("click", () => {
+  const threads = JSON.parse(localStorage.getItem(THREADS) || "[]");
+  historyBox.innerHTML = "";
+  threads.forEach((t, i) => {
+    const b = document.createElement("button");
+    b.textContent = t.title;
+    b.onclick = () => {
+      current = t.messages || [];
+      save();
+      historyBox.classList.remove("open");
+      render();
+    };
+    historyBox.appendChild(b);
+  });
+  if (!threads.length) historyBox.textContent = "No saved chat history yet.";
+  historyBox.classList.toggle("open");
+});
+
+render();
+</script>
+</body>
+</html>
