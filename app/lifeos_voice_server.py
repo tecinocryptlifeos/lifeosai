@@ -176,12 +176,12 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
 
             audit = client.generate_text(
                 audit_prompt,
-                timeout=75,
-                retries=3,
+                timeout=35,
+                retries=1,
             )
 
             voice_prompt = f"""
-Rewrite the audit below as the exact public response to show and speak.
+Rewrite the audit below as the exact public response to show on screen.
 
 Requirements:
 - Speak as Sophia, the LifeOS AI premium voice.
@@ -190,28 +190,23 @@ Requirements:
 - Do not mention markdown.
 - Keep it under 85 words.
 - Make it sound natural, premium, and human.
-- The final text must be suitable to display on screen and read aloud exactly.
+- The final text must be suitable to display on screen.
 
 Audit:
 {audit}
 """
 
-            voice = client.generate_text(
-                voice_prompt,
-                timeout=60,
-                retries=2,
-            ).strip()
+            try:
+                voice = client.generate_text(
+                    voice_prompt,
+                    timeout=25,
+                    retries=1,
+                ).strip()
+            except Exception:
+                voice = audit.strip()[:900]
 
             audio_url = None
-            tts_error = None
-
-            try:
-                audio_name = f"lifeos_voice_{int(time.time() * 1000)}.wav"
-                audio_path = AUDIO_DIR / audio_name
-                generate_lifeos_voice_wav(voice, audio_path)
-                audio_url = f"/audio/{audio_name}"
-            except Exception as e:
-                tts_error = f"{type(e).__name__}: {e}"
+            tts_error = "Server voice temporarily disabled to keep AI response fast and stable."
 
             self._send_json(
                 200,
