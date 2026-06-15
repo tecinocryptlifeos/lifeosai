@@ -702,6 +702,127 @@
     }
   }
 
+
+  /* LifeOS logo and background premium correction v6 */
+  .app {
+    background:
+      radial-gradient(circle at 30% 0%, rgba(243,201,105,0.12), transparent 34%),
+      linear-gradient(180deg, rgba(5,5,9,0.96), rgba(5,5,9,0.985)) !important;
+  }
+
+  .app::before {
+    background:
+      linear-gradient(180deg, rgba(3,3,6,0.70), rgba(3,3,6,0.88) 42%, rgba(3,3,6,0.97)),
+      url("assets/lifeos-bg.jpg") center top / cover no-repeat !important;
+    opacity: 0.72 !important;
+    filter: saturate(1.08) contrast(1.02) brightness(0.82) !important;
+  }
+
+  .app::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 50% 8%, rgba(243,201,105,0.08), transparent 34%),
+      linear-gradient(180deg, rgba(0,0,0,0.14), rgba(0,0,0,0.58));
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .inner {
+    position: relative;
+    z-index: 2;
+  }
+
+  .image-logo {
+    width: 78px !important;
+    height: 78px !important;
+    flex: 0 0 78px !important;
+    padding: 7px !important;
+    border-radius: 22px !important;
+    overflow: hidden !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background:
+      radial-gradient(circle at center, rgba(243,201,105,0.08), rgba(0,0,0,0.94)) !important;
+    border: 1px solid rgba(243,201,105,0.58) !important;
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.04),
+      0 12px 34px rgba(0,0,0,0.42),
+      0 0 22px rgba(243,201,105,0.13) !important;
+  }
+
+  .image-logo img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    object-position: center center !important;
+    display: block !important;
+    transform: scale(0.88) !important;
+    transform-origin: center center !important;
+  }
+
+  .console,
+  .response,
+  .mini,
+  .premium-inline-cta {
+    background: rgba(6,7,13,0.86) !important;
+    border-color: rgba(255,255,255,0.14) !important;
+    backdrop-filter: blur(20px) saturate(1.05) !important;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35) !important;
+  }
+
+  select,
+  textarea {
+    background: rgba(10,11,18,0.88) !important;
+    border-color: rgba(255,255,255,0.14) !important;
+  }
+
+  #stopBtn:disabled {
+    display: none !important;
+  }
+
+  .voice-mini {
+    width: auto !important;
+    max-width: max-content !important;
+    padding: 5px 8px !important;
+    min-height: 25px !important;
+    font-size: 9.8px !important;
+    line-height: 1 !important;
+  }
+
+  .voice-mini .mic-icon {
+    width: 17px !important;
+    height: 17px !important;
+  }
+
+  .voice-mini svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
+
+  @media (max-width: 560px) {
+    .image-logo {
+      width: 72px !important;
+      height: 72px !important;
+      flex: 0 0 72px !important;
+      padding: 7px !important;
+      border-radius: 21px !important;
+    }
+
+    .image-logo img {
+      transform: scale(0.86) !important;
+    }
+
+    .app::before {
+      background:
+        linear-gradient(180deg, rgba(3,3,6,0.72), rgba(3,3,6,0.89) 44%, rgba(3,3,6,0.98)),
+        url("assets/lifeos-bg.jpg") center top / cover no-repeat !important;
+      opacity: 0.70 !important;
+    }
+  }
+
   </style>
 </head>
 
