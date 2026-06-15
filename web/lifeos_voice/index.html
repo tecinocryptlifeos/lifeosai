@@ -1079,7 +1079,22 @@ LifeOS Synthetic Artificial Intelligence (LOSAI) helps you see the future outcom
           })
         });
 
-        const data = await res.json();
+        const rawResponse = await res.text();
+
+        if (!rawResponse || !rawResponse.trim()) {
+          throw new Error("LifeOS server returned an empty response. Please try again in a moment.");
+        }
+
+        let data;
+        try {
+          data = JSON.parse(rawResponse);
+        } catch (parseError) {
+          throw new Error("LifeOS server returned a non-JSON response. Please try again in a moment.");
+        }
+
+        if (!res.ok) {
+          throw new Error(data.error || "LifeOS server request failed. Please try again.");
+        }
 
         if (!data.ok) throw new Error(data.error || "Unknown server error");
 
@@ -1090,7 +1105,7 @@ LifeOS Synthetic Artificial Intelligence (LOSAI) helps you see the future outcom
         await playServerAudio(data.audio_url, displayText);
       } catch (err) {
         setStatus("Error: " + err.message);
-        responseText.textContent = "The request failed. Please try again in a moment.";
+        responseText.textContent = error && error.message ? error.message : "The request failed. Please try again in a moment.";
       } finally {
         setBusy(false);
       }

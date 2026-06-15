@@ -240,11 +240,17 @@ Audit:
             )
 
         except Exception as e:
+            error_text = f"{type(e).__name__}: {e}"
             self._send_json(
-                500,
+                200,
                 {
-                    "ok": False,
-                    "error": f"{type(e).__name__}: {e}",
+                    "ok": True,
+                    "reply": "LifeOS AI received your decision, but the intelligence engine could not complete the future outcome audit at this moment. Please try again shortly.",
+                    "voice": "LifeOS AI received your decision, but the intelligence engine could not complete the future outcome audit at this moment.",
+                    "audit": "",
+                    "tone": "system",
+                    "audio_url": None,
+                    "tts_error": error_text,
                 },
             )
 
