@@ -196,8 +196,7 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
                     latest_user = content
                     break
 
-            conversation = "
-".join(
+            conversation = "\n".join(
                 f"{role.upper()}: {content}" for role, content in cleaned
             )
 
