@@ -110,6 +110,17 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = self._path()
 
+        # LIFEOS_ROUTE_LOCK_START
+        if path in ("/", "/index.html"):
+            self._serve_file(WEB_DIR / "chat.html")
+            return
+
+        if path in ("/home", "/home.html"):
+            self._serve_file(WEB_DIR / "index.html")
+            return
+        # LIFEOS_ROUTE_LOCK_END
+
+
         if path == "/health":
             self._send_bytes(200, b"OK", "text/plain; charset=utf-8")
             return

@@ -1,20 +1,28 @@
-self.addEventListener("install", () => {
+const CACHE_NAME = "lifeos-webai-route-lock-1781738919";
+
+self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.map((key) => caches.delete(key)));
+    await self.clients.claim();
+  })());
 });
 
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
+  const request = event.request;
+
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request, { cache: "no-store" }).catch(() => fetch("/chat", { cache: "no-store" }))
+    );
+    return;
+  }
 
   event.respondWith(
-    fetch(event.request).catch(() => {
-      return new Response("LifeOS AI is temporarily offline.", {
-        status: 503,
-        headers: {"Content-Type": "text/plain; charset=utf-8"}
-      });
-    })
+    fetch(request).catch(() => caches.match(request))
   );
 });
