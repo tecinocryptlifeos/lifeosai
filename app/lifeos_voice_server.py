@@ -115,7 +115,11 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
             return
 
         if path in ("/", "/index.html"):
-            self._serve_file(WEB_FILE)
+            self._serve_file(WEB_DIR / "chat.html")
+            return
+
+        if path in ("/home", "/home.html"):
+            self._serve_file(WEB_DIR / "index.html")
             return
 
         if path in ("/chat", "/chat.html"):
