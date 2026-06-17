@@ -229,7 +229,7 @@ Rules:
 
             try:
                 client = GeminiClient()
-                reply = client.generate_text(prompt, timeout=30, retries=2).strip()
+                reply = client.generate_text(prompt, timeout=10, retries=1, max_output_tokens=430).strip()
             except Exception as e:
                 err = f"{type(e).__name__}: {e}"
                 reply = (
