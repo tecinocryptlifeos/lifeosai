@@ -1,4 +1,4 @@
-const CACHE_NAME = "lifeos-bg-card-fix-1781747268";
+const CACHE_NAME = "lifeos-clean-homepage-1781747497";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();

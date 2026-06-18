@@ -1,1521 +1,378 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#05060a" />
-  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LifeOS AI — Synthetic Decision Intelligence</title>
+  <meta name="description" content="LifeOS AI helps you see the future outcome of a decision before you act." />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="theme-color" content="#050403" />
 
   <style>
     :root {
-      --bg: #05060a;
-      --text: #f8f3e7;
-      --muted: rgba(248,243,231,0.68);
-      --soft: rgba(248,243,231,0.48);
-      --line: rgba(255,255,255,0.14);
-      --gold: #f3c969;
-      --gold2: #fff0b0;
-      --green: #9df2b6;
-      --danger: #ff8989;
-      --panel: rgba(255,255,255,0.075);
+      --gold: #f4c75d;
+      --soft-gold: #fff1a6;
+      --dark: #050403;
+      --panel: rgba(5, 5, 7, 0.66);
+      --line: rgba(255, 255, 255, 0.13);
+      --text: rgba(255, 255, 255, 0.92);
+      --muted: rgba(255, 255, 255, 0.68);
     }
 
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    * {
+      box-sizing: border-box;
+    }
 
+    html,
     body {
       margin: 0;
-      min-height: 100vh;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100%;
+      background: #030302;
       color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      padding: 14px;
       background:
-        radial-gradient(circle at 12% 8%, rgba(243,201,105,0.18), transparent 30%),
-        radial-gradient(circle at 90% 10%, rgba(105,118,255,0.18), transparent 31%),
-        radial-gradient(circle at 50% 110%, rgba(157,242,182,0.12), transparent 34%),
-        linear-gradient(145deg, #05060a, #0d1122 54%, #05060a);
-      display: flex;
-      justify-content: center;
-      padding: 18px;
+        radial-gradient(circle at 20% 10%, rgba(244, 199, 93, 0.12), transparent 32%),
+        linear-gradient(180deg, #050403, #010101 88%);
     }
 
-    .shell {
-      width: 100%;
-      max-width: 640px;
-      min-height: calc(100vh - 36px);
-      display: flex;
-      align-items: center;
-    }
-
-    .app {
-      width: 100%;
+    .page {
+      width: min(980px, 100%);
+      margin: 0 auto;
+      min-height: calc(100vh - 28px);
       border: 1px solid var(--line);
-      border-radius: 34px;
+      border-radius: 30px;
       overflow: hidden;
-      background: linear-gradient(180deg, rgba(255,255,255,0.105), rgba(255,255,255,0.045));
-      box-shadow: 0 32px 100px rgba(0,0,0,0.56);
-      backdrop-filter: blur(24px);
       position: relative;
+      isolation: isolate;
+      background:
+        linear-gradient(90deg, rgba(0,0,0,.94) 0%, rgba(0,0,0,.74) 42%, rgba(0,0,0,.48) 100%),
+        linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.86)),
+        url("/assets/lifeos-home-king-bg.webp");
+      background-size: cover;
+      background-position: 62% top;
+      background-repeat: no-repeat;
+      box-shadow: 0 35px 110px rgba(0, 0, 0, 0.72);
     }
 
-    .app::before {
+    .page::before {
       content: "";
       position: absolute;
       inset: 0;
-      background:
-        linear-gradient(135deg, rgba(255,255,255,0.09), transparent 30%),
-        radial-gradient(circle at top, rgba(243,201,105,0.09), transparent 44%);
+      z-index: -1;
       pointer-events: none;
+      background:
+        radial-gradient(circle at 18% 22%, rgba(255, 216, 115, 0.16), transparent 34%),
+        radial-gradient(circle at 78% 18%, rgba(255, 216, 115, 0.12), transparent 36%),
+        linear-gradient(180deg, transparent 0%, rgba(0,0,0,.72) 84%);
     }
 
-    .inner { position: relative; padding: 22px; }
+    .inner {
+      padding: clamp(22px, 5vw, 56px);
+    }
 
     .topbar {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      gap: 12px;
-      margin-bottom: 24px;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: clamp(34px, 7vw, 70px);
     }
 
     .brand {
       display: flex;
-      gap: 12px;
       align-items: center;
+      gap: 18px;
+      min-width: 0;
     }
 
-    .mark {
-      width: 44px;
-      height: 44px;
-      border-radius: 16px;
-      display: grid;
-      place-items: center;
-      background: linear-gradient(145deg, var(--gold), var(--gold2));
-      color: #111;
-      font-weight: 950;
-      letter-spacing: -0.08em;
-      box-shadow: 0 12px 34px rgba(243,201,105,0.18);
+    .logo {
+      width: clamp(86px, 18vw, 138px);
+      height: clamp(86px, 18vw, 138px);
+      object-fit: contain;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      opacity: 0.84;
+      mix-blend-mode: screen;
+      filter: drop-shadow(0 0 22px rgba(244, 199, 93, 0.22));
+      flex: 0 0 auto;
     }
 
-    .brand-title {
-      font-size: 14px;
-      font-weight: 900;
+    .brand-text strong {
+      display: block;
+      font-size: clamp(22px, 5vw, 36px);
+      line-height: 1;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
     }
 
-    .brand-sub {
-      margin-top: 2px;
+    .brand-text span {
+      display: block;
+      margin-top: 8px;
       color: var(--muted);
-      font-size: 11px;
+      font-size: clamp(12px, 3vw, 17px);
+      letter-spacing: 0.32em;
       text-transform: uppercase;
-      letter-spacing: 0.16em;
     }
 
-    .live {
-      color: var(--green);
-      background: rgba(157,242,182,0.08);
-      border: 1px solid rgba(157,242,182,0.28);
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 12px 18px;
       border-radius: 999px;
-      padding: 8px 10px;
-      font-size: 11px;
-      font-weight: 850;
+      border: 1px solid rgba(110, 255, 171, 0.24);
+      background: rgba(24, 82, 46, 0.38);
+      color: #b9ffd2;
+      font-weight: 900;
       white-space: nowrap;
     }
 
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--gold2);
-      background: rgba(243,201,105,0.075);
-      border: 1px solid rgba(243,201,105,0.22);
-      border-radius: 999px;
-      padding: 8px 10px;
-      font-size: 12px;
-      font-weight: 800;
-      margin-bottom: 14px;
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #78f6a7;
+      box-shadow: 0 0 18px rgba(120, 246, 167, 0.85);
     }
 
-    .pulse {
-      width: 7px;
-      height: 7px;
-      border-radius: 999px;
-      background: var(--green);
-      box-shadow: 0 0 18px rgba(157,242,182,0.8);
+    .hero {
+      max-width: 760px;
     }
 
     h1 {
       margin: 0;
-      font-size: clamp(36px, 9vw, 56px);
-      line-height: 0.95;
+      max-width: 760px;
+      font-size: clamp(45px, 11vw, 92px);
+      line-height: 0.96;
       letter-spacing: -0.07em;
-    }
-
-    .gold { color: var(--gold); }
-
-    .intro {
-      margin: 16px 0 0;
-      color: var(--muted);
-      line-height: 1.58;
-      font-size: 15px;
-    }
-
-    .console {
-      margin-top: 18px;
-      border: 1px solid var(--line);
-      border-radius: 28px;
-      padding: 16px;
-      background: rgba(0,0,0,0.24);
-    }
-
-    .row {
-      display: flex;
-      gap: 10px;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-
-    .label {
-      font-size: 12px;
-      color: var(--soft);
-      text-transform: uppercase;
-      letter-spacing: 0.14em;
-      font-weight: 850;
-    }
-
-    select {
-      width: 100%;
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      background: rgba(255,255,255,0.06);
-      color: var(--text);
-      padding: 13px;
-      font-weight: 750;
-      outline: none;
-      margin-bottom: 10px;
-    }
-
-    select option {
-      color: #111;
-    }
-
-    textarea {
-      width: 100%;
-      min-height: 132px;
-      border: 1px solid var(--line);
-      border-radius: 22px;
-      padding: 15px;
-      background: rgba(255,255,255,0.055);
-      color: var(--text);
-      font-size: 15px;
-      line-height: 1.5;
-      resize: vertical;
-      outline: none;
-    }
-
-    textarea::placeholder { color: rgba(248,243,231,0.42); }
-
-    textarea:focus, select:focus {
-      border-color: rgba(243,201,105,0.72);
-      box-shadow: 0 0 0 4px rgba(243,201,105,0.10);
-    }
-
-    .buttons {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 10px;
-      margin-top: 12px;
-    }
-
-    button {
-      border: 0;
-      border-radius: 20px;
-      padding: 16px;
-      font-size: 15px;
       font-weight: 950;
-      cursor: pointer;
     }
 
-    button:disabled { opacity: 0.48; }
-
-    .primary {
-      background: linear-gradient(135deg, var(--gold), var(--gold2));
-      color: #111;
-      box-shadow: 0 16px 38px rgba(243,201,105,0.15);
-    }
-
-    .voice {
-      background: linear-gradient(135deg, var(--green), #e7ffe9);
-      color: #061009;
-    }
-
-    .danger {
-      color: #ffdada;
-      background: rgba(255,137,137,0.10);
-      border: 1px solid rgba(255,137,137,0.30);
-    }
-
-    .install {
-      color: var(--text);
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.16);
-    }
-
-    .status {
-      min-height: 20px;
-      margin-top: 14px;
+    h1 .gold {
       color: var(--gold);
-      font-size: 13px;
-      font-weight: 850;
     }
 
-    .response {
-      margin-top: 14px;
-      padding: 16px;
-      border-radius: 24px;
-      min-height: 122px;
-      border: 1px solid rgba(255,255,255,0.10);
-      background: linear-gradient(180deg, rgba(255,255,255,0.065), rgba(255,255,255,0.028));
-      color: rgba(248,243,231,0.92);
-      white-space: pre-wrap;
-      line-height: 1.58;
-      font-size: 15px;
+    .lead {
+      max-width: 720px;
+      margin: 24px 0 0;
+      font-size: clamp(19px, 4.2vw, 30px);
+      line-height: 1.42;
+      color: rgba(255,255,255,.76);
     }
 
-    .features {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 14px;
+    .panel {
+      margin-top: clamp(32px, 7vw, 70px);
+      max-width: 780px;
+      padding: clamp(22px, 5vw, 38px);
+      border: 1px solid var(--line);
+      border-radius: 34px;
+      background: rgba(0, 0, 0, 0.48);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 22px 80px rgba(0, 0, 0, 0.45);
     }
 
-    .mini {
-      border: 1px solid rgba(255,255,255,0.10);
-      background: rgba(255,255,255,0.045);
-      border-radius: 20px;
-      padding: 12px;
-    }
-
-    .mini strong {
-      display: block;
-      font-size: 13px;
-      margin-bottom: 4px;
-    }
-
-    .mini span {
-      color: var(--soft);
-      font-size: 12px;
-      line-height: 1.35;
-    }
-
-    footer {
-      margin-top: 18px;
-      padding-top: 14px;
-      border-top: 1px solid rgba(255,255,255,0.10);
-      text-align: center;
-      color: rgba(248,243,231,0.52);
-      font-size: 12px;
+    .brief {
+      padding: 22px;
+      border: 1px solid rgba(255,255,255,.11);
+      border-radius: 25px;
+      background: rgba(0,0,0,.38);
+      color: rgba(255,255,255,.86);
+      font-size: clamp(18px, 4vw, 26px);
       line-height: 1.55;
     }
 
-    footer a {
-      color: var(--gold);
-      font-weight: 850;
+    .brief strong {
+      color: var(--soft-gold);
+      font-weight: 950;
+    }
+
+    .cta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      margin-top: 26px;
+      padding: 20px 24px;
+      border-radius: 999px;
+      text-decoration: none;
+      color: #090703;
+      background: linear-gradient(135deg, #f4c75d, #fff1a6);
+      font-size: clamp(18px, 4vw, 26px);
+      font-weight: 950;
+      box-shadow: 0 20px 58px rgba(244, 199, 93, 0.22);
+    }
+
+    .secondary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      margin-top: 16px;
+      padding: 18px 22px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+      color: rgba(255,255,255,.93);
+      font-size: clamp(16px, 3.5vw, 22px);
+      font-weight: 900;
+    }
+
+    .subscribe {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      margin-top: 16px;
+      padding: 16px 20px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.34);
+      color: #fff0a9;
+      font-size: clamp(15px, 3.4vw, 20px);
+      font-weight: 950;
+    }
+
+    .subscribe::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #7af5a7;
+      box-shadow: 0 0 18px rgba(122,245,167,.7);
+    }
+
+    .note {
+      margin-top: 22px;
+      padding: 18px 20px;
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 22px;
+      background: rgba(0,0,0,.30);
+      color: rgba(255,255,255,.70);
+      font-size: clamp(15px, 3.4vw, 19px);
+      line-height: 1.5;
+    }
+
+    .footer {
+      margin-top: clamp(44px, 9vw, 90px);
+      padding-top: 24px;
+      border-top: 1px solid rgba(255,255,255,.10);
+      text-align: center;
+      color: rgba(255,255,255,.58);
+      font-size: clamp(14px, 3.2vw, 18px);
+      line-height: 1.55;
+    }
+
+    .footer strong,
+    .footer a {
+      color: #fff0a9;
+      font-weight: 900;
       text-decoration: none;
     }
 
-    @media (min-width: 560px) {
-      .buttons { grid-template-columns: 1fr 1fr; }
-      .primary, .install { grid-column: 1 / -1; }
+    @media (max-width: 620px) {
+      body {
+        padding: 12px;
+      }
+
+      .page {
+        border-radius: 24px;
+        background-position: 66% top;
+      }
+
+      .topbar {
+        align-items: flex-start;
+      }
+
+      .brand {
+        gap: 12px;
+      }
+
+      .status {
+        padding: 10px 13px;
+        font-size: 14px;
+      }
+
+      .panel {
+        border-radius: 28px;
+      }
     }
-
-  /* LifeOS topbar premium upgrade */
-  .logo-mark {
-    width: 54px;
-    height: 54px;
-    border-radius: 18px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    line-height: 0.9;
-    font-size: 10px;
-    letter-spacing: -0.04em;
-  }
-
-  .logo-mark strong {
-    font-size: 17px;
-    letter-spacing: -0.08em;
-  }
-
-  .top-actions {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .network.online {
-    color: var(--green);
-    border-color: rgba(157,242,182,0.30);
-    background: rgba(157,242,182,0.08);
-  }
-
-  .network.offline {
-    color: var(--danger);
-    border-color: rgba(255,137,137,0.35);
-    background: rgba(255,137,137,0.10);
-  }
-
-  .menu-button {
-    width: 38px;
-    height: 38px;
-    padding: 0;
-    border-radius: 999px;
-    color: var(--text);
-    border: 1px solid rgba(255,255,255,0.16);
-    background: rgba(255,255,255,0.075);
-    font-size: 24px;
-    line-height: 1;
-    box-shadow: none;
-  }
-
-  .app-menu {
-    position: absolute;
-    top: 48px;
-    right: 0;
-    z-index: 20;
-    min-width: 185px;
-    padding: 8px;
-    border-radius: 18px;
-    border: 1px solid rgba(255,255,255,0.14);
-    background: rgba(12,14,24,0.96);
-    box-shadow: 0 22px 60px rgba(0,0,0,0.42);
-    backdrop-filter: blur(18px);
-  }
-
-  .app-menu button {
-    width: 100%;
-    padding: 11px 12px;
-    border-radius: 12px;
-    background: transparent;
-    color: var(--text);
-    text-align: left;
-    font-size: 13px;
-    font-weight: 800;
-  }
-
-  .app-menu button:hover {
-    background: rgba(255,255,255,0.08);
-  }
-
-
-  /* LifeOS footer and full mobile premium layout */
-  .footer-premium {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-bottom: 10px;
-    padding: 8px 13px;
-    border-radius: 999px;
-    color: var(--gold2);
-    background: rgba(243,201,105,0.08);
-    border: 1px solid rgba(243,201,105,0.22);
-    font-size: 11px;
-    font-weight: 900;
-    letter-spacing: 0.04em;
-  }
-
-  @media (max-width: 560px) {
-    body {
-      min-height: 100dvh;
-      padding: 8px;
-      align-items: stretch;
-    }
-
-    .shell {
-      max-width: none;
-      min-height: calc(100dvh - 16px);
-      align-items: stretch;
-    }
-
-    .app {
-      min-height: calc(100dvh - 16px);
-      border-radius: 28px;
-    }
-
-    .inner {
-      min-height: calc(100dvh - 16px);
-      display: flex;
-      flex-direction: column;
-      padding: 18px;
-    }
-
-    .topbar {
-      margin-bottom: 14px;
-    }
-
-    h1 {
-      font-size: clamp(34px, 9.5vw, 48px);
-      line-height: 0.96;
-      margin-top: 4px;
-    }
-
-    .intro {
-      margin-top: 12px;
-      font-size: 14px;
-      line-height: 1.48;
-    }
-
-    .console {
-      margin-top: 14px;
-      padding: 14px;
-      border-radius: 24px;
-    }
-
-    textarea {
-      min-height: 88px;
-      max-height: 112px;
-    }
-
-    button {
-      padding: 13px;
-      border-radius: 18px;
-    }
-
-    .response {
-      padding: 14px;
-      font-size: 14px;
-      line-height: 1.45;
-    }
-
-    .features {
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .mini {
-      padding: 10px;
-      border-radius: 16px;
-    }
-
-    footer {
-      margin-top: auto;
-      padding-top: 12px;
-      font-size: 11px;
-      line-height: 1.48;
-    }
-  }
-
-
-  /* LifeOS image background, logo, and voice-card rebuild */
-  .app {
-    position: relative;
-    overflow: hidden;
-  }
-
-  .app::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background:
-      linear-gradient(180deg, rgba(10,10,16,0.72), rgba(10,10,16,0.92)),
-      url("assets/lifeos-bg.jpg") center / cover no-repeat;
-    opacity: 0.42;
-    filter: saturate(1.15) contrast(1.06);
-    z-index: 0;
-  }
-
-  .inner {
-    position: relative;
-    z-index: 1;
-  }
-
-  .image-logo {
-    padding: 0;
-    overflow: hidden;
-    background: rgba(0,0,0,0.35);
-    border: 1px solid rgba(243,201,105,0.35);
-  }
-
-  .image-logo img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  .response {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .voice-mini {
-    align-self: flex-start;
-    width: auto;
-    padding: 9px 12px;
-    border-radius: 999px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    font-size: 12px;
-    font-weight: 900;
-    color: #0c111b;
-    background: linear-gradient(135deg, #b6ffd0, #f6fff1);
-    border: 1px solid rgba(255,255,255,0.35);
-    box-shadow: 0 12px 28px rgba(129,255,174,0.12);
-  }
-
-  .mic-icon {
-    width: 26px;
-    height: 26px;
-    border-radius: 999px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: #071018;
-    background: rgba(255,255,255,0.7);
-  }
-
-  .premium-inline-cta {
-    grid-column: 1 / -1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 2px;
-    padding: 11px 13px;
-    border-radius: 18px;
-    color: var(--gold2);
-    background: rgba(243,201,105,0.08);
-    border: 1px solid rgba(243,201,105,0.22);
-    font-size: 12px;
-    font-weight: 900;
-    letter-spacing: 0.035em;
-  }
-
-  .features .mini:first-child span {
-    line-height: 1.45;
-  }
-
-
-  /* LifeOS visual correction v3 */
-  .app {
-    background-image:
-      linear-gradient(180deg, rgba(8,8,12,0.28), rgba(8,8,12,0.74)),
-      url("assets/lifeos-bg.jpg") !important;
-    background-size: cover !important;
-    background-position: center top !important;
-    background-repeat: no-repeat !important;
-  }
-
-  .app::before {
-    background:
-      linear-gradient(180deg, rgba(8,8,12,0.18), rgba(8,8,12,0.70)),
-      url("assets/lifeos-bg.jpg") center top / cover no-repeat !important;
-    opacity: 0.95 !important;
-    filter: saturate(1.28) contrast(1.12) brightness(1.04) !important;
-  }
-
-  .image-logo {
-    width: 66px !important;
-    height: 66px !important;
-    padding: 3px !important;
-    border-radius: 18px !important;
-    background: rgba(0,0,0,0.88) !important;
-    border: 1px solid rgba(243,201,105,0.55) !important;
-  }
-
-  .image-logo img {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: contain !important;
-    object-position: center !important;
-    display: block !important;
-  }
-
-  .voice-mini {
-    width: auto !important;
-    max-width: max-content !important;
-    padding: 5px 8px !important;
-    border-radius: 999px !important;
-    font-size: 10px !important;
-    line-height: 1 !important;
-    min-height: 26px !important;
-    box-shadow: 0 6px 14px rgba(129,255,174,0.10) !important;
-  }
-
-  .voice-mini .mic-icon {
-    width: 17px !important;
-    height: 17px !important;
-  }
-
-  .voice-mini svg {
-    width: 12px !important;
-    height: 12px !important;
-  }
-
-
-  /* LifeOS logo fit correction v5 */
-  .image-logo {
-    width: 76px !important;
-    height: 76px !important;
-    padding: 0 !important;
-    border-radius: 22px !important;
-    overflow: hidden !important;
-    background: #050505 !important;
-    border: 1px solid rgba(243,201,105,0.65) !important;
-    box-shadow:
-      0 0 0 1px rgba(255,255,255,0.04),
-      0 14px 38px rgba(0,0,0,0.38),
-      0 0 24px rgba(243,201,105,0.10) !important;
-  }
-
-  .image-logo img {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important;
-    object-position: center center !important;
-    display: block !important;
-    transform: scale(1.08);
-    transform-origin: center center;
-  }
-
-  @media (max-width: 560px) {
-    .image-logo {
-      width: 68px !important;
-      height: 68px !important;
-      border-radius: 20px !important;
-      flex: 0 0 68px !important;
-    }
-
-    .brand-title {
-      font-size: 17px !important;
-    }
-
-    .brand-sub {
-      font-size: 11px !important;
-      letter-spacing: 0.22em !important;
-    }
-  }
-
-
-  /* LifeOS logo and background premium correction v6 */
-  .app {
-    background:
-      radial-gradient(circle at 30% 0%, rgba(243,201,105,0.12), transparent 34%),
-      linear-gradient(180deg, rgba(5,5,9,0.96), rgba(5,5,9,0.985)) !important;
-  }
-
-  .app::before {
-    background:
-      linear-gradient(180deg, rgba(3,3,6,0.70), rgba(3,3,6,0.88) 42%, rgba(3,3,6,0.97)),
-      url("assets/lifeos-bg.jpg") center top / cover no-repeat !important;
-    opacity: 0.72 !important;
-    filter: saturate(1.08) contrast(1.02) brightness(0.82) !important;
-  }
-
-  .app::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background:
-      radial-gradient(circle at 50% 8%, rgba(243,201,105,0.08), transparent 34%),
-      linear-gradient(180deg, rgba(0,0,0,0.14), rgba(0,0,0,0.58));
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .inner {
-    position: relative;
-    z-index: 2;
-  }
-
-  .image-logo {
-    width: 78px !important;
-    height: 78px !important;
-    flex: 0 0 78px !important;
-    padding: 7px !important;
-    border-radius: 22px !important;
-    overflow: hidden !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    background:
-      radial-gradient(circle at center, rgba(243,201,105,0.08), rgba(0,0,0,0.94)) !important;
-    border: 1px solid rgba(243,201,105,0.58) !important;
-    box-shadow:
-      0 0 0 1px rgba(255,255,255,0.04),
-      0 12px 34px rgba(0,0,0,0.42),
-      0 0 22px rgba(243,201,105,0.13) !important;
-  }
-
-  .image-logo img {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: contain !important;
-    object-position: center center !important;
-    display: block !important;
-    transform: scale(0.88) !important;
-    transform-origin: center center !important;
-  }
-
-  .console,
-  .response,
-  .mini,
-  .premium-inline-cta {
-    background: rgba(6,7,13,0.86) !important;
-    border-color: rgba(255,255,255,0.14) !important;
-    backdrop-filter: blur(20px) saturate(1.05) !important;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.35) !important;
-  }
-
-  select,
-  textarea {
-    background: rgba(10,11,18,0.88) !important;
-    border-color: rgba(255,255,255,0.14) !important;
-  }
-
-  #stopBtn:disabled {
-    display: none !important;
-  }
-
-  .voice-mini {
-    width: auto !important;
-    max-width: max-content !important;
-    padding: 5px 8px !important;
-    min-height: 25px !important;
-    font-size: 9.8px !important;
-    line-height: 1 !important;
-  }
-
-  .voice-mini .mic-icon {
-    width: 17px !important;
-    height: 17px !important;
-  }
-
-  .voice-mini svg {
-    width: 12px !important;
-    height: 12px !important;
-  }
-
-  @media (max-width: 560px) {
-    .image-logo {
-      width: 72px !important;
-      height: 72px !important;
-      flex: 0 0 72px !important;
-      padding: 7px !important;
-      border-radius: 21px !important;
-    }
-
-    .image-logo img {
-      transform: scale(0.86) !important;
-    }
-
-    .app::before {
-      background:
-        linear-gradient(180deg, rgba(3,3,6,0.72), rgba(3,3,6,0.89) 44%, rgba(3,3,6,0.98)),
-        url("assets/lifeos-bg.jpg") center top / cover no-repeat !important;
-      opacity: 0.70 !important;
-    }
-  }
-
-
-  /* LifeOS free floating logo correction v8 */
-  .image-logo {
-    width: 88px !important;
-    height: 78px !important;
-    flex: 0 0 88px !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    overflow: visible !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-  }
-
-  .image-logo img {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: contain !important;
-    object-position: center !important;
-    transform: scale(1.38) !important;
-    mix-blend-mode: screen !important;
-    filter:
-      drop-shadow(0 10px 22px rgba(0,0,0,0.55))
-      drop-shadow(0 0 10px rgba(243,201,105,0.18)) !important;
-  }
-
-  @media (max-width: 560px) {
-    .image-logo {
-      width: 82px !important;
-      height: 72px !important;
-      flex: 0 0 82px !important;
-    }
-
-    .image-logo img {
-      transform: scale(1.42) !important;
-    }
-  }
-
   </style>
-
-
-
-
-
-<!-- LIFEOS_BACKGROUND_CARD_FIX_START -->
-<style id="lifeos-background-card-fix-style">
-  html,
-  body {
-    background:#030302 !important;
-    min-height:100%;
-  }
-
-  body::before {
-    content:"";
-    position:fixed;
-    inset:0;
-    z-index:-5;
-    background:#030302;
-  }
-
-  .lifeos-home-bg-card {
-    position:relative !important;
-    overflow:hidden !important;
-    isolation:isolate !important;
-    background:
-      linear-gradient(90deg, rgba(0,0,0,.94) 0%, rgba(0,0,0,.74) 38%, rgba(0,0,0,.50) 100%),
-      linear-gradient(180deg, rgba(0,0,0,.16) 0%, rgba(0,0,0,.82) 86%),
-      url("/assets/lifeos-home-king-bg.webp?v=1781747268") !important;
-    background-size:cover !important;
-    background-position:62% top !important;
-    background-repeat:no-repeat !important;
-    border:1px solid rgba(255,255,255,.12) !important;
-    box-shadow:0 30px 90px rgba(0,0,0,.68) !important;
-  }
-
-  .lifeos-home-bg-card::before {
-    content:"";
-    position:absolute;
-    inset:0;
-    z-index:-1;
-    pointer-events:none;
-    background:
-      radial-gradient(circle at 18% 20%, rgba(255,210,96,.16), transparent 31%),
-      radial-gradient(circle at 74% 18%, rgba(255,210,96,.13), transparent 36%),
-      linear-gradient(180deg, rgba(0,0,0,.04), rgba(0,0,0,.58));
-  }
-
-  .lifeos-home-bg-card > * {
-    position:relative;
-    z-index:1;
-  }
-
-  .lifeos-home-bg-card textarea,
-  .lifeos-home-bg-card select,
-  .lifeos-home-bg-card input[type="text"],
-  .lifeos-home-bg-card input[type="search"] {
-    display:none !important;
-  }
-
-  .lifeos-home-logo-clean {
-    width:92px !important;
-    max-width:92px !important;
-    height:92px !important;
-    max-height:92px !important;
-    object-fit:contain !important;
-    object-position:center !important;
-    background:transparent !important;
-    border:none !important;
-    border-radius:0 !important;
-    box-shadow:none !important;
-    opacity:.82 !important;
-    transform:none !important;
-    rotate:0deg !important;
-    mix-blend-mode:screen;
-    filter:drop-shadow(0 0 18px rgba(244,199,93,.20));
-    flex:0 0 auto !important;
-  }
-
-  .lifeos-home-bg-card img[src*="lifeos-logo"],
-  .lifeos-home-bg-card img[src*="lifeos-logo-transparent"] {
-    width:92px !important;
-    max-width:92px !important;
-    height:92px !important;
-    max-height:92px !important;
-    object-fit:contain !important;
-    background:transparent !important;
-    box-shadow:none !important;
-    border:none !important;
-    border-radius:0 !important;
-    opacity:.82 !important;
-    transform:none !important;
-    rotate:0deg !important;
-    mix-blend-mode:screen;
-  }
-
-  .lifeos-home-info-card {
-    margin:18px 0 20px !important;
-    padding:20px 22px !important;
-    border:1px solid rgba(255,255,255,.12) !important;
-    border-radius:24px !important;
-    background:rgba(0,0,0,.42) !important;
-    backdrop-filter:blur(14px);
-    color:rgba(255,255,255,.86) !important;
-    line-height:1.58 !important;
-    font-size:clamp(17px, 4vw, 23px) !important;
-  }
-
-  .lifeos-home-info-card strong {
-    color:#ffeaa1 !important;
-    font-weight:950 !important;
-  }
-
-  .lifeos-home-start-chat {
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-    width:100% !important;
-    margin:18px 0 14px !important;
-    padding:18px 24px !important;
-    border-radius:30px !important;
-    text-decoration:none !important;
-    font-weight:950 !important;
-    letter-spacing:.01em !important;
-    color:#080604 !important;
-    background:linear-gradient(135deg,#f5c85b,#fff1a6) !important;
-    box-shadow:0 18px 48px rgba(245,200,91,.22) !important;
-  }
-
-  .lifeos-home-start-chat:hover,
-  .lifeos-home-start-chat:focus {
-    transform:translateY(-1px);
-  }
-
-  .lifeos-home-proof-note {
-    margin:14px 0 !important;
-    padding:16px 18px !important;
-    border-radius:22px !important;
-    border:1px solid rgba(255,255,255,.10) !important;
-    background:rgba(0,0,0,.32) !important;
-    color:rgba(255,255,255,.76) !important;
-    line-height:1.5 !important;
-    font-size:15px !important;
-  }
-
-  [data-lifeos-home-hidden="true"] {
-    display:none !important;
-  }
-
-  @media (max-width: 640px) {
-    .lifeos-home-bg-card {
-      background-position:66% top !important;
-    }
-
-    .lifeos-home-logo-clean,
-    .lifeos-home-bg-card img[src*="lifeos-logo"],
-    .lifeos-home-bg-card img[src*="lifeos-logo-transparent"] {
-      width:82px !important;
-      max-width:82px !important;
-      height:82px !important;
-      max-height:82px !important;
-    }
-  }
-</style>
-
-<script id="lifeos-background-card-fix-script">
-(function () {
-  function cleanText(el) {
-    return String((el && el.textContent) || "").replace(/\s+/g, " ").trim();
-  }
-
-  function hide(el) {
-    if (!el) return;
-    el.setAttribute("data-lifeos-home-hidden", "true");
-    el.style.display = "none";
-  }
-
-  function findTextElement(words) {
-    var list = Array.from(document.querySelectorAll("h1,h2,h3,p,span,div,section,article,button,a"));
-    return list.find(function (el) {
-      var text = cleanText(el).toLowerCase();
-      return words.every(function (w) { return text.includes(w); });
-    });
-  }
-
-  function chooseHomepageCard() {
-    var headline = findTextElement(["reveal", "future", "direction", "decision"]);
-    if (!headline) return document.querySelector("main") || document.body.firstElementChild || document.body;
-
-    var node = headline;
-    var best = node;
-
-    for (var i = 0; i < 8 && node && node.parentElement && node.parentElement !== document.body; i++) {
-      node = node.parentElement;
-      var rect = node.getBoundingClientRect();
-      if (rect.width >= window.innerWidth * 0.86 && rect.height >= 520) {
-        best = node;
-      }
-    }
-
-    return best || headline;
-  }
-
-  function run() {
-    var card = chooseHomepageCard();
-    if (card) {
-      card.classList.add("lifeos-home-bg-card");
-    }
-
-    var logo =
-      document.querySelector('img[src*="lifeos-logo"]') ||
-      document.querySelector('img[alt*="LifeOS"]') ||
-      document.querySelector('header img') ||
-      document.querySelector('.brand img');
-
-    if (logo) {
-      logo.src = "/assets/lifeos-logo-transparent.webp?v=1781747268";
-      logo.removeAttribute("srcset");
-      logo.classList.add("lifeos-home-logo-clean");
-      logo.style.background = "transparent";
-      logo.style.transform = "none";
-      logo.style.rotate = "0deg";
-    }
-
-    document.querySelectorAll("a").forEach(function (a) {
-      var href = a.getAttribute("href") || "";
-      if (href === "/chat" || href === "/chat.html") {
-        a.removeAttribute("target");
-      }
-    });
-
-    document.querySelectorAll("textarea, select, input[type='text'], input[type='search']").forEach(function (el) {
-      hide(el);
-      var box = el.closest("label, form, .field, .input, .input-wrap, .form-group, .control");
-      if (box) hide(box);
-    });
-
-    document.querySelectorAll("button").forEach(function (btn) {
-      var t = cleanText(btn).toLowerCase();
-
-      if (
-        t.includes("stop listening") ||
-        t.includes("reveal future output") ||
-        t.includes("start voice conversation")
-      ) {
-        hide(btn);
-      }
-
-      if (t.includes("install lifeos ai")) {
-        btn.textContent = "Install LifeOS AI Mobile App";
-      }
-    });
-
-    document.querySelectorAll("a").forEach(function (a) {
-      var t = cleanText(a).toLowerCase();
-      if (t.includes("install lifeos ai")) {
-        a.textContent = "Install LifeOS AI Mobile App";
-      }
-    });
-
-    [
-      ["decision input"],
-      ["advisor mode"],
-      ["your future direction", "will appear here"],
-      ["server-generated", "spoken", "response"],
-      ["decision future outcome"],
-      ["voice output"]
-    ].forEach(function (words) {
-      var el = findTextElement(words);
-      if (el) {
-        var box = el.closest(".card, .panel, section, article, div");
-        hide(box || el);
-      }
-    });
-
-    if (!document.querySelector(".lifeos-home-start-chat")) {
-      var info = document.createElement("div");
-      info.className = "lifeos-home-info-card";
-      info.innerHTML = "<strong>LifeOS AI</strong> helps you see the future outcome of a decision before you act. It exposes risk, pressure, hidden cost, and the better next move before you commit.";
-
-      var cta = document.createElement("a");
-      cta.className = "lifeos-home-start-chat";
-      cta.href = "/chat";
-      cta.textContent = "Start Decision Chat";
-      cta.setAttribute("aria-label", "Start LifeOS Decision Chat");
-
-      var note = document.createElement("div");
-      note.className = "lifeos-home-proof-note";
-      note.textContent = "Use the decision chat when you want to test a choice, continue a question, or clarify the next action.";
-
-      var installTarget = Array.from(document.querySelectorAll("button, a")).find(function (el) {
-        return cleanText(el).toLowerCase().includes("install lifeos ai");
-      });
-
-      if (installTarget && installTarget.parentNode) {
-        installTarget.parentNode.insertBefore(info, installTarget);
-        installTarget.parentNode.insertBefore(cta, installTarget);
-        installTarget.parentNode.insertBefore(note, installTarget);
-      } else if (card) {
-        card.appendChild(info);
-        card.appendChild(cta);
-        card.appendChild(note);
-      }
-    }
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", run);
-  } else {
-    run();
-  }
-})();
-</script>
-<!-- LIFEOS_BACKGROUND_CARD_FIX_END -->
-
 </head>
 
 <body>
-  <main class="shell">
-    <section class="app">
-      <div class="inner">
-        <header class="topbar">
-          <div class="brand">
-            <div class="mark image-logo" aria-label="LifeOS logo"><img src="assets/lifeos-logo.jpg" alt="LifeOS logo"></div>
-            <div>
-              <div class="brand-title">LifeOS AI</div>
-              <div class="brand-sub">Synthetic Intelligence</div>
-            </div>
+  <main class="page">
+    <div class="inner">
+      <header class="topbar">
+        <div class="brand">
+          <img class="logo" src="/assets/lifeos-logo-transparent.webp" alt="LifeOS AI logo" />
+          <div class="brand-text">
+            <strong>LifeOS AI</strong>
+            <span>Synthetic Intelligence</span>
           </div>
-          <div class="top-actions">
-              <div id="networkBadge" class="live network online">● Online</div>
-              <button id="menuBtn" class="menu-button" aria-label="Open LifeOS menu" aria-expanded="false">⋮</button>
-              <div id="appMenu" class="app-menu" hidden>
-                <button type="button">Profile</button>
-                <button type="button">Chat History</button>
-                <button type="button">Subscription</button>
-                <button type="button">Voice Changes</button>
-              </div>
-            </div>
-        </header>
+        </div>
 
-        <section>
-<h1>Reveal the <span class="gold">future direction</span> of your decision.</h1>
-          <p class="intro">
-            Speak or type a decision. LifeOS AI reveals the future outcome, exposes the risk, and guides you before action.
-          </p>
-        </section>
+        <div class="status">
+          <span class="dot"></span>
+          <span>Online</span>
+        </div>
+      </header>
 
-        <section class="console">
-          <div class="row">
-            <div class="label">Decision Input</div>
-            <div class="label">Advisor Mode</div>
-          </div>
+      <section class="hero">
+        <h1>Reveal the <span class="gold">future direction</span> of your decision.</h1>
+        <p class="lead">
+          LifeOS AI helps you see the future outcome of a decision before you act — exposing risk, pressure, hidden cost, and the better next move.
+        </p>
+      </section>
 
-          <select id="toneSelect" aria-label="Voice tone selector">
-            <option value="london">London Executive Lady</option>
-            <option value="executive">Executive Strategy Voice</option>
-            <option value="calm">Calm Female Advisor</option>
-            <option value="direct">Direct Truth Teller</option>
-          </select>
+      <section class="panel" aria-label="LifeOS AI entry panel">
+        <div class="brief">
+          <strong>LifeOS AI</strong> is built for decision clarity. Start with one decision, continue the same conversation, and keep asking until the choice becomes clear.
+        </div>
 
-          <textarea id="textInput" placeholder="Example: Audit this decision: I should launch LifeOS AI publicly before adding more features."></textarea>
+        <a class="cta" href="/chat">Start Decision Chat</a>
 
-          <div class="buttons">
-<button id="stopVoiceBtn" class="danger" disabled>Stop Listening</button>
-            <button id="sendBtn" class="primary">Reveal Future Output</button>
-            <button id="installBtn" class="install" hidden>Install LifeOS AI Mobile App</button>
-              <div class="premium-inline-cta"><span class="pulse"></span> Subscribe to Premium Synthetic Intelligence</div>
-          </div>
+        <button class="secondary" id="installButton" type="button">Install LifeOS AI Mobile App</button>
 
-          <div id="status" class="status">Synthetic Intelligence ready.</div>
-          <div id="response" class="response">
-              <div id="responseText">Your future direction will appear here — analyzed, structured, and spoken with intelligence.</div>
-              <button id="voiceBtn" class="voice-mini" type="button" aria-label="Start voice conversation">
-                <span class="mic-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" width="18" height="18">
-                    <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Z" fill="currentColor"/>
-                    <path d="M17.5 10.5a5.5 5.5 0 0 1-11 0H5a7 7 0 0 0 6.25 6.96V20H8.8v1.5h6.4V20h-2.45v-2.54A7 7 0 0 0 19 10.5h-1.5Z" fill="currentColor"/>
-                  </svg>
-                </span>
-                <span>Start voice conversation</span>
-              </button>
-            </div>
+        <div class="subscribe">Subscribe to Premium Synthetic Intelligence</div>
 
-          <div class="features">
-            <div class="mini">
-              <strong>Decision Future Outcome</strong>
-              <span>Before you choose wrongly, LOSAI shows where that decision may lead.</span>
-            </div>
-            <div class="mini">
-              <strong>Voice Output</strong>
-              <span>Server-generated spoken response.</span>
-            </div>
-          </div>
-        </section>
+        <div class="note">
+          The homepage is your entry point. The decision chat is where the AI conversation happens.
+        </div>
+      </section>
 
-        <footer>
-LifeOS Synthetic Artificial Intelligence (LOSAI) helps you see the future outcome of a decision before you act—guiding you toward better choices and away from costly mistakes.<br>
-          Powered by Hansafrique LTD, <a href="https://lifeosdaily.blogspot.com" target="_blank" rel="noopener">LifeOS Daily</a>, and Tecino’s Channel. © 2026
-        </footer>
-      </div>
-    </section>
+      <footer class="footer">
+        LifeOS Synthetic Artificial Intelligence (LOSAI) helps you see the future outcome of a decision before you act—guiding you toward better choices and away from costly mistakes.
+        <br />
+        Powered by Hansafrique LTD, <a href="https://lifeosdaily.blogspot.com/">LifeOS Daily</a>, and Tecino’s Channel. © 2026
+      </footer>
+    </div>
   </main>
 
   <script>
-    const textInput = document.getElementById("textInput");
-    const toneSelect = document.getElementById("toneSelect");
-    const sendBtn = document.getElementById("sendBtn");
-    const voiceBtn = document.getElementById("voiceBtn");
-    const stopVoiceBtn = document.getElementById("stopVoiceBtn");
-    const installBtn = document.getElementById("installBtn");
-    const statusBox = document.getElementById("status");
-    const responseBox = document.getElementById("response");
-  const responseText = document.getElementById("responseText");
-
-  const networkBadge = document.getElementById("networkBadge");
-  const menuBtn = document.getElementById("menuBtn");
-  const appMenu = document.getElementById("appMenu");
-
-  function updateNetworkBadge() {
-    if (!networkBadge) return;
-    const online = navigator.onLine;
-    networkBadge.textContent = online ? "● Online" : "● Offline";
-    networkBadge.classList.toggle("online", online);
-    networkBadge.classList.toggle("offline", !online);
-  }
-
-  updateNetworkBadge();
-  window.addEventListener("online", updateNetworkBadge);
-  window.addEventListener("offline", updateNetworkBadge);
-
-  if (menuBtn && appMenu) {
-    menuBtn.addEventListener("click", () => {
-      const opening = appMenu.hidden;
-      appMenu.hidden = !opening;
-      menuBtn.setAttribute("aria-expanded", String(opening));
-    });
-
-    document.addEventListener("click", (event) => {
-      if (!menuBtn.contains(event.target) && !appMenu.contains(event.target)) {
-        appMenu.hidden = true;
-        menuBtn.setAttribute("aria-expanded", "false");
-      }
-    });
-  }
-
-
-
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let recognition = null;
-    let listening = false;
-    let finalSpeechText = "";
     let deferredPrompt = null;
-
-    function setStatus(message) {
-      statusBox.textContent = message;
-    }
-
-    function setBusy(isBusy) {
-      sendBtn.disabled = isBusy;
-      voiceBtn.disabled = isBusy || !SpeechRecognition;
-      stopVoiceBtn.disabled = !listening;
-    }
-
-    function fallbackSpeak(text) {
-      if (!("speechSynthesis" in window)) {
-        setStatus("Future output ready. Speech fallback unavailable.");
-        return;
-      }
-
-      window.speechSynthesis.cancel();
-
-      const utterance = new SpeechSynthesisUtterance(text);
-      const voices = window.speechSynthesis.getVoices();
-
-      const preferred =
-        voices.find(v => /en-GB/i.test(v.lang) && /female|samantha|serena|kate|google/i.test(v.name)) ||
-        voices.find(v => /en-GB/i.test(v.lang)) ||
-        voices[0];
-
-      if (preferred) utterance.voice = preferred;
-
-      utterance.lang = "en-GB";
-      utterance.rate = 0.92;
-      utterance.pitch = 1.02;
-      utterance.volume = 1.0;
-
-      window.speechSynthesis.speak(utterance);
-    }
-
-    async function playServerAudio(audioUrl, fallbackText) {
-      if (!audioUrl) {
-        fallbackSpeak(fallbackText);
-        return;
-      }
-
-      try {
-        const audio = new Audio(audioUrl + "?t=" + Date.now());
-        audio.preload = "auto";
-        await audio.play();
-      } catch (err) {
-        fallbackSpeak(fallbackText);
-      }
-    }
-
-    async function runAudit(rawText) {
-      const cleanText = (rawText || "").trim();
-
-      if (!cleanText) {
-        setStatus("Speak or type a decision first.");
-        return;
-      }
-
-      listening = false;
-      setBusy(true);
-      setStatus("Synthetic Intelligence loading future output...");
-      responseText.textContent = "";
-
-      try {
-        const res = await fetch("/api/text-audit", {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({
-            text: cleanText,
-            tone: toneSelect.value
-          })
-        });
-
-        const rawResponse = await res.text();
-
-        if (!rawResponse || !rawResponse.trim()) {
-          throw new Error("LifeOS server returned an empty response. Please try again in a moment.");
-        }
-
-        let data;
-        try {
-          data = JSON.parse(rawResponse);
-        } catch (parseError) {
-          throw new Error("LifeOS server returned a non-JSON response. Please try again in a moment.");
-        }
-
-        if (!res.ok) {
-          throw new Error(data.error || "LifeOS server request failed. Please try again.");
-        }
-
-        if (!data.ok) throw new Error(data.error || "Unknown server error");
-
-        const displayText = data.reply || data.voice || "Future output generated.";
-        responseText.textContent = displayText;
-
-        setStatus("Future output ready. Speaking now...");
-        await playServerAudio(data.audio_url, displayText);
-      } catch (err) {
-        setStatus("Error: " + err.message);
-        responseText.textContent = error && error.message ? error.message : "The request failed. Please try again in a moment.";
-      } finally {
-        setBusy(false);
-      }
-    }
-
-    sendBtn.onclick = () => runAudit(textInput.value);
-
-    if (!SpeechRecognition) {
-      voiceBtn.disabled = true;
-      setStatus("Synthetic Intelligence ready. Voice input is not supported in this browser.");
-    } else {
-      recognition = new SpeechRecognition();
-      recognition.lang = "en-GB";
-      recognition.interimResults = true;
-      recognition.continuous = false;
-
-      recognition.onstart = () => {
-        listening = true;
-        finalSpeechText = "";
-        setBusy(false);
-        voiceBtn.disabled = true;
-        stopVoiceBtn.disabled = false;
-        setStatus("Listening. Speak your decision now.");
-      };
-
-      recognition.onresult = (event) => {
-        let interimText = "";
-
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-
-          if (event.results[i].isFinal) {
-            finalSpeechText += transcript + " ";
-          } else {
-            interimText += transcript;
-          }
-        }
-
-        textInput.value = (finalSpeechText + interimText).trim();
-      };
-
-      recognition.onerror = (event) => {
-        listening = false;
-        setBusy(false);
-        setStatus("Voice input error: " + event.error);
-      };
-
-      recognition.onend = () => {
-        const captured = textInput.value.trim();
-        listening = false;
-        stopVoiceBtn.disabled = true;
-        voiceBtn.disabled = false;
-
-        if (captured) runAudit(captured);
-        else setStatus("No decision captured. Try speaking again.");
-      };
-
-      voiceBtn.onclick = () => {
-        try {
-          window.speechSynthesis && window.speechSynthesis.cancel();
-          recognition.start();
-        } catch (err) {
-          setStatus("Voice input could not start. Try again.");
-        }
-      };
-
-      stopVoiceBtn.onclick = () => {
-        if (recognition && listening) {
-          recognition.stop();
-          setStatus("Listening stopped.");
-        }
-      };
-    }
+    const installButton = document.getElementById("installButton");
 
     window.addEventListener("beforeinstallprompt", (event) => {
       event.preventDefault();
       deferredPrompt = event;
-      installBtn.hidden = false;
     });
 
-    installBtn.onclick = async () => {
+    installButton.addEventListener("click", async () => {
       if (!deferredPrompt) {
-        setStatus("Use your browser menu and choose Add to Home screen.");
+        alert("LifeOS AI can be installed from your browser menu if your device supports app installation.");
         return;
       }
 
       deferredPrompt.prompt();
       await deferredPrompt.userChoice;
       deferredPrompt = null;
-      installBtn.hidden = true;
-    };
-
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/service-worker.js").catch(() => {});
-    }
+    });
   </script>
 </body>
 </html>
