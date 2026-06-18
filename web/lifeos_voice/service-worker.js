@@ -1,4 +1,4 @@
-const CACHE_NAME = "lifeos-mobile-fit-1781788746";
+const CACHE_NAME = "lifeos-motion-chat-bg-1781789411";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
