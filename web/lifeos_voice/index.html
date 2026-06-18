@@ -320,64 +320,84 @@
     }
   </style>
 
-<!-- LIFEOS_GOLD_DUST_HOME_START -->
-<style id="lifeos-gold-dust-home-style">
+
+
+<!-- LIFEOS_VISIBLE_MOTION_HOME_START -->
+<style id="lifeos-visible-motion-home-style">
   .page {
-    position: relative;
-    overflow: hidden;
-    isolation: isolate;
+    position: relative !important;
+    overflow: hidden !important;
+    isolation: isolate !important;
   }
 
   .page > .inner {
-    position: relative;
-    z-index: 2;
+    position: relative !important;
+    z-index: 5 !important;
   }
 
-  .page::after {
-    content: "";
+  .lifeos-home-dust-visible {
     position: absolute;
-    inset: -18%;
-    z-index: 1;
+    inset: -12%;
+    z-index: 3;
     pointer-events: none;
-    opacity: .34;
-    background:
-      radial-gradient(circle at 12% 20%, rgba(255,215,112,.42) 0 1.4px, transparent 2.8px),
-      radial-gradient(circle at 28% 76%, rgba(255,194,74,.30) 0 1.2px, transparent 2.8px),
-      radial-gradient(circle at 43% 35%, rgba(255,238,165,.26) 0 1.1px, transparent 2.6px),
-      radial-gradient(circle at 68% 22%, rgba(255,202,88,.32) 0 1.3px, transparent 2.9px),
-      radial-gradient(circle at 82% 72%, rgba(255,222,130,.24) 0 1.2px, transparent 2.7px),
-      radial-gradient(circle at 90% 44%, rgba(255,196,72,.22) 0 1.1px, transparent 2.6px);
-    background-size:
-      240px 240px,
-      300px 300px,
-      260px 260px,
-      340px 340px,
-      280px 280px,
-      360px 360px;
-    animation: lifeosGoldDustFloat 24s linear infinite;
+    opacity: .55;
     mix-blend-mode: screen;
-    filter: blur(.15px);
+    filter: blur(.1px);
+    background:
+      radial-gradient(circle at 12% 18%, rgba(255,218,118,.85) 0 1.5px, transparent 3px),
+      radial-gradient(circle at 24% 76%, rgba(255,187,54,.55) 0 1.3px, transparent 3px),
+      radial-gradient(circle at 42% 38%, rgba(255,244,178,.48) 0 1.2px, transparent 2.8px),
+      radial-gradient(circle at 66% 24%, rgba(255,207,84,.58) 0 1.4px, transparent 3px),
+      radial-gradient(circle at 84% 70%, rgba(255,226,139,.42) 0 1.2px, transparent 2.8px);
+    background-size:
+      210px 210px,
+      280px 280px,
+      240px 240px,
+      310px 310px,
+      260px 260px;
+    animation: lifeosVisibleDustMove 18s linear infinite;
   }
 
-  @keyframes lifeosGoldDustFloat {
+  @keyframes lifeosVisibleDustMove {
     0% {
-      transform: translate3d(0, 0, 0) scale(1);
+      transform: translate3d(0, 0, 0);
     }
     50% {
-      transform: translate3d(-14px, -22px, 0) scale(1.015);
+      transform: translate3d(-18px, -24px, 0);
     }
     100% {
-      transform: translate3d(0, -44px, 0) scale(1);
+      transform: translate3d(0, -48px, 0);
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .page::after {
-      animation: none;
+    .lifeos-home-dust-visible {
+      animation: none !important;
     }
   }
 </style>
-<!-- LIFEOS_GOLD_DUST_HOME_END -->
+
+<script id="lifeos-visible-motion-home-script">
+(function () {
+  function run() {
+    var page = document.querySelector(".page");
+    if (!page) return;
+
+    if (!document.querySelector(".lifeos-home-dust-visible")) {
+      var dust = document.createElement("div");
+      dust.className = "lifeos-home-dust-visible";
+      page.insertBefore(dust, page.firstChild);
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", run);
+  } else {
+    run();
+  }
+})();
+</script>
+<!-- LIFEOS_VISIBLE_MOTION_HOME_END -->
 
 </head>
 
