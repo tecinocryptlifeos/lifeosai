@@ -1,4 +1,4 @@
-const CACHE_NAME = "lifeos-homepage-visual-1781741932";
+const CACHE_NAME = "lifeos-homepage-visual-1781746750";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
