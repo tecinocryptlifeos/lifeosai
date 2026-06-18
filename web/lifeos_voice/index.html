@@ -869,118 +869,212 @@
 
 
 
-<!-- LIFEOS_HOMEPAGE_VISUAL_START -->
-<style id="lifeos-homepage-premium-visuals">
-  :root {
-    --lifeos-gold: #f4c75d;
-    --lifeos-soft-gold: #ffeaa1;
-    --lifeos-ink: #050403;
-  }
 
+
+<!-- LIFEOS_BACKGROUND_CARD_FIX_START -->
+<style id="lifeos-background-card-fix-style">
   html,
   body {
-    background: #030302 !important;
-    min-height: 100%;
+    background:#030302 !important;
+    min-height:100%;
   }
 
   body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -3;
+    content:"";
+    position:fixed;
+    inset:0;
+    z-index:-5;
+    background:#030302;
+  }
+
+  .lifeos-home-bg-card {
+    position:relative !important;
+    overflow:hidden !important;
+    isolation:isolate !important;
     background:
-      linear-gradient(90deg, rgba(0,0,0,.90) 0%, rgba(0,0,0,.62) 42%, rgba(0,0,0,.42) 100%),
-      linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.90)),
-      url("/assets/lifeos-home-king-bg.webp?v=1781746750");
-    background-size: cover;
-    background-position: center top;
-    background-repeat: no-repeat;
-    opacity: .88;
+      linear-gradient(90deg, rgba(0,0,0,.94) 0%, rgba(0,0,0,.74) 38%, rgba(0,0,0,.50) 100%),
+      linear-gradient(180deg, rgba(0,0,0,.16) 0%, rgba(0,0,0,.82) 86%),
+      url("/assets/lifeos-home-king-bg.webp?v=1781747268") !important;
+    background-size:cover !important;
+    background-position:62% top !important;
+    background-repeat:no-repeat !important;
+    border:1px solid rgba(255,255,255,.12) !important;
+    box-shadow:0 30px 90px rgba(0,0,0,.68) !important;
   }
 
-  body::after {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -2;
-    pointer-events: none;
+  .lifeos-home-bg-card::before {
+    content:"";
+    position:absolute;
+    inset:0;
+    z-index:-1;
+    pointer-events:none;
     background:
-      radial-gradient(circle at 18% 22%, rgba(255,207,90,.18), transparent 34%),
-      radial-gradient(circle at 70% 20%, rgba(255,207,90,.13), transparent 36%),
-      linear-gradient(180deg, transparent 0%, rgba(0,0,0,.72) 82%);
+      radial-gradient(circle at 18% 20%, rgba(255,210,96,.16), transparent 31%),
+      radial-gradient(circle at 74% 18%, rgba(255,210,96,.13), transparent 36%),
+      linear-gradient(180deg, rgba(0,0,0,.04), rgba(0,0,0,.58));
   }
 
-  img[src*="lifeos-logo"],
-  img[src*="lifeos-logo-transparent"],
-  header img,
-  .brand img {
-    background: transparent !important;
-    box-shadow: none !important;
-    border: 0 !important;
-    object-fit: contain !important;
-    transform: none !important;
-    rotate: 0deg !important;
+  .lifeos-home-bg-card > * {
+    position:relative;
+    z-index:1;
   }
 
-  img[src*="lifeos-logo-transparent"] {
-    width: clamp(118px, 24vw, 210px) !important;
-    height: auto !important;
-    opacity: .88 !important;
-    mix-blend-mode: screen;
-    filter: drop-shadow(0 0 22px rgba(244,199,93,.20));
+  .lifeos-home-bg-card textarea,
+  .lifeos-home-bg-card select,
+  .lifeos-home-bg-card input[type="text"],
+  .lifeos-home-bg-card input[type="search"] {
+    display:none !important;
   }
 
-  textarea,
-  select,
-  input[type="text"],
-  input[type="search"] {
-    display: none !important;
+  .lifeos-home-logo-clean {
+    width:92px !important;
+    max-width:92px !important;
+    height:92px !important;
+    max-height:92px !important;
+    object-fit:contain !important;
+    object-position:center !important;
+    background:transparent !important;
+    border:none !important;
+    border-radius:0 !important;
+    box-shadow:none !important;
+    opacity:.82 !important;
+    transform:none !important;
+    rotate:0deg !important;
+    mix-blend-mode:screen;
+    filter:drop-shadow(0 0 18px rgba(244,199,93,.20));
+    flex:0 0 auto !important;
   }
 
-  .lifeos-home-cta {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    margin: 20px 0 14px;
-    padding: 18px 24px;
-    border-radius: 28px;
-    text-decoration: none;
-    font-weight: 950;
-    letter-spacing: .01em;
-    color: #080604;
-    background: linear-gradient(135deg, #f4c75d, #fff1a6);
-    box-shadow: 0 18px 48px rgba(244,199,93,.22);
+  .lifeos-home-bg-card img[src*="lifeos-logo"],
+  .lifeos-home-bg-card img[src*="lifeos-logo-transparent"] {
+    width:92px !important;
+    max-width:92px !important;
+    height:92px !important;
+    max-height:92px !important;
+    object-fit:contain !important;
+    background:transparent !important;
+    box-shadow:none !important;
+    border:none !important;
+    border-radius:0 !important;
+    opacity:.82 !important;
+    transform:none !important;
+    rotate:0deg !important;
+    mix-blend-mode:screen;
   }
 
-  .lifeos-home-cta:focus,
-  .lifeos-home-cta:hover {
-    transform: translateY(-1px);
+  .lifeos-home-info-card {
+    margin:18px 0 20px !important;
+    padding:20px 22px !important;
+    border:1px solid rgba(255,255,255,.12) !important;
+    border-radius:24px !important;
+    background:rgba(0,0,0,.42) !important;
+    backdrop-filter:blur(14px);
+    color:rgba(255,255,255,.86) !important;
+    line-height:1.58 !important;
+    font-size:clamp(17px, 4vw, 23px) !important;
   }
 
-  .lifeos-home-brief {
-    margin: 16px 0 18px;
-    padding: 18px 20px;
-    border: 1px solid rgba(255,255,255,.12);
-    border-radius: 24px;
-    background: rgba(0,0,0,.44);
-    backdrop-filter: blur(14px);
-    color: rgba(255,255,255,.84);
-    line-height: 1.55;
+  .lifeos-home-info-card strong {
+    color:#ffeaa1 !important;
+    font-weight:950 !important;
   }
 
-  .lifeos-home-brief strong {
-    color: var(--lifeos-soft-gold);
+  .lifeos-home-start-chat {
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    width:100% !important;
+    margin:18px 0 14px !important;
+    padding:18px 24px !important;
+    border-radius:30px !important;
+    text-decoration:none !important;
+    font-weight:950 !important;
+    letter-spacing:.01em !important;
+    color:#080604 !important;
+    background:linear-gradient(135deg,#f5c85b,#fff1a6) !important;
+    box-shadow:0 18px 48px rgba(245,200,91,.22) !important;
+  }
+
+  .lifeos-home-start-chat:hover,
+  .lifeos-home-start-chat:focus {
+    transform:translateY(-1px);
+  }
+
+  .lifeos-home-proof-note {
+    margin:14px 0 !important;
+    padding:16px 18px !important;
+    border-radius:22px !important;
+    border:1px solid rgba(255,255,255,.10) !important;
+    background:rgba(0,0,0,.32) !important;
+    color:rgba(255,255,255,.76) !important;
+    line-height:1.5 !important;
+    font-size:15px !important;
+  }
+
+  [data-lifeos-home-hidden="true"] {
+    display:none !important;
+  }
+
+  @media (max-width: 640px) {
+    .lifeos-home-bg-card {
+      background-position:66% top !important;
+    }
+
+    .lifeos-home-logo-clean,
+    .lifeos-home-bg-card img[src*="lifeos-logo"],
+    .lifeos-home-bg-card img[src*="lifeos-logo-transparent"] {
+      width:82px !important;
+      max-width:82px !important;
+      height:82px !important;
+      max-height:82px !important;
+    }
   }
 </style>
 
-<script id="lifeos-homepage-premium-script">
+<script id="lifeos-background-card-fix-script">
 (function () {
-  function cleanText(value) {
-    return String(value || "").replace(/\s+/g, " ").trim();
+  function cleanText(el) {
+    return String((el && el.textContent) || "").replace(/\s+/g, " ").trim();
   }
 
-  function runLifeOSHomepageVisuals() {
+  function hide(el) {
+    if (!el) return;
+    el.setAttribute("data-lifeos-home-hidden", "true");
+    el.style.display = "none";
+  }
+
+  function findTextElement(words) {
+    var list = Array.from(document.querySelectorAll("h1,h2,h3,p,span,div,section,article,button,a"));
+    return list.find(function (el) {
+      var text = cleanText(el).toLowerCase();
+      return words.every(function (w) { return text.includes(w); });
+    });
+  }
+
+  function chooseHomepageCard() {
+    var headline = findTextElement(["reveal", "future", "direction", "decision"]);
+    if (!headline) return document.querySelector("main") || document.body.firstElementChild || document.body;
+
+    var node = headline;
+    var best = node;
+
+    for (var i = 0; i < 8 && node && node.parentElement && node.parentElement !== document.body; i++) {
+      node = node.parentElement;
+      var rect = node.getBoundingClientRect();
+      if (rect.width >= window.innerWidth * 0.86 && rect.height >= 520) {
+        best = node;
+      }
+    }
+
+    return best || headline;
+  }
+
+  function run() {
+    var card = chooseHomepageCard();
+    if (card) {
+      card.classList.add("lifeos-home-bg-card");
+    }
+
     var logo =
       document.querySelector('img[src*="lifeos-logo"]') ||
       document.querySelector('img[alt*="LifeOS"]') ||
@@ -988,8 +1082,9 @@
       document.querySelector('.brand img');
 
     if (logo) {
-      logo.src = "/assets/lifeos-logo-transparent.webp?v=1781746750";
+      logo.src = "/assets/lifeos-logo-transparent.webp?v=1781747268";
       logo.removeAttribute("srcset");
+      logo.classList.add("lifeos-home-logo-clean");
       logo.style.background = "transparent";
       logo.style.transform = "none";
       logo.style.rotate = "0deg";
@@ -1002,72 +1097,89 @@
       }
     });
 
-    document.querySelectorAll("button, a").forEach(function (el) {
-      var text = cleanText(el.textContent);
-      if (text === "Install LifeOS AI" || text === "Install LifeOS AI App") {
-        el.textContent = "Install LifeOS AI Mobile App";
-      }
+    document.querySelectorAll("textarea, select, input[type='text'], input[type='search']").forEach(function (el) {
+      hide(el);
+      var box = el.closest("label, form, .field, .input, .input-wrap, .form-group, .control");
+      if (box) hide(box);
     });
 
     document.querySelectorAll("button").forEach(function (btn) {
-      var text = cleanText(btn.textContent).toLowerCase();
+      var t = cleanText(btn).toLowerCase();
+
       if (
-        text === "stop listening" ||
-        text === "reveal future output"
+        t.includes("stop listening") ||
+        t.includes("reveal future output") ||
+        t.includes("start voice conversation")
       ) {
-        btn.style.display = "none";
+        hide(btn);
+      }
+
+      if (t.includes("install lifeos ai")) {
+        btn.textContent = "Install LifeOS AI Mobile App";
       }
     });
 
-    document.querySelectorAll("textarea, select, input[type='text'], input[type='search']").forEach(function (el) {
-      el.style.display = "none";
-      var parent = el.closest(".field, .input, .input-wrap, .form-group, label");
-      if (parent) parent.style.display = "none";
-    });
-
-    document.querySelectorAll("*").forEach(function (el) {
-      var text = cleanText(el.textContent).toLowerCase();
-      if (
-        text === "decision input" ||
-        text === "advisor mode"
-      ) {
-        el.style.display = "none";
+    document.querySelectorAll("a").forEach(function (a) {
+      var t = cleanText(a).toLowerCase();
+      if (t.includes("install lifeos ai")) {
+        a.textContent = "Install LifeOS AI Mobile App";
       }
     });
 
-    if (!document.querySelector(".lifeos-home-cta")) {
+    [
+      ["decision input"],
+      ["advisor mode"],
+      ["your future direction", "will appear here"],
+      ["server-generated", "spoken", "response"],
+      ["decision future outcome"],
+      ["voice output"]
+    ].forEach(function (words) {
+      var el = findTextElement(words);
+      if (el) {
+        var box = el.closest(".card, .panel, section, article, div");
+        hide(box || el);
+      }
+    });
+
+    if (!document.querySelector(".lifeos-home-start-chat")) {
+      var info = document.createElement("div");
+      info.className = "lifeos-home-info-card";
+      info.innerHTML = "<strong>LifeOS AI</strong> helps you see the future outcome of a decision before you act. It exposes risk, pressure, hidden cost, and the better next move before you commit.";
+
       var cta = document.createElement("a");
-      cta.className = "lifeos-home-cta";
+      cta.className = "lifeos-home-start-chat";
       cta.href = "/chat";
       cta.textContent = "Start Decision Chat";
       cta.setAttribute("aria-label", "Start LifeOS Decision Chat");
 
-      var brief = document.createElement("div");
-      brief.className = "lifeos-home-brief";
-      brief.innerHTML = "<strong>LifeOS AI</strong> helps you check the future outcome of a decision before you act. Use it to expose hidden cost, risk, pressure, and the better next move.";
+      var note = document.createElement("div");
+      note.className = "lifeos-home-proof-note";
+      note.textContent = "Use the decision chat when you want to test a choice, continue a question, or clarify the next action.";
 
       var installTarget = Array.from(document.querySelectorAll("button, a")).find(function (el) {
-        return cleanText(el.textContent).toLowerCase().includes("install lifeos ai");
+        return cleanText(el).toLowerCase().includes("install lifeos ai");
       });
 
       if (installTarget && installTarget.parentNode) {
-        installTarget.parentNode.insertBefore(brief, installTarget);
+        installTarget.parentNode.insertBefore(info, installTarget);
         installTarget.parentNode.insertBefore(cta, installTarget);
-      } else {
-        document.body.appendChild(brief);
-        document.body.appendChild(cta);
+        installTarget.parentNode.insertBefore(note, installTarget);
+      } else if (card) {
+        card.appendChild(info);
+        card.appendChild(cta);
+        card.appendChild(note);
       }
     }
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", runLifeOSHomepageVisuals);
+    document.addEventListener("DOMContentLoaded", run);
   } else {
-    runLifeOSHomepageVisuals();
+    run();
   }
 })();
 </script>
-<!-- LIFEOS_HOMEPAGE_VISUAL_END -->
+<!-- LIFEOS_BACKGROUND_CARD_FIX_END -->
 
 </head>
 
