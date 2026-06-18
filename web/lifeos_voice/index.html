@@ -6,16 +6,16 @@
   <title>LifeOS AI — Synthetic Decision Intelligence</title>
   <meta name="description" content="LifeOS AI helps you see the future outcome of a decision before you act." />
   <meta name="theme-color" content="#050403" />
-  <meta name="lifeos-build" content="20260618122834" />
-  <link rel="manifest" href="/manifest.webmanifest?v=20260618122834" />
+  <meta name="lifeos-build" content="20260618141906" />
+  <link rel="manifest" href="/manifest.webmanifest?v=20260618141906" />
 
   <style>
     :root {
       --gold: #f4c75d;
       --soft-gold: #fff1a6;
       --line: rgba(255,255,255,.13);
-      --text: rgba(255,255,255,.92);
-      --muted: rgba(255,255,255,.70);
+      --text: rgba(255,255,255,.93);
+      --muted: rgba(255,255,255,.72);
     }
 
     * {
@@ -25,14 +25,18 @@
     html,
     body {
       margin: 0;
+      width: 100%;
+      height: 100%;
       min-height: 100%;
       background: #030302;
       color: var(--text);
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow: hidden;
     }
 
     body {
-      padding: 14px;
+      height: 100svh;
+      padding: 10px;
       background:
         radial-gradient(circle at 20% 10%, rgba(244,199,93,.12), transparent 32%),
         linear-gradient(180deg, #050403, #010101 88%);
@@ -40,21 +44,22 @@
 
     .page {
       width: min(980px, 100%);
+      height: calc(100svh - 20px);
       margin: 0 auto;
-      min-height: calc(100vh - 28px);
       border: 1px solid var(--line);
-      border-radius: 30px;
+      border-radius: 26px;
       overflow: hidden;
       position: relative;
       isolation: isolate;
       background:
-        linear-gradient(90deg, rgba(0,0,0,.60) 0%, rgba(0,0,0,.44) 42%, rgba(0,0,0,.32) 100%),
-        linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.50)),
-        url("/assets/lifeos-home-king-bg.webp?v=20260618122834");
-      background-size: cover;
-      background-position: center top;
+        linear-gradient(90deg, rgba(0,0,0,.64) 0%, rgba(0,0,0,.45) 44%, rgba(0,0,0,.28) 100%),
+        linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.44)),
+        url("/assets/lifeos-home-king-bg.webp?v=20260618141906");
+      background-size: auto 92%;
+      background-position: center 2%;
       background-repeat: no-repeat;
-      box-shadow: 0 35px 110px rgba(0,0,0,.72);
+      background-color: #030302;
+      box-shadow: 0 30px 100px rgba(0,0,0,.72);
     }
 
     .page::before {
@@ -64,58 +69,63 @@
       z-index: -1;
       pointer-events: none;
       background:
-        radial-gradient(circle at 18% 22%, rgba(255,216,115,.08), transparent 34%),
-        radial-gradient(circle at 78% 18%, rgba(255,216,115,.06), transparent 36%),
-        linear-gradient(180deg, transparent 0%, rgba(0,0,0,.30) 84%);
+        radial-gradient(circle at 18% 18%, rgba(255,216,115,.08), transparent 34%),
+        radial-gradient(circle at 76% 16%, rgba(255,216,115,.07), transparent 36%),
+        linear-gradient(180deg, transparent 0%, rgba(0,0,0,.42) 86%);
     }
 
     .inner {
-      padding: clamp(22px, 5vw, 56px);
+      height: 100%;
+      padding: clamp(13px, 3.4vw, 34px);
+      display: flex;
+      flex-direction: column;
+      gap: clamp(8px, 1.7svh, 18px);
     }
 
     .topbar {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
-      gap: 16px;
-      margin-bottom: clamp(34px, 7vw, 70px);
+      gap: 12px;
+      flex: 0 0 auto;
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: clamp(10px, 2.6vw, 18px);
       min-width: 0;
     }
 
     .logo {
-      width: clamp(82px, 17vw, 132px);
-      height: clamp(82px, 17vw, 132px);
+      width: clamp(96px, 22vw, 152px);
+      height: clamp(96px, 22vw, 152px);
       object-fit: contain;
       background: transparent;
       border: none;
       box-shadow: none;
       opacity: .96;
       mix-blend-mode: screen;
-      filter: drop-shadow(0 0 16px rgba(244,199,93,.18));
+      filter: drop-shadow(0 0 16px rgba(244,199,93,.20));
       flex: 0 0 auto;
     }
 
     .brand-text strong {
       display: block;
-      font-size: clamp(22px, 5vw, 36px);
+      font-size: clamp(18px, 4.8vw, 34px);
       line-height: 1;
-      letter-spacing: .04em;
+      letter-spacing: .045em;
       text-transform: uppercase;
       text-shadow: 0 3px 14px rgba(0,0,0,.35);
+      white-space: nowrap;
     }
 
     .brand-text span {
       display: block;
-      margin-top: 8px;
+      margin-top: 6px;
       color: var(--muted);
-      font-size: clamp(12px, 3vw, 17px);
-      letter-spacing: .32em;
+      font-size: clamp(10px, 2.8vw, 16px);
+      letter-spacing: .28em;
       text-transform: uppercase;
       text-shadow: 0 2px 10px rgba(0,0,0,.35);
     }
@@ -123,19 +133,21 @@
     .status {
       display: inline-flex;
       align-items: center;
-      gap: 9px;
-      padding: 12px 18px;
+      gap: 8px;
+      padding: 10px 13px;
       border-radius: 999px;
       border: 1px solid rgba(110,255,171,.24);
       background: rgba(24,82,46,.38);
       color: #b9ffd2;
+      font-size: clamp(13px, 3vw, 17px);
       font-weight: 900;
       white-space: nowrap;
+      flex: 0 0 auto;
     }
 
     .dot {
-      width: 9px;
-      height: 9px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background: #78f6a7;
       box-shadow: 0 0 18px rgba(120,246,167,.85);
@@ -143,16 +155,17 @@
 
     .hero {
       max-width: 760px;
+      flex: 0 0 auto;
     }
 
     h1 {
       margin: 0;
       max-width: 760px;
-      font-size: clamp(45px, 11vw, 92px);
+      font-size: clamp(33px, 8.7vw, 78px);
       line-height: .96;
-      letter-spacing: -.07em;
+      letter-spacing: -.065em;
       font-weight: 950;
-      text-shadow: 0 4px 18px rgba(0,0,0,.30);
+      text-shadow: 0 4px 18px rgba(0,0,0,.32);
     }
 
     h1 .gold {
@@ -161,32 +174,33 @@
 
     .lead {
       max-width: 720px;
-      margin: 24px 0 0;
-      font-size: clamp(19px, 4.2vw, 30px);
-      line-height: 1.42;
-      color: rgba(255,255,255,.82);
+      margin: clamp(10px, 2svh, 18px) 0 0;
+      font-size: clamp(15px, 3.7vw, 24px);
+      line-height: 1.34;
+      color: rgba(255,255,255,.84);
       text-shadow: 0 2px 8px rgba(0,0,0,.35);
     }
 
     .panel {
-      margin-top: clamp(32px, 7vw, 70px);
+      margin-top: auto;
       max-width: 780px;
-      padding: clamp(22px, 5vw, 38px);
+      padding: clamp(14px, 3.4vw, 30px);
       border: 1px solid var(--line);
-      border-radius: 34px;
+      border-radius: clamp(24px, 6vw, 34px);
       background: rgba(0,0,0,.48);
       backdrop-filter: blur(18px);
       box-shadow: 0 22px 80px rgba(0,0,0,.45);
+      flex: 0 0 auto;
     }
 
     .brief {
-      padding: 22px;
+      padding: clamp(14px, 3.6vw, 22px);
       border: 1px solid rgba(255,255,255,.11);
-      border-radius: 25px;
+      border-radius: 22px;
       background: rgba(0,0,0,.38);
       color: rgba(255,255,255,.88);
-      font-size: clamp(18px, 4vw, 26px);
-      line-height: 1.55;
+      font-size: clamp(15px, 3.6vw, 23px);
+      line-height: 1.42;
     }
 
     .brief strong {
@@ -199,15 +213,15 @@
       align-items: center;
       justify-content: center;
       width: 100%;
-      margin-top: 26px;
-      padding: 20px 24px;
+      margin-top: clamp(14px, 2.7svh, 24px);
+      padding: clamp(14px, 3.5vw, 20px) 20px;
       border-radius: 999px;
       text-decoration: none;
       color: #090703;
       background: linear-gradient(135deg, #f4c75d, #fff1a6);
-      font-size: clamp(18px, 4vw, 26px);
+      font-size: clamp(16px, 3.8vw, 24px);
       font-weight: 950;
-      box-shadow: 0 20px 58px rgba(244,199,93,.22);
+      box-shadow: 0 18px 50px rgba(244,199,93,.22);
     }
 
     .secondary {
@@ -215,13 +229,13 @@
       align-items: center;
       justify-content: center;
       width: 100%;
-      margin-top: 16px;
-      padding: 18px 22px;
+      margin-top: 11px;
+      padding: clamp(13px, 3.2vw, 18px) 20px;
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,.16);
       background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
       color: rgba(255,255,255,.93);
-      font-size: clamp(16px, 3.5vw, 22px);
+      font-size: clamp(15px, 3.4vw, 21px);
       font-weight: 900;
     }
 
@@ -229,35 +243,38 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
+      gap: 9px;
       width: 100%;
-      margin-top: 16px;
-      padding: 16px 20px;
+      margin-top: 11px;
+      padding: clamp(12px, 3vw, 16px) 16px;
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,.14);
       background: rgba(0,0,0,.34);
       color: #fff0a9;
-      font-size: clamp(15px, 3.4vw, 20px);
+      font-size: clamp(13px, 3.1vw, 19px);
       font-weight: 950;
+      line-height: 1.15;
+      text-align: center;
     }
 
     .subscribe::before {
       content: "";
-      width: 10px;
-      height: 10px;
+      width: 9px;
+      height: 9px;
       border-radius: 50%;
       background: #7af5a7;
       box-shadow: 0 0 18px rgba(122,245,167,.7);
+      flex: 0 0 auto;
     }
 
     .footer {
-      margin-top: clamp(44px, 9vw, 90px);
-      padding-top: 24px;
+      padding-top: clamp(8px, 1.4svh, 18px);
       border-top: 1px solid rgba(255,255,255,.10);
       text-align: center;
       color: rgba(255,255,255,.62);
-      font-size: clamp(14px, 3.2vw, 18px);
-      line-height: 1.55;
+      font-size: clamp(10px, 2.45vw, 15px);
+      line-height: 1.34;
+      flex: 0 0 auto;
     }
 
     .footer strong,
@@ -267,31 +284,38 @@
       text-decoration: none;
     }
 
-    @media (max-width: 620px) {
-      body {
-        padding: 12px;
-      }
-
-      .page {
-        border-radius: 24px;
-        background-position: center top;
-      }
-
-      .topbar {
-        align-items: flex-start;
-      }
-
-      .brand {
-        gap: 12px;
-      }
-
-      .status {
+    @media (max-height: 760px) {
+      .inner {
         padding: 10px 13px;
-        font-size: 14px;
+        gap: 7px;
+      }
+
+      .logo {
+        width: 84px;
+        height: 84px;
+      }
+
+      h1 {
+        font-size: clamp(29px, 8vw, 58px);
+      }
+
+      .lead {
+        font-size: clamp(13px, 3.4vw, 19px);
+        margin-top: 8px;
+      }
+
+      .brief {
+        font-size: clamp(13px, 3.3vw, 18px);
+        padding: 12px 14px;
       }
 
       .panel {
-        border-radius: 28px;
+        padding: 12px;
+      }
+
+      .footer {
+        font-size: 10px;
+        line-height: 1.25;
       }
     }
   </style>
@@ -302,7 +326,7 @@
     <div class="inner">
       <header class="topbar">
         <div class="brand">
-          <img class="logo" src="/assets/lifeos-logo-transparent.webp?v=20260618122834" alt="LifeOS AI logo" />
+          <img class="logo" src="/assets/lifeos-logo-transparent.webp?v=20260618141906" alt="LifeOS AI logo" />
           <div class="brand-text">
             <strong>LifeOS AI</strong>
             <span>Synthetic Intelligence</span>
@@ -318,13 +342,13 @@
       <section class="hero">
         <h1>Reveal the <span class="gold">future direction</span> of your decision.</h1>
         <p class="lead">
-          Speak or type a decision. LifeOS AI reveals the future outcome, exposes the risk, and guides you before action.
+          LifeOS AI is built for decision clarity. Start with one decision, continue the same conversation, and keep asking until the choice becomes clear.
         </p>
       </section>
 
       <section class="panel" aria-label="LifeOS AI entry panel">
         <div class="brief">
-          <strong>LifeOS AI</strong> is built for decision clarity. Start with one decision, continue the same conversation, and keep asking until the choice becomes clear.
+          <strong>Speak or type a decision.</strong> LifeOS AI reveals the future outcome, exposes the risk, and guides you before action.
         </div>
 
         <a class="cta" href="/chat">Start Decision Chat</a>
