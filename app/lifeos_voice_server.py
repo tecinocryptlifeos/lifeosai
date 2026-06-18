@@ -112,13 +112,21 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
 
         # LIFEOS_ROUTE_LOCK_START
         if path in ("/", "/index.html"):
+            self._serve_file(WEB_DIR / "index.html")
+            return
+
+        if path in ("/chat", "/chat.html"):
             self._serve_file(WEB_DIR / "chat.html")
             return
 
         if path in ("/home", "/home.html"):
-            self._serve_file(WEB_DIR / "index.html")
+            self.send_response(302)
+            self.send_header("Location", "/")
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
             return
         # LIFEOS_ROUTE_LOCK_END
+
 
 
         if path == "/health":

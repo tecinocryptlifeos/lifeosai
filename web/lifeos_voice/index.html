@@ -866,6 +866,207 @@
   }
 
   </style>
+
+<!-- LIFEOS_HOMEPAGE_VISUAL_START -->
+<style id="lifeos-homepage-premium-visuals">
+  :root {
+    --lifeos-gold: #f4c75d;
+    --lifeos-soft-gold: #ffeaa1;
+    --lifeos-ink: #050403;
+  }
+
+  html,
+  body {
+    background: #030302 !important;
+    min-height: 100%;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -3;
+    background:
+      linear-gradient(90deg, rgba(0,0,0,.90) 0%, rgba(0,0,0,.62) 42%, rgba(0,0,0,.42) 100%),
+      linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.90)),
+      url("/assets/lifeos-home-king-bg.webp?v=1781741932");
+    background-size: cover;
+    background-position: center top;
+    background-repeat: no-repeat;
+    opacity: .88;
+  }
+
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 18% 22%, rgba(255,207,90,.18), transparent 34%),
+      radial-gradient(circle at 70% 20%, rgba(255,207,90,.13), transparent 36%),
+      linear-gradient(180deg, transparent 0%, rgba(0,0,0,.72) 82%);
+  }
+
+  img[src*="lifeos-logo"],
+  img[src*="lifeos-logo-transparent"],
+  header img,
+  .brand img {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    object-fit: contain !important;
+    transform: none !important;
+    rotate: 0deg !important;
+  }
+
+  img[src*="lifeos-logo-transparent"] {
+    width: clamp(118px, 24vw, 210px) !important;
+    height: auto !important;
+    opacity: .88 !important;
+    mix-blend-mode: screen;
+    filter: drop-shadow(0 0 22px rgba(244,199,93,.20));
+  }
+
+  textarea,
+  select,
+  input[type="text"],
+  input[type="search"] {
+    display: none !important;
+  }
+
+  .lifeos-home-cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin: 20px 0 14px;
+    padding: 18px 24px;
+    border-radius: 28px;
+    text-decoration: none;
+    font-weight: 950;
+    letter-spacing: .01em;
+    color: #080604;
+    background: linear-gradient(135deg, #f4c75d, #fff1a6);
+    box-shadow: 0 18px 48px rgba(244,199,93,.22);
+  }
+
+  .lifeos-home-cta:focus,
+  .lifeos-home-cta:hover {
+    transform: translateY(-1px);
+  }
+
+  .lifeos-home-brief {
+    margin: 16px 0 18px;
+    padding: 18px 20px;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 24px;
+    background: rgba(0,0,0,.44);
+    backdrop-filter: blur(14px);
+    color: rgba(255,255,255,.84);
+    line-height: 1.55;
+  }
+
+  .lifeos-home-brief strong {
+    color: var(--lifeos-soft-gold);
+  }
+</style>
+
+<script id="lifeos-homepage-premium-script">
+(function () {
+  function cleanText(value) {
+    return String(value || "").replace(/\s+/g, " ").trim();
+  }
+
+  function runLifeOSHomepageVisuals() {
+    var logo =
+      document.querySelector('img[src*="lifeos-logo"]') ||
+      document.querySelector('img[alt*="LifeOS"]') ||
+      document.querySelector('header img') ||
+      document.querySelector('.brand img');
+
+    if (logo) {
+      logo.src = "/assets/lifeos-logo-transparent.webp?v=1781741932";
+      logo.removeAttribute("srcset");
+      logo.style.background = "transparent";
+      logo.style.transform = "none";
+      logo.style.rotate = "0deg";
+    }
+
+    document.querySelectorAll("a").forEach(function (a) {
+      var href = a.getAttribute("href") || "";
+      if (href === "/chat" || href === "/chat.html") {
+        a.removeAttribute("target");
+      }
+    });
+
+    document.querySelectorAll("button, a").forEach(function (el) {
+      var text = cleanText(el.textContent);
+      if (text === "Install LifeOS AI" || text === "Install LifeOS AI App") {
+        el.textContent = "Install LifeOS AI Mobile App";
+      }
+    });
+
+    document.querySelectorAll("button").forEach(function (btn) {
+      var text = cleanText(btn.textContent).toLowerCase();
+      if (
+        text === "stop listening" ||
+        text === "reveal future output"
+      ) {
+        btn.style.display = "none";
+      }
+    });
+
+    document.querySelectorAll("textarea, select, input[type='text'], input[type='search']").forEach(function (el) {
+      el.style.display = "none";
+      var parent = el.closest(".field, .input, .input-wrap, .form-group, label");
+      if (parent) parent.style.display = "none";
+    });
+
+    document.querySelectorAll("*").forEach(function (el) {
+      var text = cleanText(el.textContent).toLowerCase();
+      if (
+        text === "decision input" ||
+        text === "advisor mode"
+      ) {
+        el.style.display = "none";
+      }
+    });
+
+    if (!document.querySelector(".lifeos-home-cta")) {
+      var cta = document.createElement("a");
+      cta.className = "lifeos-home-cta";
+      cta.href = "/chat";
+      cta.textContent = "Start Decision Chat";
+      cta.setAttribute("aria-label", "Start LifeOS Decision Chat");
+
+      var brief = document.createElement("div");
+      brief.className = "lifeos-home-brief";
+      brief.innerHTML = "<strong>LifeOS AI</strong> helps you check the future outcome of a decision before you act. Use it to expose hidden cost, risk, pressure, and the better next move.";
+
+      var installTarget = Array.from(document.querySelectorAll("button, a")).find(function (el) {
+        return cleanText(el.textContent).toLowerCase().includes("install lifeos ai");
+      });
+
+      if (installTarget && installTarget.parentNode) {
+        installTarget.parentNode.insertBefore(brief, installTarget);
+        installTarget.parentNode.insertBefore(cta, installTarget);
+      } else {
+        document.body.appendChild(brief);
+        document.body.appendChild(cta);
+      }
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", runLifeOSHomepageVisuals);
+  } else {
+    runLifeOSHomepageVisuals();
+  }
+})();
+</script>
+<!-- LIFEOS_HOMEPAGE_VISUAL_END -->
+
 </head>
 
 <body>
@@ -917,7 +1118,7 @@
           <div class="buttons">
 <button id="stopVoiceBtn" class="danger" disabled>Stop Listening</button>
             <button id="sendBtn" class="primary">Reveal Future Output</button>
-            <button id="installBtn" class="install" hidden>Install LifeOS AI</button>
+            <button id="installBtn" class="install" hidden>Install LifeOS AI Mobile App</button>
               <div class="premium-inline-cta"><span class="pulse"></span> Subscribe to Premium Synthetic Intelligence</div>
           </div>
 

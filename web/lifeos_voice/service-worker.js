@@ -1,4 +1,4 @@
-const CACHE_NAME = "lifeos-webai-route-lock-1781738919";
+const CACHE_NAME = "lifeos-homepage-visual-1781741932";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -16,13 +16,9 @@ self.addEventListener("fetch", (event) => {
   const request = event.request;
 
   if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request, { cache: "no-store" }).catch(() => fetch("/chat", { cache: "no-store" }))
-    );
+    event.respondWith(fetch(request, { cache: "no-store" }));
     return;
   }
 
-  event.respondWith(
-    fetch(request).catch(() => caches.match(request))
-  );
+  event.respondWith(fetch(request).catch(() => caches.match(request)));
 });
