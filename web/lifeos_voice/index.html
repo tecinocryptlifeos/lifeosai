@@ -5,18 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LifeOS AI — Synthetic Decision Intelligence</title>
   <meta name="description" content="LifeOS AI helps you see the future outcome of a decision before you act." />
-  <link rel="manifest" href="/manifest.webmanifest" />
   <meta name="theme-color" content="#050403" />
+  <meta name="lifeos-build" content="20260618122834" />
+  <link rel="manifest" href="/manifest.webmanifest?v=20260618122834" />
 
   <style>
     :root {
       --gold: #f4c75d;
       --soft-gold: #fff1a6;
-      --dark: #050403;
-      --panel: rgba(5, 5, 7, 0.66);
-      --line: rgba(255, 255, 255, 0.13);
-      --text: rgba(255, 255, 255, 0.92);
-      --muted: rgba(255, 255, 255, 0.68);
+      --line: rgba(255,255,255,.13);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.70);
     }
 
     * {
@@ -35,40 +34,40 @@
     body {
       padding: 14px;
       background:
-        radial-gradient(circle at 20% 10%, rgba(244, 199, 93, 0.12), transparent 32%),
+        radial-gradient(circle at 20% 10%, rgba(244,199,93,.12), transparent 32%),
         linear-gradient(180deg, #050403, #010101 88%);
     }
 
     .page {
-  width: min(980px, 100%);
-  margin: 0 auto;
-  min-height: calc(100vh - 28px);
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: 30px;
-  overflow: hidden;
-  position: relative;
-  isolation: isolate;
-  background:
-    linear-gradient(90deg, rgba(0,0,0,.58) 0%, rgba(0,0,0,.42) 42%, rgba(0,0,0,.30) 100%),
-    linear-gradient(180deg, rgba(0,0,0,.10), rgba(0,0,0,.50)),
-    url("/assets/lifeos-home-king-bg.webp");
-  background-size: cover;
-  background-position: center top;
-  background-repeat: no-repeat;
-  box-shadow: 0 35px 110px rgba(0, 0, 0, 0.72);
-}
+      width: min(980px, 100%);
+      margin: 0 auto;
+      min-height: calc(100vh - 28px);
+      border: 1px solid var(--line);
+      border-radius: 30px;
+      overflow: hidden;
+      position: relative;
+      isolation: isolate;
+      background:
+        linear-gradient(90deg, rgba(0,0,0,.60) 0%, rgba(0,0,0,.44) 42%, rgba(0,0,0,.32) 100%),
+        linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.50)),
+        url("/assets/lifeos-home-king-bg.webp?v=20260618122834");
+      background-size: cover;
+      background-position: center top;
+      background-repeat: no-repeat;
+      box-shadow: 0 35px 110px rgba(0,0,0,.72);
+    }
 
     .page::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 18% 22%, rgba(255, 216, 115, 0.08), transparent 34%),
-    radial-gradient(circle at 78% 18%, rgba(255, 216, 115, 0.06), transparent 36%),
-    linear-gradient(180deg, transparent 0%, rgba(0,0,0,.28) 84%);
-}
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 18% 22%, rgba(255,216,115,.08), transparent 34%),
+        radial-gradient(circle at 78% 18%, rgba(255,216,115,.06), transparent 36%),
+        linear-gradient(180deg, transparent 0%, rgba(0,0,0,.30) 84%);
+    }
 
     .inner {
       padding: clamp(22px, 5vw, 56px);
@@ -85,29 +84,30 @@
     .brand {
       display: flex;
       align-items: center;
-      gap: 18px;
+      gap: 16px;
       min-width: 0;
     }
 
     .logo {
-  width: clamp(86px, 18vw, 138px);
-  height: clamp(86px, 18vw, 138px);
-  object-fit: contain;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  opacity: 0.96;
-  mix-blend-mode: screen;
-  filter: drop-shadow(0 0 16px rgba(244, 199, 93, 0.18));
-  flex: 0 0 auto;
-}
+      width: clamp(82px, 17vw, 132px);
+      height: clamp(82px, 17vw, 132px);
+      object-fit: contain;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      opacity: .96;
+      mix-blend-mode: screen;
+      filter: drop-shadow(0 0 16px rgba(244,199,93,.18));
+      flex: 0 0 auto;
+    }
 
     .brand-text strong {
       display: block;
       font-size: clamp(22px, 5vw, 36px);
       line-height: 1;
-      letter-spacing: 0.04em;
+      letter-spacing: .04em;
       text-transform: uppercase;
+      text-shadow: 0 3px 14px rgba(0,0,0,.35);
     }
 
     .brand-text span {
@@ -115,8 +115,9 @@
       margin-top: 8px;
       color: var(--muted);
       font-size: clamp(12px, 3vw, 17px);
-      letter-spacing: 0.32em;
+      letter-spacing: .32em;
       text-transform: uppercase;
+      text-shadow: 0 2px 10px rgba(0,0,0,.35);
     }
 
     .status {
@@ -125,8 +126,8 @@
       gap: 9px;
       padding: 12px 18px;
       border-radius: 999px;
-      border: 1px solid rgba(110, 255, 171, 0.24);
-      background: rgba(24, 82, 46, 0.38);
+      border: 1px solid rgba(110,255,171,.24);
+      background: rgba(24,82,46,.38);
       color: #b9ffd2;
       font-weight: 900;
       white-space: nowrap;
@@ -137,7 +138,7 @@
       height: 9px;
       border-radius: 50%;
       background: #78f6a7;
-      box-shadow: 0 0 18px rgba(120, 246, 167, 0.85);
+      box-shadow: 0 0 18px rgba(120,246,167,.85);
     }
 
     .hero {
@@ -145,27 +146,27 @@
     }
 
     h1 {
-  margin: 0;
-  max-width: 760px;
-  font-size: clamp(45px, 11vw, 92px);
-  line-height: 0.96;
-  letter-spacing: -0.07em;
-  font-weight: 950;
-  text-shadow: 0 4px 18px rgba(0,0,0,.28);
-}
+      margin: 0;
+      max-width: 760px;
+      font-size: clamp(45px, 11vw, 92px);
+      line-height: .96;
+      letter-spacing: -.07em;
+      font-weight: 950;
+      text-shadow: 0 4px 18px rgba(0,0,0,.30);
+    }
 
     h1 .gold {
       color: var(--gold);
     }
 
     .lead {
-  max-width: 720px;
-  margin: 24px 0 0;
-  font-size: clamp(19px, 4.2vw, 30px);
-  line-height: 1.42;
-  color: rgba(255,255,255,.82);
-  text-shadow: 0 2px 8px rgba(0,0,0,.35);
-}
+      max-width: 720px;
+      margin: 24px 0 0;
+      font-size: clamp(19px, 4.2vw, 30px);
+      line-height: 1.42;
+      color: rgba(255,255,255,.82);
+      text-shadow: 0 2px 8px rgba(0,0,0,.35);
+    }
 
     .panel {
       margin-top: clamp(32px, 7vw, 70px);
@@ -173,9 +174,9 @@
       padding: clamp(22px, 5vw, 38px);
       border: 1px solid var(--line);
       border-radius: 34px;
-      background: rgba(0, 0, 0, 0.48);
+      background: rgba(0,0,0,.48);
       backdrop-filter: blur(18px);
-      box-shadow: 0 22px 80px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 22px 80px rgba(0,0,0,.45);
     }
 
     .brief {
@@ -183,7 +184,7 @@
       border: 1px solid rgba(255,255,255,.11);
       border-radius: 25px;
       background: rgba(0,0,0,.38);
-      color: rgba(255,255,255,.86);
+      color: rgba(255,255,255,.88);
       font-size: clamp(18px, 4vw, 26px);
       line-height: 1.55;
     }
@@ -206,7 +207,7 @@
       background: linear-gradient(135deg, #f4c75d, #fff1a6);
       font-size: clamp(18px, 4vw, 26px);
       font-weight: 950;
-      box-shadow: 0 20px 58px rgba(244, 199, 93, 0.22);
+      box-shadow: 0 20px 58px rgba(244,199,93,.22);
     }
 
     .secondary {
@@ -249,23 +250,12 @@
       box-shadow: 0 0 18px rgba(122,245,167,.7);
     }
 
-    .note {
-      margin-top: 22px;
-      padding: 18px 20px;
-      border: 1px solid rgba(255,255,255,.10);
-      border-radius: 22px;
-      background: rgba(0,0,0,.30);
-      color: rgba(255,255,255,.70);
-      font-size: clamp(15px, 3.4vw, 19px);
-      line-height: 1.5;
-    }
-
     .footer {
       margin-top: clamp(44px, 9vw, 90px);
       padding-top: 24px;
       border-top: 1px solid rgba(255,255,255,.10);
       text-align: center;
-      color: rgba(255,255,255,.58);
+      color: rgba(255,255,255,.62);
       font-size: clamp(14px, 3.2vw, 18px);
       line-height: 1.55;
     }
@@ -284,7 +274,7 @@
 
       .page {
         border-radius: 24px;
-        background-position: 66% top;
+        background-position: center top;
       }
 
       .topbar {
@@ -312,7 +302,7 @@
     <div class="inner">
       <header class="topbar">
         <div class="brand">
-          <img class="logo" src="/assets/lifeos-logo-transparent.webp" alt="LifeOS AI logo" />
+          <img class="logo" src="/assets/lifeos-logo-transparent.webp?v=20260618122834" alt="LifeOS AI logo" />
           <div class="brand-text">
             <strong>LifeOS AI</strong>
             <span>Synthetic Intelligence</span>
@@ -328,7 +318,7 @@
       <section class="hero">
         <h1>Reveal the <span class="gold">future direction</span> of your decision.</h1>
         <p class="lead">
-          LifeOS AI helps you see the future outcome of a decision before you act — exposing risk, pressure, hidden cost, and the better next move.
+          Speak or type a decision. LifeOS AI reveals the future outcome, exposes the risk, and guides you before action.
         </p>
       </section>
 
@@ -342,10 +332,6 @@
         <button class="secondary" id="installButton" type="button">Install LifeOS AI Mobile App</button>
 
         <div class="subscribe">Subscribe to Premium Synthetic Intelligence</div>
-
-        <div class="note">
-          The homepage is your entry point. The decision chat is where the AI conversation happens.
-        </div>
       </section>
 
       <footer class="footer">

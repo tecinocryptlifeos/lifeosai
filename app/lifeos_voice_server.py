@@ -131,6 +131,7 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
 
 
 
+
         if path == "/health":
             self._send_bytes(200, b"OK", "text/plain; charset=utf-8")
             return
