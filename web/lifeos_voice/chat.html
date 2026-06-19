@@ -383,6 +383,86 @@
 </script>
 <!-- LIFEOS_VISIBLE_CHAT_BACKGROUND_END -->
 
+
+<!-- LIFEOS_CHAT_BACKGROUND_VISIBILITY_START -->
+<style id="lifeos-chat-background-visibility">
+  /*
+   * Visual-only adjustment.
+   * No chat structure, wording or JavaScript is changed.
+   */
+
+  .app {
+    background: rgba(3, 3, 5, 0.30) !important;
+  }
+
+  .app::before {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(3, 3, 6, 0.38) 0%,
+        rgba(3, 3, 6, 0.58) 55%,
+        rgba(3, 3, 6, 0.72) 100%
+      ),
+      url("/assets/lifeos-bg.jpg?v=1781879659")
+        center top / cover no-repeat !important;
+
+    opacity: 0.82 !important;
+    filter:
+      saturate(1.12)
+      brightness(0.96)
+      contrast(1.04) !important;
+  }
+
+  .lifeos-chat-character-visible {
+    width: min(94vw, 620px) !important;
+    height: 100svh !important;
+    opacity: 0.32 !important;
+
+    background:
+      linear-gradient(
+        90deg,
+        rgba(3, 3, 2, 0.04) 0%,
+        rgba(3, 3, 2, 0.12) 38%,
+        rgba(3, 3, 2, 0.48) 100%
+      ),
+      url("/assets/lifeos-home-king-bg.webp?v=1781879659") !important;
+
+    background-size: auto 94% !important;
+    background-position: right center !important;
+    background-repeat: no-repeat !important;
+
+    filter:
+      saturate(1.10)
+      brightness(0.98)
+      contrast(1.04) !important;
+  }
+
+  .chat {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(6, 7, 12, 0.43),
+        rgba(6, 7, 12, 0.57)
+      ) !important;
+
+    backdrop-filter: blur(8px) !important;
+  }
+
+  .messages {
+    background: transparent !important;
+  }
+
+  @media (max-width: 420px) {
+    .lifeos-chat-character-visible {
+      width: 100vw !important;
+      opacity: 0.29 !important;
+      background-size: auto 91% !important;
+      background-position: 73% center !important;
+    }
+  }
+</style>
+<!-- LIFEOS_CHAT_BACKGROUND_VISIBILITY_END -->
+
 </head>
 <body>
   <main class="app">
