@@ -463,6 +463,93 @@
 </style>
 <!-- LIFEOS_CHAT_BACKGROUND_VISIBILITY_END -->
 
+
+<!-- LIFEOS_MICROPHONE_INPUT_START -->
+<style id="lifeos-microphone-input-style">
+  .composer {
+    grid-template-columns: minmax(0, 1fr) 82px !important;
+    align-items: end !important;
+  }
+
+  .lifeos-composer-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .lifeos-mic-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 43px;
+    padding: 7px;
+    border: 1px solid rgba(161, 231, 255, 0.22);
+    border-radius: 15px;
+    color: #a9ecff;
+    background: rgba(7, 13, 21, 0.58);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 0 20px rgba(86, 211, 255, 0.08);
+    cursor: pointer;
+  }
+
+  .lifeos-mic-button svg {
+    width: 25px;
+    height: 25px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .lifeos-mic-button.listening {
+    color: #fff0a9;
+    border-color: rgba(244, 199, 93, 0.48);
+    background: rgba(244, 199, 93, 0.14);
+    box-shadow: 0 0 22px rgba(244, 199, 93, 0.18);
+    animation: lifeosMicPulse 1.25s ease-in-out infinite;
+  }
+
+  .lifeos-mic-button.unsupported,
+  .lifeos-mic-button:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+  }
+
+  .lifeos-composer-actions #sendBtn {
+    width: 100% !important;
+    min-height: 70px !important;
+    padding: 12px 9px !important;
+  }
+
+  @keyframes lifeosMicPulse {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+
+    50% {
+      transform: scale(1.055);
+    }
+  }
+
+  @media (max-width: 390px) {
+    .composer {
+      grid-template-columns: minmax(0, 1fr) 74px !important;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lifeos-mic-button.listening {
+      animation: none !important;
+    }
+  }
+</style>
+<!-- LIFEOS_MICROPHONE_INPUT_END -->
+
 </head>
 <body>
   <main class="app">
@@ -495,7 +582,30 @@
         <div id="messages" class="messages"></div>
         <div class="composer">
           <textarea id="input" placeholder="Type your decision or follow-up question..."></textarea>
-          <button id="sendBtn">Send</button>
+
+<div class="lifeos-composer-actions">
+  <button
+    id="micBtn"
+    class="lifeos-mic-button"
+    type="button"
+    aria-label="Start voice input"
+    title="Start voice input"
+  >
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <rect x="9" y="3" width="6" height="11" rx="3"></rect>
+      <path d="M5.5 10.5a6.5 6.5 0 0 0 13 0"></path>
+      <path d="M12 17v4"></path>
+      <path d="M8.5 21h7"></path>
+    </svg>
+  </button>
+
+  <button id="sendBtn" type="button">Send</button>
+</div>
+
         </div>
       </section>
 
@@ -509,6 +619,7 @@
 const messagesBox = document.getElementById("messages");
 const input = document.getElementById("input");
 const sendBtn = document.getElementById("sendBtn");
+const micBtn = document.getElementById("micBtn");
 const newBtn = document.getElementById("newBtn");
 const clearBtn = document.getElementById("clearBtn");
 const historyBtn = document.getElementById("historyBtn");
@@ -592,6 +703,114 @@ async function sendMessage() {
   save();
   render();
 }
+
+
+const LifeOSSpeechRecognition =
+  window.SpeechRecognition || window.webkitSpeechRecognition;
+
+let lifeosRecognition = null;
+let lifeosListening = false;
+let lifeosOriginalInput = "";
+
+function setLifeOSMicState(listening, label) {
+  lifeosListening = listening;
+  micBtn.classList.toggle("listening", listening);
+
+  const text = label || (
+    listening ? "Listening…" : "Start voice input"
+  );
+
+  micBtn.setAttribute("aria-label", text);
+  micBtn.title = text;
+}
+
+if (!LifeOSSpeechRecognition) {
+  micBtn.disabled = true;
+  micBtn.classList.add("unsupported");
+  micBtn.setAttribute(
+    "aria-label",
+    "Voice input is not supported by this browser"
+  );
+  micBtn.title = "Voice input is not supported by this browser";
+} else {
+  lifeosRecognition = new LifeOSSpeechRecognition();
+
+  lifeosRecognition.lang = "en-NG";
+  lifeosRecognition.continuous = false;
+  lifeosRecognition.interimResults = true;
+  lifeosRecognition.maxAlternatives = 1;
+
+  lifeosRecognition.addEventListener("start", function () {
+    lifeosOriginalInput = input.value.trim();
+    setLifeOSMicState(true, "Listening… tap again to stop");
+  });
+
+  lifeosRecognition.addEventListener("result", function (event) {
+    let transcript = "";
+
+    for (
+      let index = event.resultIndex;
+      index < event.results.length;
+      index += 1
+    ) {
+      transcript += event.results[index][0].transcript;
+    }
+
+    const prefix = lifeosOriginalInput
+      ? lifeosOriginalInput + " "
+      : "";
+
+    input.value = (prefix + transcript).trim();
+    input.focus();
+  });
+
+  lifeosRecognition.addEventListener("end", function () {
+    setLifeOSMicState(false, "Start voice input");
+    input.focus();
+  });
+
+  lifeosRecognition.addEventListener("error", function (event) {
+    setLifeOSMicState(false, "Start voice input");
+
+    if (event.error === "not-allowed") {
+      micBtn.title = "Microphone permission was denied";
+      micBtn.setAttribute(
+        "aria-label",
+        "Microphone permission was denied"
+      );
+      return;
+    }
+
+    if (event.error === "no-speech") {
+      micBtn.title = "No speech was detected. Tap and try again";
+      micBtn.setAttribute(
+        "aria-label",
+        "No speech was detected. Tap and try again"
+      );
+      return;
+    }
+
+    micBtn.title = "Voice input stopped. Tap to try again";
+    micBtn.setAttribute(
+      "aria-label",
+      "Voice input stopped. Tap to try again"
+    );
+  });
+
+  micBtn.addEventListener("click", function () {
+    try {
+      if (lifeosListening) {
+        lifeosRecognition.stop();
+        return;
+      }
+
+      lifeosRecognition.start();
+    } catch (error) {
+      setLifeOSMicState(false, "Start voice input");
+    }
+  });
+}
+
 
 sendBtn.addEventListener("click", sendMessage);
 input.addEventListener("keydown", e => {
