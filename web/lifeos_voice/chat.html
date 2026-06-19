@@ -560,5 +560,90 @@ historyBtn.addEventListener("click", () => {
 
 render();
 </script>
+
+<!-- LIFEOS_REMOVE_DUPLICATE_STARTER_START -->
+<script id="lifeos-remove-duplicate-starter">
+(function () {
+  "use strict";
+
+  const starterText = [
+    "Start with a decision.",
+    "After I answer,",
+    "continue asking until the decision becomes clear."
+  ].join(" ");
+
+  function normalize(value) {
+    return String(value || "").replace(/\s+/g, " ").trim();
+  }
+
+  function removeStarterBubble() {
+    const selectors = [
+      ".msg.assistant",
+      ".assistant.msg",
+      "[data-role='assistant']",
+      "[data-message-role='assistant']"
+    ].join(",");
+
+    document.querySelectorAll(selectors).forEach(function (element) {
+      if (normalize(element.textContent) === starterText) {
+        element.remove();
+      }
+    });
+  }
+
+  function cleanSavedCurrentChat() {
+    const key = "lifeos_decision_chat_v1";
+
+    try {
+      const saved = JSON.parse(localStorage.getItem(key) || "[]");
+
+      if (!Array.isArray(saved)) {
+        return;
+      }
+
+      const cleaned = saved.filter(function (message) {
+        const role = normalize(message && message.role).toLowerCase();
+        const content = normalize(message && message.content);
+
+        return !(role === "assistant" && content === starterText);
+      });
+
+      if (cleaned.length !== saved.length) {
+        localStorage.setItem(key, JSON.stringify(cleaned));
+      }
+    } catch (error) {
+      console.warn("LifeOS starter-message cleanup skipped:", error);
+    }
+  }
+
+  function installCleanup() {
+    cleanSavedCurrentChat();
+    removeStarterBubble();
+
+    const chatArea =
+      document.getElementById("messages") ||
+      document.querySelector(".messages") ||
+      document.querySelector(".chat-messages") ||
+      document.body;
+
+    const observer = new MutationObserver(removeStarterBubble);
+
+    observer.observe(chatArea, {
+      childList: true,
+      subtree: true
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", installCleanup, {
+      once: true
+    });
+  } else {
+    installCleanup();
+  }
+})();
+</script>
+<!-- LIFEOS_REMOVE_DUPLICATE_STARTER_END -->
+
 </body>
 </html>
