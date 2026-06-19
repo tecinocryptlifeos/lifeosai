@@ -550,6 +550,32 @@
 </style>
 <!-- LIFEOS_MICROPHONE_INPUT_END -->
 
+
+<!-- LIFEOS_VOICE_FRONTEND_START -->
+<style id="lifeos-voice-frontend-style">
+  .voice-mode-tool {
+    color: #bcefff;
+    border-color: rgba(169, 236, 255, 0.30);
+  }
+
+  .voice-mode-tool.active {
+    color: #fff0ad;
+    border-color: rgba(244, 199, 93, 0.62);
+    background: rgba(244, 199, 93, 0.14);
+    box-shadow: 0 0 18px rgba(244, 199, 93, 0.15);
+  }
+
+  .voice-mode-tool:disabled {
+    opacity: 0.42;
+    cursor: not-allowed;
+  }
+
+  #lifeosVoicePlayer {
+    display: none;
+  }
+</style>
+<!-- LIFEOS_VOICE_FRONTEND_END -->
+
 </head>
 <body>
   <main class="app">
@@ -577,6 +603,12 @@
           <button class="tool" id="newBtn">New Decision</button>
           <button class="tool" id="historyBtn">Chat History</button>
           <button class="tool" id="clearBtn">Clear Current</button>
+<button
+  class="tool voice-mode-tool"
+  id="voiceModeBtn"
+  type="button"
+  aria-pressed="false"
+>Voice: Off</button>
         </div>
         <div id="history" class="history"></div>
         <div id="messages" class="messages"></div>
@@ -620,6 +652,8 @@ const messagesBox = document.getElementById("messages");
 const input = document.getElementById("input");
 const sendBtn = document.getElementById("sendBtn");
 const micBtn = document.getElementById("micBtn");
+const voiceModeBtn = document.getElementById("voiceModeBtn");
+const lifeosVoicePlayer = document.getElementById("lifeosVoicePlayer");
 const newBtn = document.getElementById("newBtn");
 const clearBtn = document.getElementById("clearBtn");
 const historyBtn = document.getElementById("historyBtn");
@@ -663,47 +697,245 @@ function render() {
   messagesBox.scrollTop = messagesBox.scrollHeight;
 }
 
-async function sendMessage() {
+async function sendMessage(voiceTriggered = false) {
+  voiceTriggered = voiceTriggered === true;
+
   const text = input.value.trim();
-  if (!text) return;
+
+  if (!text || lifeosSending) return;
+
+  lifeosSending = true;
 
   current.push({ role: "user", content: text });
   input.value = "";
   save();
   render();
 
-  const loading = { role: "assistant", content: "LifeOS AI is reviewing the decision thread..." };
+  const loading = {
+    role: "assistant",
+    content: "LifeOS AI is reviewing the decision thread..."
+  };
+
   current.push(loading);
   render();
 
   try {
     const outgoingMessages = current
-      .filter(m => m && m.role && m.content && !m.content.includes("reviewing the decision thread"))
+      .filter(m =>
+        m &&
+        m.role &&
+        m.content &&
+        !m.content.includes("reviewing the decision thread")
+      )
       .slice(-8)
       .map(m => ({
         role: m.role,
-        content: String(m.content || "").slice(0, m.role === "assistant" ? 700 : 900)
+        content: String(m.content || "").slice(
+          0,
+          m.role === "assistant" ? 700 : 900
+        )
       }));
 
-    const res = await fetch("/api/chat-decision", {
+    const response = await fetch("/api/chat-decision", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ messages: outgoingMessages })
     });
 
-    const raw = await res.text();
+    const raw = await response.text();
     let data = {};
-    try { data = raw ? JSON.parse(raw) : {}; } catch (e) {}
 
-    loading.content = data.reply || "LifeOS AI could not complete the continuation. Please try again.";
-  } catch (e) {
-    loading.content = "LifeOS AI could not reach the intelligence server. Please try again.";
+    try {
+      data = raw ? JSON.parse(raw) : {};
+    } catch (error) {}
+
+    loading.content =
+      data.reply ||
+      "LifeOS AI could not complete the continuation. Please try again.";
+
+  } catch (error) {
+    loading.content =
+      "LifeOS AI could not reach the intelligence server. Please try again.";
   }
 
   save();
   render();
+
+  try {
+    if (voiceTriggered || lifeosVoiceMode) {
+      await speakLifeOS(loading.content);
+    }
+  } finally {
+    lifeosSending = false;
+
+    if (lifeosVoiceMode) {
+      scheduleLifeOSListen();
+    }
+  }
 }
 
+
+
+let lifeosVoiceMode = false;
+let lifeosSending = false;
+let lifeosRestartTimer = null;
+let lifeosVoiceResolve = null;
+
+function updateLifeOSVoiceButton(label) {
+  voiceModeBtn.textContent =
+    label || (lifeosVoiceMode ? "Voice: On" : "Voice: Off");
+
+  voiceModeBtn.classList.toggle("active", lifeosVoiceMode);
+  voiceModeBtn.setAttribute(
+    "aria-pressed",
+    String(lifeosVoiceMode)
+  );
+}
+
+function setLifeOSVoiceMode(enabled) {
+  lifeosVoiceMode = Boolean(enabled);
+  updateLifeOSVoiceButton();
+
+  clearTimeout(lifeosRestartTimer);
+
+  if (!lifeosVoiceMode) {
+    if (lifeosRecognition && lifeosListening) {
+      try {
+        lifeosRecognition.stop();
+      } catch (error) {}
+    }
+
+    lifeosVoicePlayer.pause();
+    lifeosVoicePlayer.removeAttribute("src");
+
+    if (lifeosVoiceResolve) {
+      lifeosVoiceResolve();
+      lifeosVoiceResolve = null;
+    }
+
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+
+    setLifeOSMicState(false, "Start voice input");
+    return;
+  }
+
+  input.value = "";
+  scheduleLifeOSListen(200);
+}
+
+function scheduleLifeOSListen(delay = 750) {
+  clearTimeout(lifeosRestartTimer);
+
+  if (!lifeosVoiceMode) return;
+
+  lifeosRestartTimer = setTimeout(
+    startLifeOSListen,
+    delay
+  );
+}
+
+function startLifeOSListen() {
+  if (
+    !lifeosVoiceMode ||
+    !lifeosRecognition ||
+    lifeosListening ||
+    lifeosSending ||
+    !lifeosVoicePlayer.paused
+  ) {
+    return;
+  }
+
+  input.value = "";
+  lifeosOriginalInput = "";
+
+  try {
+    lifeosRecognition.start();
+  } catch (error) {
+    scheduleLifeOSListen(900);
+  }
+}
+
+function browserVoiceFallback(text) {
+  return new Promise(resolve => {
+    if (!("speechSynthesis" in window)) {
+      resolve();
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    const voices = window.speechSynthesis.getVoices();
+
+    utterance.voice =
+      voices.find(voice => /^en-GB/i.test(voice.lang)) ||
+      voices.find(voice => /^en/i.test(voice.lang)) ||
+      null;
+
+    utterance.lang = "en-GB";
+    utterance.rate = 0.94;
+    utterance.pitch = 1;
+    utterance.onend = resolve;
+    utterance.onerror = resolve;
+
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  });
+}
+
+async function speakLifeOS(text) {
+  const spokenText = String(text || "").trim();
+
+  if (!spokenText) return;
+
+  updateLifeOSVoiceButton("Voice: Speaking");
+
+  if (lifeosRecognition && lifeosListening) {
+    try {
+      lifeosRecognition.stop();
+    } catch (error) {}
+  }
+
+  try {
+    const response = await fetch("/api/voice-read", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: spokenText })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok || !data.audio_url) {
+      throw new Error(data.tts_error || "Voice audio unavailable");
+    }
+
+    await new Promise((resolve, reject) => {
+      const finish = () => {
+        lifeosVoicePlayer.onended = null;
+        lifeosVoicePlayer.onerror = null;
+        lifeosVoiceResolve = null;
+        resolve();
+      };
+
+      lifeosVoiceResolve = finish;
+      lifeosVoicePlayer.onended = finish;
+      lifeosVoicePlayer.onerror = reject;
+      lifeosVoicePlayer.src =
+        data.audio_url + "?v=" + Date.now();
+
+      const playing = lifeosVoicePlayer.play();
+
+      if (playing && typeof playing.catch === "function") {
+        playing.catch(reject);
+      }
+    });
+
+  } catch (error) {
+    await browserVoiceFallback(spokenText);
+  }
+
+  updateLifeOSVoiceButton();
+}
 
 const LifeOSSpeechRecognition =
   window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -725,6 +957,8 @@ function setLifeOSMicState(listening, label) {
 }
 
 if (!LifeOSSpeechRecognition) {
+  voiceModeBtn.disabled = true;
+  voiceModeBtn.textContent = "Voice: Unavailable";
   micBtn.disabled = true;
   micBtn.classList.add("unsupported");
   micBtn.setAttribute(
@@ -764,15 +998,32 @@ if (!LifeOSSpeechRecognition) {
     input.focus();
   });
 
-  lifeosRecognition.addEventListener("end", function () {
+  lifeosRecognition.addEventListener(
+  "end",
+  function () {
     setLifeOSMicState(false, "Start voice input");
+
+    if (lifeosVoiceMode) {
+      const spokenText = input.value.trim();
+
+      if (spokenText && !lifeosSending) {
+        sendMessage(true);
+      } else if (!lifeosSending) {
+        scheduleLifeOSListen();
+      }
+
+      return;
+    }
+
     input.focus();
-  });
+  }
+);
 
   lifeosRecognition.addEventListener("error", function (event) {
     setLifeOSMicState(false, "Start voice input");
 
     if (event.error === "not-allowed") {
+      setLifeOSVoiceMode(false);
       micBtn.title = "Microphone permission was denied";
       micBtn.setAttribute(
         "aria-label",
@@ -812,6 +1063,12 @@ if (!LifeOSSpeechRecognition) {
 }
 
 
+voiceModeBtn.addEventListener("click", function () {
+  if (!LifeOSSpeechRecognition) return;
+
+  setLifeOSVoiceMode(!lifeosVoiceMode);
+});
+
 sendBtn.addEventListener("click", sendMessage);
 input.addEventListener("keydown", e => {
   if (e.key === "Enter" && !e.shiftKey) {
@@ -821,6 +1078,7 @@ input.addEventListener("keydown", e => {
 });
 
 newBtn.addEventListener("click", () => {
+  setLifeOSVoiceMode(false);
   saveThread();
   current = [];
   save();
@@ -828,6 +1086,7 @@ newBtn.addEventListener("click", () => {
 });
 
 clearBtn.addEventListener("click", () => {
+  setLifeOSVoiceMode(false);
   current = [];
   save();
   render();
@@ -938,5 +1197,6 @@ render();
 </script>
 <!-- LIFEOS_REMOVE_DUPLICATE_STARTER_END -->
 
+<audio id="lifeosVoicePlayer" preload="none"></audio>
 </body>
 </html>
