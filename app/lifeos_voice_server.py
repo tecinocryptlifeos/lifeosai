@@ -2,7 +2,7 @@ import os
 import json
 import time
 import mimetypes
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote
 
@@ -297,11 +297,82 @@ Rules:
             )
 
 
+    def _handle_voice_read(self):
+        try:
+            length = int(
+                self.headers.get("Content-Length", "0")
+            )
+
+            if length <= 0:
+                raise ValueError("Request body is required")
+
+            if length > 12000:
+                raise ValueError("Request body is too large")
+
+            raw = self.rfile.read(length)
+            data = json.loads(raw.decode("utf-8"))
+
+            text = " ".join(
+                str(data.get("text") or "").split()
+            )
+
+            if not text:
+                raise ValueError("Voice text is required")
+
+            text = text[:2400]
+            now = time.time()
+
+            for old_file in AUDIO_DIR.glob(
+                "lifeos_voice_*.wav"
+            ):
+                try:
+                    if now - old_file.stat().st_mtime > 3600:
+                        old_file.unlink()
+                except OSError:
+                    pass
+
+            filename = (
+                f"lifeos_voice_{int(time.time() * 1000)}_"
+                f"{os.getpid()}.wav"
+            )
+
+            output_path = AUDIO_DIR / filename
+
+            generate_lifeos_voice_wav(
+                text,
+                output_path,
+                timeout=42,
+            )
+
+            self._send_json(
+                200,
+                {
+                    "ok": True,
+                    "audio_url": f"/audio/{filename}",
+                    "tts_error": None,
+                },
+            )
+
+        except Exception as error:
+            self._send_json(
+                200,
+                {
+                    "ok": False,
+                    "audio_url": None,
+                    "tts_error": (
+                        f"{type(error).__name__}: {error}"
+                    ),
+                },
+            )
+
     def do_POST(self):
         path = self._path()
 
         if path == "/api/chat-decision":
             self._handle_chat_decision()
+            return
+        if path == "/api/voice-read":
+            self._handle_voice_read()
             return
 
         if path != "/api/text-audit":
@@ -420,7 +491,7 @@ def main():
         raise SystemExit(1)
 
     print(f"✅ LifeOS AI Voice server running at http://{HOST}:{PORT}")
-    HTTPServer((HOST, PORT), LifeOSVoiceHandler).serve_forever()
+    ThreadingHTTPServer((HOST, PORT), LifeOSVoiceHandler).serve_forever()
 
 
 if __name__ == "__main__":
