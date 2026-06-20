@@ -1078,7 +1078,11 @@ input.addEventListener("keydown", e => {
 });
 
 newBtn.addEventListener("click", () => {
-  setLifeOSVoiceMode(false);
+  try {
+    setLifeOSVoiceMode(false);
+  } catch (error) {
+    console.warn("LifeOS mode reset skipped:", error);
+  }
   saveThread();
   current = [];
   save();
@@ -1086,7 +1090,11 @@ newBtn.addEventListener("click", () => {
 });
 
 clearBtn.addEventListener("click", () => {
-  setLifeOSVoiceMode(false);
+  try {
+    setLifeOSVoiceMode(false);
+  } catch (error) {
+    console.warn("LifeOS mode reset skipped:", error);
+  }
   current = [];
   save();
   render();
