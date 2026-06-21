@@ -872,7 +872,7 @@ let lifeosVoiceMode = false;
 let lifeosSending = false;
 let lifeosRestartTimer = null;
 let lifeosVoiceResolve = null;
-let lifeosVoicePausedByUser = false;
+let lifeosVoicePausedByUser = "";
 
 function updateLifeOSVoiceButton(label) {
   voiceModeBtn.textContent =
@@ -886,80 +886,86 @@ function updateLifeOSVoiceButton(label) {
 }
 
 function setLifeOSVoiceMode(enabled) {
-  const activeVoicePlayer =
-    lifeosVoicePlayer ||
-    document.getElementById("lifeosVoicePlayer");
+  // LIFEOS_VOICE_PAUSE_RESUME_V1
+  const shouldEnable = Boolean(enabled);
 
-  lifeosVoiceMode = Boolean(enabled);
-  updateLifeOSVoiceButton();
   clearTimeout(lifeosRestartTimer);
 
-  if (!lifeosVoiceMode) {
+  if (!shouldEnable) {
+    lifeosVoiceMode = false;
+    updateLifeOSVoiceButton();
+
     if (lifeosRecognition && lifeosListening) {
       try {
         lifeosRecognition.stop();
       } catch (error) {}
     }
 
-    let pausedOutput = false;
+    lifeosVoicePausedByUser = "";
 
     if (
-      activeVoicePlayer &&
-      !activeVoicePlayer.paused &&
-      !activeVoicePlayer.ended
+      lifeosVoicePlayer &&
+      !lifeosVoicePlayer.paused &&
+      !lifeosVoicePlayer.ended
     ) {
-      activeVoicePlayer.pause();
-      pausedOutput = true;
-    }
-
-    if (
+      lifeosVoicePlayer.pause();
+      lifeosVoicePausedByUser = "audio";
+    } else if (
       "speechSynthesis" in window &&
       window.speechSynthesis.speaking &&
       !window.speechSynthesis.paused
     ) {
       window.speechSynthesis.pause();
-      pausedOutput = true;
+      lifeosVoicePausedByUser = "speech";
     }
 
-    lifeosVoicePausedByUser = pausedOutput;
     setLifeOSMicState(false, "Start voice input");
     return;
   }
 
-  input.value = "";
+  lifeosVoiceMode = true;
+  updateLifeOSVoiceButton();
 
-  if (lifeosVoicePausedByUser) {
-    lifeosVoicePausedByUser = false;
+  if (
+    lifeosVoicePausedByUser === "audio" &&
+    lifeosVoicePlayer &&
+    lifeosVoicePlayer.src &&
+    lifeosVoicePlayer.paused &&
+    !lifeosVoicePlayer.ended
+  ) {
+    lifeosVoicePausedByUser = "";
 
-    if (
-      activeVoicePlayer &&
-      activeVoicePlayer.getAttribute("src") &&
-      activeVoicePlayer.paused &&
-      !activeVoicePlayer.ended
-    ) {
-      const resumedPlayback = activeVoicePlayer.play();
-
-      if (
-        resumedPlayback &&
-        typeof resumedPlayback.catch === "function"
-      ) {
-        resumedPlayback.catch((error) => {
-          console.warn("LifeOS voice resume skipped:", error);
-        });
-      }
-
-      return;
-    }
+    const resumedPlayback = lifeosVoicePlayer.play();
 
     if (
-      "speechSynthesis" in window &&
-      window.speechSynthesis.paused
+      resumedPlayback &&
+      typeof resumedPlayback.catch === "function"
     ) {
-      window.speechSynthesis.resume();
-      return;
+      resumedPlayback.catch((error) => {
+        console.warn(
+          "LifeOS voice resume skipped:",
+          error
+        );
+
+        scheduleLifeOSListen(200);
+      });
     }
+
+    return;
   }
 
+  if (
+    lifeosVoicePausedByUser === "speech" &&
+    "speechSynthesis" in window &&
+    window.speechSynthesis.paused
+  ) {
+    lifeosVoicePausedByUser = "";
+    window.speechSynthesis.resume();
+    return;
+  }
+
+  lifeosVoicePausedByUser = "";
+  input.value = "";
   scheduleLifeOSListen(200);
 }
 
