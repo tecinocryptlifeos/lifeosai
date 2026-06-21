@@ -576,6 +576,93 @@
 </style>
 <!-- LIFEOS_VOICE_FRONTEND_END -->
 
+
+<style id="lifeos-mobile-space-balance-v3">
+@media (max-width: 700px) {
+  html,
+  body {
+    height: 100%;
+    overflow: hidden !important;
+  }
+
+  body {
+    min-height: 100dvh !important;
+  }
+
+  header {
+    min-height: 0 !important;
+    padding: 6px 10px !important;
+  }
+
+  header img {
+    width: auto !important;
+    max-height: 40px !important;
+  }
+
+  .hero {
+    margin: 0 !important;
+    padding: 5px 12px 6px !important;
+  }
+
+  .hero h1 {
+    margin: 0 0 4px !important;
+    font-size: clamp(1.12rem, 4.9vw, 1.42rem) !important;
+    line-height: 1.08 !important;
+  }
+
+  .hero .intro,
+  .intro {
+    margin: 0 !important;
+    font-size: 0.76rem !important;
+    line-height: 1.2 !important;
+  }
+
+  section.chat {
+    min-height: 0 !important;
+    overflow: hidden !important;
+    gap: 6px !important;
+    padding: 8px !important;
+  }
+
+  section.chat .tools {
+    gap: 5px !important;
+    margin: 0 0 3px !important;
+  }
+
+  section.chat .tool {
+    padding: 7px 8px !important;
+    font-size: 0.75rem !important;
+  }
+
+  #messages {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    padding: 8px 10px !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .composer {
+    flex: 0 0 auto !important;
+    gap: 7px !important;
+    margin-top: 4px !important;
+  }
+
+  #input {
+    min-height: 88px !important;
+    max-height: 118px !important;
+    padding: 12px 13px !important;
+    font-size: 16px !important;
+    line-height: 1.35 !important;
+  }
+
+  #sendBtn {
+    min-height: 64px !important;
+  }
+}
+</style>
+
 </head>
 <body>
   <main class="app">
@@ -653,7 +740,12 @@ const input = document.getElementById("input");
 const sendBtn = document.getElementById("sendBtn");
 const micBtn = document.getElementById("micBtn");
 const voiceModeBtn = document.getElementById("voiceModeBtn");
-const lifeosVoicePlayer = document.getElementById("lifeosVoicePlayer");
+let lifeosVoicePlayer = document.getElementById("lifeosVoicePlayer");
+document.addEventListener("DOMContentLoaded", () => {
+  if (!lifeosVoicePlayer) {
+    lifeosVoicePlayer = document.getElementById("lifeosVoicePlayer");
+  }
+}, { once: true });
 const newBtn = document.getElementById("newBtn");
 const clearBtn = document.getElementById("clearBtn");
 const historyBtn = document.getElementById("historyBtn");
@@ -780,6 +872,7 @@ let lifeosVoiceMode = false;
 let lifeosSending = false;
 let lifeosRestartTimer = null;
 let lifeosVoiceResolve = null;
+let lifeosVoicePausedByUser = false;
 
 function updateLifeOSVoiceButton(label) {
   voiceModeBtn.textContent =
@@ -793,9 +886,12 @@ function updateLifeOSVoiceButton(label) {
 }
 
 function setLifeOSVoiceMode(enabled) {
+  const activeVoicePlayer =
+    lifeosVoicePlayer ||
+    document.getElementById("lifeosVoicePlayer");
+
   lifeosVoiceMode = Boolean(enabled);
   updateLifeOSVoiceButton();
-
   clearTimeout(lifeosRestartTimer);
 
   if (!lifeosVoiceMode) {
@@ -805,23 +901,65 @@ function setLifeOSVoiceMode(enabled) {
       } catch (error) {}
     }
 
-    lifeosVoicePlayer.pause();
-    lifeosVoicePlayer.removeAttribute("src");
+    let pausedOutput = false;
 
-    if (lifeosVoiceResolve) {
-      lifeosVoiceResolve();
-      lifeosVoiceResolve = null;
+    if (
+      activeVoicePlayer &&
+      !activeVoicePlayer.paused &&
+      !activeVoicePlayer.ended
+    ) {
+      activeVoicePlayer.pause();
+      pausedOutput = true;
     }
 
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
+    if (
+      "speechSynthesis" in window &&
+      window.speechSynthesis.speaking &&
+      !window.speechSynthesis.paused
+    ) {
+      window.speechSynthesis.pause();
+      pausedOutput = true;
     }
 
+    lifeosVoicePausedByUser = pausedOutput;
     setLifeOSMicState(false, "Start voice input");
     return;
   }
 
   input.value = "";
+
+  if (lifeosVoicePausedByUser) {
+    lifeosVoicePausedByUser = false;
+
+    if (
+      activeVoicePlayer &&
+      activeVoicePlayer.getAttribute("src") &&
+      activeVoicePlayer.paused &&
+      !activeVoicePlayer.ended
+    ) {
+      const resumedPlayback = activeVoicePlayer.play();
+
+      if (
+        resumedPlayback &&
+        typeof resumedPlayback.catch === "function"
+      ) {
+        resumedPlayback.catch((error) => {
+          console.warn("LifeOS voice resume skipped:", error);
+        });
+      }
+
+      return;
+    }
+
+    if (
+      "speechSynthesis" in window &&
+      window.speechSynthesis.paused
+    ) {
+      window.speechSynthesis.resume();
+      return;
+    }
+  }
+
   scheduleLifeOSListen(200);
 }
 
