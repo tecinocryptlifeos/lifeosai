@@ -1344,6 +1344,185 @@ render();
 <!-- LIFEOS_REMOVE_DUPLICATE_STARTER_END -->
 
 <audio id="lifeosVoicePlayer" preload="none"></audio>
-<!-- LIFEOS_MOBILE_CHAT_FIT_START --><style id="lifeos-mobile-chat-fit">@media (hover:none) and (pointer:coarse){html,body{height:100%;overflow:hidden!important;overscroll-behavior:none}section.chat{display:flex!important;flex-direction:column!important;box-sizing:border-box!important;min-height:0!important;overflow:hidden!important}section.chat .tools,section.chat .composer{flex:0 0 auto}#messages{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}#history{max-height:40%;overflow-y:auto;-webkit-overflow-scrolling:touch}}</style><script id="lifeos-mobile-chat-fit-script">(()=>{"use strict";const m=matchMedia("(hover:none) and (pointer:coarse)"),c=document.querySelector("section.chat"),x=document.getElementById("messages"),o=document.querySelector("footer");if(!c||!x)return;const f=()=>{if(!m.matches)return;scrollTo(0,0);const v=visualViewport?visualViewport.height:innerHeight,t=Math.max(0,c.getBoundingClientRect().top),g=o?o.getBoundingClientRect().height:0,h=Math.max(0,Math.floor(v-t-g));c.style.height=c.style.maxHeight=h+"px"};addEventListener("resize",f,{passive:true});addEventListener("orientationchange",f,{passive:true});visualViewport&&visualViewport.addEventListener("resize",f,{passive:true});document.readyState==="loading"?document.addEventListener("DOMContentLoaded",f,{once:true}):f();requestAnimationFrame(f)})();</script><!-- LIFEOS_MOBILE_CHAT_FIT_END -->
+<!-- LIFEOS_SCREEN_ONLY_V11_START -->
+<style id="lifeos-mobile-screen-v11">
+@media (max-width:700px), (hover:none) and (pointer:coarse) {
+  html,
+  body {
+    width:100%;
+    height:100%;
+    overflow:hidden !important;
+    overscroll-behavior:none;
+  }
+
+  header {
+    min-height:0 !important;
+    padding:4px 10px !important;
+    gap:6px !important;
+  }
+
+  header img {
+    width:40px !important;
+    height:40px !important;
+    max-width:40px !important;
+    max-height:40px !important;
+    object-fit:contain !important;
+  }
+
+  #net {
+    font-size:.76rem !important;
+    white-space:nowrap !important;
+  }
+
+  .hero {
+    margin:0 !important;
+    padding:4px 10px 5px !important;
+  }
+
+  .hero h1 {
+    margin:0 0 3px !important;
+    font-size:clamp(1.02rem,4.4vw,1.26rem) !important;
+    line-height:1.06 !important;
+  }
+
+  .hero .intro,
+  .intro {
+    margin:0 !important;
+    font-size:.72rem !important;
+    line-height:1.17 !important;
+  }
+
+  section.chat {
+    display:flex !important;
+    flex-direction:column !important;
+    box-sizing:border-box !important;
+    min-height:0 !important;
+    padding:6px 8px !important;
+    gap:5px !important;
+    overflow:hidden !important;
+  }
+
+  section.chat .tools {
+    flex:0 0 auto !important;
+    gap:5px !important;
+    margin:0 0 2px !important;
+  }
+
+  section.chat .tool {
+    padding:7px 5px !important;
+    font-size:.72rem !important;
+  }
+
+  #history {
+    max-height:35% !important;
+    overflow-y:auto !important;
+  }
+
+  #messages {
+    flex:1 1 auto !important;
+    min-height:0 !important;
+    overflow-y:auto !important;
+    padding:8px 10px !important;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  .composer {
+    flex:0 0 auto !important;
+    gap:7px !important;
+    margin-top:3px !important;
+  }
+
+  #input {
+    min-height:88px !important;
+    max-height:112px !important;
+    padding:12px 13px !important;
+    font-size:16px !important;
+    line-height:1.35 !important;
+  }
+
+  #sendBtn {
+    min-height:64px !important;
+  }
+
+  footer {
+    margin:0 !important;
+    padding:4px 8px !important;
+    font-size:.64rem !important;
+    line-height:1.15 !important;
+  }
+}
+</style>
+
+<script id="lifeos-mobile-screen-fit-v11">
+(() => {
+  "use strict";
+
+  const mobile = window.matchMedia(
+    "(max-width:700px), (hover:none) and (pointer:coarse)"
+  );
+
+  const chat = document.querySelector("section.chat");
+  const footer = document.querySelector("footer");
+
+  if (!chat) return;
+
+  const fit = () => {
+    if (!mobile.matches) {
+      chat.style.removeProperty("height");
+      chat.style.removeProperty("max-height");
+      return;
+    }
+
+    const viewportHeight = window.visualViewport
+      ? window.visualViewport.height
+      : window.innerHeight;
+
+    const chatTop = Math.max(
+      0,
+      chat.getBoundingClientRect().top
+    );
+
+    const footerHeight = footer
+      ? footer.getBoundingClientRect().height
+      : 0;
+
+    const available = Math.max(
+      140,
+      Math.floor(
+        viewportHeight - chatTop - footerHeight - 8
+      )
+    );
+
+    chat.style.height = available + "px";
+    chat.style.maxHeight = available + "px";
+  };
+
+  window.addEventListener("resize", fit, {
+    passive:true
+  });
+
+  window.addEventListener("orientationchange", fit, {
+    passive:true
+  });
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", fit, {
+      passive:true
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", fit, {
+      once:true
+    });
+  } else {
+    fit();
+  }
+
+  window.requestAnimationFrame(fit);
+  window.setTimeout(fit, 120);
+})();
+</script>
+<!-- LIFEOS_SCREEN_ONLY_V11_END -->
 </body>
 </html>
