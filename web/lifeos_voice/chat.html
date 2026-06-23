@@ -2527,25 +2527,67 @@ html body.lifeos-vc-on #lifeosVC #vcStart {
 </script>
 <!-- LIFEOS_VOICE_LOCAL_VISUAL_V10_END -->
 
-
-<!-- LIFEOS_LOGO_HOMEPAGE_LINK_V1 -->
-<style id="lifeos-logo-home-link-v1-style">
-#lifeosVCLogo {
+<!-- LIFEOS_LOGO_HOMEPAGE_LINK_V2_START -->
+<style id="lifeos-logo-home-link-v2-style">
+#vcOrb {
   cursor:pointer !important;
+  touch-action:manipulation;
+}
+
+#vcOrb:focus-visible {
+  outline:2px solid rgba(255,190,0,.95);
+  outline-offset:5px;
 }
 </style>
 
-<script id="lifeos-logo-home-link-v1">
-document.addEventListener("click", function (event) {
-  const logo = event.target.closest
-    ? event.target.closest("#lifeosVCLogo")
-    : null;
+<script id="lifeos-logo-home-link-v2">
+(() => {
+  "use strict";
 
-  if (!logo) return;
+  const installHomepageLink = () => {
+    const orb = document.getElementById("vcOrb");
 
-  window.location.assign("/");
-});
+    if (!orb || orb.dataset.homeLink === "1") return;
+
+    orb.dataset.homeLink = "1";
+    orb.setAttribute("role", "link");
+    orb.setAttribute("tabindex", "0");
+    orb.setAttribute(
+      "aria-label",
+      "Open the LifeOS homepage"
+    );
+
+    const openHomepage = () => {
+      window.location.assign(
+        window.location.origin + "/"
+      );
+    };
+
+    orb.addEventListener("click", openHomepage);
+
+    orb.addEventListener("keydown", (event) => {
+      if (
+        event.key === "Enter" ||
+        event.key === " "
+      ) {
+        event.preventDefault();
+        openHomepage();
+      }
+    });
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener(
+      "DOMContentLoaded",
+      installHomepageLink,
+      { once:true }
+    );
+  } else {
+    installHomepageLink();
+  }
+})();
 </script>
+<!-- LIFEOS_LOGO_HOMEPAGE_LINK_V2_END -->
 
 </body>
 </html>
