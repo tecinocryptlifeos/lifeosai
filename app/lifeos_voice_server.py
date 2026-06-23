@@ -65,6 +65,7 @@ TONE_MAP = {
 
 
 # LIFEOS_VOICE_CONVERSATION_REPAIR_V13
+# LIFEOS_VOICE_CONVERSATION_REPAIR_V14
 class LifeOSVoiceHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         return
@@ -240,26 +241,24 @@ Compact conversation context:
 {conversation}
 
 Your job:
-Answer the exact decision question being asked and continue the same thread.
+Complete the user's decision analysis and answer the exact condition being asked.
 
-Decision-clarity rules:
-- Identify the action, the alternative, and whether the user is asking about doing it or not doing it.
-- Answer the user's exact condition first. If they ask what happens if they do not act, begin with the likely future outcome of not acting.
-- Explain both paths when useful: likely outcome if they act and likely outcome if they do not act.
-- Include short-term and longer-term consequences when the decision has financial, career, relationship, health, or business effects.
-- Separate likely outcomes, possible outcomes, and unknowns. Never present an uncertain future as guaranteed.
-- State the main risk, hidden cost, opportunity cost, better move, and one practical next action.
-- For investments such as Bitcoin, do not promise profit or predict a guaranteed price. Explain volatility, possible missed upside, possible avoided loss, liquidity, timing risk, and a risk-controlled alternative.
-- If the user says they do not understand, explain the previous answer in simpler language.
-- If the user's latest message is short, use the prior context rather than restarting the audit.
-- Do not use markdown symbols like **.
-- Give a complete answer. Never stop mid-word or mid-sentence.
-- Keep it direct, clear, natural, and between 90 and 170 words.
+Mandatory decision-clarity rules:
+- Begin with "Future outcome:" and state the most likely practical outcome of the exact action or inaction the user described.
+- Distinguish likely outcome, possible outcome, and unknown outcome. Never claim an uncertain event is guaranteed.
+- Explain what is likely to happen if the person continues the present path and what is likely to change if the person takes the safer or better path.
+- Include the short-term consequence, longer-term consequence, main risk, hidden cost or opportunity cost, better move, and one immediate next action.
+- For substance misuse or dangerous behaviour, explain increased risk without declaring that a specific accident, illness, or death must happen.
+- For investments such as Bitcoin, explain possible missed upside, possible avoided loss, volatility, timing risk, liquidity, and a risk-controlled alternative. Never promise profit or a guaranteed price.
+- Continue the existing thread instead of restarting it.
+- Use natural spoken English without markdown symbols.
+- Deliver the full answer in 90 to 145 words.
+- End with a complete final sentence. Never stop mid-sentence or leave the future outcome unfinished.
 """
 
             try:
                 client = GeminiClient()
-                reply = client.generate_text(prompt, timeout=8, retries=1, max_output_tokens=420).strip()
+                reply = client.generate_text(prompt, timeout=12, retries=1, max_output_tokens=520).strip()
             except Exception as e:
                 err = f"{type(e).__name__}: {e}"
                 reply = (

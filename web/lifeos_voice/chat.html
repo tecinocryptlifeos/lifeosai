@@ -873,6 +873,8 @@ let lifeosSending = false;
 let lifeosRestartTimer = null;
 let lifeosVoiceResolve = null;
 let lifeosBrowserVoiceResolve = null;
+let lifeosSpeechSequenceToken = 0;
+let lifeosNoSpeechDetected = false;
 let lifeosVoicePausedByUser = "";
 
 function updateLifeOSVoiceButton(label) {
@@ -1013,6 +1015,62 @@ function startLifeOSListen() {
   }
 }
 
+function splitLifeOSSpeech(text, maximum = 210) {
+  const normalized = String(text || "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!normalized) return [];
+
+  const sentences = normalized.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [normalized];
+  const chunks = [];
+  let currentChunk = "";
+
+  const pushWords = (sentence) => {
+    const words = sentence.trim().split(/\s+/);
+    let part = "";
+
+    words.forEach((word) => {
+      const candidate = part ? part + " " + word : word;
+
+      if (candidate.length > maximum && part) {
+        chunks.push(part.trim());
+        part = word;
+      } else {
+        part = candidate;
+      }
+    });
+
+    if (part) chunks.push(part.trim());
+  };
+
+  sentences.forEach((sentence) => {
+    const candidate = currentChunk
+      ? currentChunk + " " + sentence.trim()
+      : sentence.trim();
+
+    if (candidate.length <= maximum) {
+      currentChunk = candidate;
+      return;
+    }
+
+    if (currentChunk) {
+      chunks.push(currentChunk.trim());
+      currentChunk = "";
+    }
+
+    if (sentence.trim().length <= maximum) {
+      currentChunk = sentence.trim();
+    } else {
+      pushWords(sentence);
+    }
+  });
+
+  if (currentChunk) chunks.push(currentChunk.trim());
+
+  return chunks.filter(Boolean);
+}
+
 function browserVoiceFallback(text) {
   return new Promise(resolve => {
     if (!("speechSynthesis" in window)) {
@@ -1020,33 +1078,85 @@ function browserVoiceFallback(text) {
       return;
     }
 
-    const utterance = new SpeechSynthesisUtterance(text);
+    const chunks = splitLifeOSSpeech(text);
+
+    if (!chunks.length || window.lifeosVCSpeakerEnabled === false) {
+      resolve();
+      return;
+    }
+
+    const token = ++lifeosSpeechSequenceToken;
     const voices = window.speechSynthesis.getVoices();
+    let index = 0;
+    let settled = false;
 
     const finish = () => {
-      if (lifeosBrowserVoiceResolve === finish) {
+      if (settled) return;
+      settled = true;
+
+      if (lifeosBrowserVoiceResolve === cancelSequence) {
         lifeosBrowserVoiceResolve = null;
       }
+
       resolve();
     };
 
-    lifeosBrowserVoiceResolve = finish;
+    const cancelSequence = () => {
+      lifeosSpeechSequenceToken += 1;
+      window.speechSynthesis.cancel();
+      finish();
+    };
 
-    utterance.voice =
-      voices.find(voice => /^en-GB/i.test(voice.lang)) ||
-      voices.find(voice => /^en/i.test(voice.lang)) ||
-      null;
+    const speakNext = () => {
+      if (
+        settled ||
+        token !== lifeosSpeechSequenceToken ||
+        window.lifeosVCSpeakerEnabled === false
+      ) {
+        finish();
+        return;
+      }
 
-    utterance.lang = "en-GB";
-    utterance.rate = 0.94;
-    utterance.pitch = 1;
-    utterance.volume =
-      window.lifeosVCSpeakerEnabled === false ? 0 : 1;
-    utterance.onend = finish;
-    utterance.onerror = finish;
+      if (index >= chunks.length) {
+        finish();
+        return;
+      }
 
+      const utterance = new SpeechSynthesisUtterance(chunks[index]);
+
+      utterance.voice =
+        voices.find(voice => /^en-GB/i.test(voice.lang)) ||
+        voices.find(voice => /^en/i.test(voice.lang)) ||
+        null;
+
+      utterance.lang = utterance.voice?.lang || "en-GB";
+      utterance.rate = 0.94;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+
+      utterance.onend = () => {
+        index += 1;
+        setTimeout(speakNext, 70);
+      };
+
+      utterance.onerror = (event) => {
+        const reason = String(event?.error || "");
+
+        if (reason === "canceled" || reason === "interrupted") {
+          finish();
+          return;
+        }
+
+        index += 1;
+        setTimeout(speakNext, 70);
+      };
+
+      window.speechSynthesis.speak(utterance);
+    };
+
+    lifeosBrowserVoiceResolve = cancelSequence;
     window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
+    setTimeout(speakNext, 60);
   });
 }
 
@@ -1158,6 +1268,7 @@ if (!LifeOSSpeechRecognition) {
   lifeosRecognition.maxAlternatives = 1;
 
   lifeosRecognition.addEventListener("start", function () {
+    lifeosNoSpeechDetected = false;
     lifeosOriginalInput = input.value.trim();
     setLifeOSMicState(true, "Listening… tap again to stop");
   });
@@ -1192,12 +1303,25 @@ if (!LifeOSSpeechRecognition) {
     setLifeOSMicState(false, "Start voice input");
 
     if (lifeosVoiceMode) {
+      if (
+        document.body.classList.contains("lifeos-vc-on") &&
+        window.lifeosVCMicMuted === true
+      ) {
+        return;
+      }
+
       const spokenText = input.value.trim();
 
       if (spokenText && !lifeosSending) {
+        lifeosNoSpeechDetected = false;
         sendMessage(true);
       } else if (!lifeosSending) {
-        scheduleLifeOSListen();
+        const retryDelay = lifeosNoSpeechDetected
+          ? 3500
+          : 1100;
+
+        lifeosNoSpeechDetected = false;
+        scheduleLifeOSListen(retryDelay);
       }
 
       return;
@@ -1225,11 +1349,16 @@ if (!LifeOSSpeechRecognition) {
     }
 
     if (event.error === "no-speech") {
-      micBtn.title = "No speech was detected. Tap and try again";
+      lifeosNoSpeechDetected = true;
+      micBtn.title = "Listening remains available";
       micBtn.setAttribute(
         "aria-label",
-        "No speech was detected. Tap and try again"
+        "Listening remains available"
       );
+      return;
+    }
+
+    if (event.error === "aborted") {
       return;
     }
 
@@ -1827,9 +1956,21 @@ body.lifeos-vc-on #lifeosVC{display:flex}
   orb.appendChild(note);
 
   const setStatus = (label, active = false, detail = "") => {
+    const normalized = String(label || "").toUpperCase();
+    const aiSpeaking =
+      active && normalized.includes("SOPHIA SPEAKING");
+    const viewerSpeaking =
+      active && (
+        normalized.includes("LISTENING") ||
+        normalized.includes("MIC ACTIVE")
+      );
+
     status.textContent = label;
     if (detail) note.textContent = detail;
+
     orb.classList.toggle("on", active);
+    orb.classList.toggle("viewer-speaking", viewerSpeaking);
+    orb.classList.toggle("ai-speaking", aiSpeaking);
   };
 
   const availableVoices = () =>
@@ -1894,8 +2035,16 @@ body.lifeos-vc-on #lifeosVC{display:flex}
         utterance.addEventListener(
           "end",
           () => {
-            if (callActive && !micMuted) {
-              setStatus("LISTENING", true, "Speak naturally. Sophia is listening.");
+            if (
+              lifeosBrowserVoiceResolve === null &&
+              callActive &&
+              !micMuted
+            ) {
+              setStatus(
+                "LISTENING",
+                true,
+                "Speak naturally. Sophia is listening."
+              );
             }
           },
           { once: true }
@@ -1981,14 +2130,18 @@ body.lifeos-vc-on #lifeosVC{display:flex}
         lifeosListening
       ) {
         try {
-          lifeosRecognition.stop();
-        } catch (error) {}
+          lifeosRecognition.abort();
+        } catch (error) {
+          try {
+            lifeosRecognition.stop();
+          } catch (stopError) {}
+        }
       }
 
       setStatus(
         "MIC MUTED",
         false,
-        "Your microphone is off. Sophia remains audible."
+        "Only your microphone is off. Sophia's voice continues."
       );
     } else if (callActive) {
       setStatus(
@@ -1996,7 +2149,7 @@ body.lifeos-vc-on #lifeosVC{display:flex}
         true,
         "Your microphone is listening again."
       );
-      scheduleLifeOSListen(150);
+      scheduleLifeOSListen(180);
     } else {
       setStatus(
         "MIC ACTIVE",
@@ -2018,24 +2171,23 @@ body.lifeos-vc-on #lifeosVC{display:flex}
       lifeosVoicePlayer.muted = !speakerEnabled;
     }
 
-    if (
-      !speakerEnabled &&
-      "speechSynthesis" in window &&
-      speechSynthesis.speaking
-    ) {
-      speechSynthesis.cancel();
-
+    if (!speakerEnabled) {
       if (lifeosBrowserVoiceResolve) {
         lifeosBrowserVoiceResolve();
+      } else if (
+        "speechSynthesis" in window &&
+        speechSynthesis.speaking
+      ) {
+        speechSynthesis.cancel();
       }
     }
 
     setStatus(
       speakerEnabled ? "SPEAKER ON" : "SPEAKER OFF",
-      callActive && !micMuted,
+      callActive && !micMuted && speakerEnabled,
       speakerEnabled
-        ? "Sophia's voice is audible."
-        : "Sophia's voice is muted. Your microphone state is unchanged."
+        ? "Sophia's voice is audible. Your microphone state is unchanged."
+        : "Sophia's voice is off. Your microphone state is unchanged."
     );
   };
 
@@ -2844,6 +2996,83 @@ body.lifeos-vc-on #input {
 }
 </style>
 <!-- LIFEOS_VOICE_CONVERSATION_REPAIR_V13_END -->
+
+
+<!-- LIFEOS_VOICE_CONVERSATION_REPAIR_V14_START -->
+<style id="lifeos-vc-conversation-repair-v14">
+html body.lifeos-vc-on #lifeosVC .vcOrb {
+  top:clamp(-96px,-9vh,-64px) !important;
+  transform:scale(1.10) !important;
+  transform-origin:center center !important;
+}
+
+html body.lifeos-vc-on #lifeosVC .vcOrb.on #lifeosVCLogo {
+  animation:none !important;
+}
+
+html body.lifeos-vc-on #lifeosVC .vcOrb.viewer-speaking #lifeosVCLogo {
+  animation:lifeosViewerHeartbeatV14 .72s cubic-bezier(.22,.8,.32,1) infinite !important;
+}
+
+html body.lifeos-vc-on #lifeosVC .vcOrb::before,
+html body.lifeos-vc-on #lifeosVC .vcOrb::after {
+  content:"" !important;
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  width:66% !important;
+  height:66% !important;
+  border:2px solid rgba(255,190,44,.75) !important;
+  border-radius:50% !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+  z-index:1 !important;
+  transform:translate(-50%,-50%) scale(.82) !important;
+}
+
+html body.lifeos-vc-on #lifeosVC .vcOrb.ai-speaking::before {
+  animation:lifeosAIWaveV14 1.25s ease-out infinite !important;
+}
+
+html body.lifeos-vc-on #lifeosVC .vcOrb.ai-speaking::after {
+  animation:lifeosAIWaveV14 1.25s .42s ease-out infinite !important;
+}
+
+html body.lifeos-vc-on #lifeosVC .vcOrb.ai-speaking #lifeosVCLogo {
+  animation:lifeosAIReplyGlowV14 .9s ease-in-out infinite alternate !important;
+}
+
+@keyframes lifeosViewerHeartbeatV14 {
+  0%,100% { transform:scale(1); }
+  18% { transform:scale(1.055); }
+  32% { transform:scale(1.012); }
+  48% { transform:scale(1.075); }
+  66% { transform:scale(1); }
+}
+
+@keyframes lifeosAIWaveV14 {
+  0% {
+    opacity:.72;
+    transform:translate(-50%,-50%) scale(.76);
+  }
+  100% {
+    opacity:0;
+    transform:translate(-50%,-50%) scale(1.34);
+  }
+}
+
+@keyframes lifeosAIReplyGlowV14 {
+  from {
+    transform:scale(1.015);
+    filter:drop-shadow(0 0 14px rgba(255,179,0,.58));
+  }
+  to {
+    transform:scale(1.055);
+    filter:drop-shadow(0 0 34px rgba(255,205,76,.92));
+  }
+}
+</style>
+<!-- LIFEOS_VOICE_CONVERSATION_REPAIR_V14_END -->
 
 </body>
 </html>
