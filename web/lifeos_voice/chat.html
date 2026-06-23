@@ -2527,5 +2527,25 @@ html body.lifeos-vc-on #lifeosVC #vcStart {
 </script>
 <!-- LIFEOS_VOICE_LOCAL_VISUAL_V10_END -->
 
+
+<!-- LIFEOS_LOGO_HOMEPAGE_LINK_V1 -->
+<style id="lifeos-logo-home-link-v1-style">
+#lifeosVCLogo {
+  cursor:pointer !important;
+}
+</style>
+
+<script id="lifeos-logo-home-link-v1">
+document.addEventListener("click", function (event) {
+  const logo = event.target.closest
+    ? event.target.closest("#lifeosVCLogo")
+    : null;
+
+  if (!logo) return;
+
+  window.location.assign("/");
+});
+</script>
+
 </body>
 </html>
