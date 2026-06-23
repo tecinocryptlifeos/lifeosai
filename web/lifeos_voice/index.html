@@ -466,5 +466,71 @@
       deferredPrompt = null;
     });
   </script>
+
+<!-- LIFEOS_HEADER_LOGO_HOME_LINK_V3_START -->
+<style id="lifeos-header-logo-home-link-v3-style">
+header img:first-of-type {
+  cursor: pointer !important;
+  touch-action: manipulation;
+}
+</style>
+
+<script id="lifeos-header-logo-home-link-v3">
+(() => {
+  "use strict";
+
+  const installHeaderLogoLink = () => {
+    const logo = document.querySelector(
+      "header img:first-of-type"
+    );
+
+    if (!logo || logo.dataset.homeLink === "1") {
+      return;
+    }
+
+    logo.dataset.homeLink = "1";
+    logo.setAttribute("role", "link");
+    logo.setAttribute("tabindex", "0");
+    logo.setAttribute(
+      "aria-label",
+      "Open the LifeOS homepage"
+    );
+
+    const openHomepage = () => {
+      window.location.assign("/");
+    };
+
+    logo.addEventListener(
+      "click",
+      openHomepage
+    );
+
+    logo.addEventListener(
+      "keydown",
+      (event) => {
+        if (
+          event.key === "Enter" ||
+          event.key === " "
+        ) {
+          event.preventDefault();
+          openHomepage();
+        }
+      }
+    );
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener(
+      "DOMContentLoaded",
+      installHeaderLogoLink,
+      { once: true }
+    );
+  } else {
+    installHeaderLogoLink();
+  }
+})();
+</script>
+<!-- LIFEOS_HEADER_LOGO_HOME_LINK_V3_END -->
+
 </body>
 </html>

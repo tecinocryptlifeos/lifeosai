@@ -2527,67 +2527,71 @@ html body.lifeos-vc-on #lifeosVC #vcStart {
 </script>
 <!-- LIFEOS_VOICE_LOCAL_VISUAL_V10_END -->
 
-<!-- LIFEOS_LOGO_HOMEPAGE_LINK_V2_START -->
-<style id="lifeos-logo-home-link-v2-style">
-#vcOrb {
-  cursor:pointer !important;
-  touch-action:manipulation;
-}
 
-#vcOrb:focus-visible {
-  outline:2px solid rgba(255,190,0,.95);
-  outline-offset:5px;
+<!-- LIFEOS_HEADER_LOGO_HOME_LINK_V3_START -->
+<style id="lifeos-header-logo-home-link-v3-style">
+header img:first-of-type {
+  cursor: pointer !important;
+  touch-action: manipulation;
 }
 </style>
 
-<script id="lifeos-logo-home-link-v2">
+<script id="lifeos-header-logo-home-link-v3">
 (() => {
   "use strict";
 
-  const installHomepageLink = () => {
-    const orb = document.getElementById("vcOrb");
+  const installHeaderLogoLink = () => {
+    const logo = document.querySelector(
+      "header img:first-of-type"
+    );
 
-    if (!orb || orb.dataset.homeLink === "1") return;
+    if (!logo || logo.dataset.homeLink === "1") {
+      return;
+    }
 
-    orb.dataset.homeLink = "1";
-    orb.setAttribute("role", "link");
-    orb.setAttribute("tabindex", "0");
-    orb.setAttribute(
+    logo.dataset.homeLink = "1";
+    logo.setAttribute("role", "link");
+    logo.setAttribute("tabindex", "0");
+    logo.setAttribute(
       "aria-label",
       "Open the LifeOS homepage"
     );
 
     const openHomepage = () => {
-      window.location.assign(
-        window.location.origin + "/"
-      );
+      window.location.assign("/");
     };
 
-    orb.addEventListener("click", openHomepage);
+    logo.addEventListener(
+      "click",
+      openHomepage
+    );
 
-    orb.addEventListener("keydown", (event) => {
-      if (
-        event.key === "Enter" ||
-        event.key === " "
-      ) {
-        event.preventDefault();
-        openHomepage();
+    logo.addEventListener(
+      "keydown",
+      (event) => {
+        if (
+          event.key === "Enter" ||
+          event.key === " "
+        ) {
+          event.preventDefault();
+          openHomepage();
+        }
       }
-    });
+    );
   };
 
   if (document.readyState === "loading") {
     document.addEventListener(
       "DOMContentLoaded",
-      installHomepageLink,
-      { once:true }
+      installHeaderLogoLink,
+      { once: true }
     );
   } else {
-    installHomepageLink();
+    installHeaderLogoLink();
   }
 })();
 </script>
-<!-- LIFEOS_LOGO_HOMEPAGE_LINK_V2_END -->
+<!-- LIFEOS_HEADER_LOGO_HOME_LINK_V3_END -->
 
 </body>
 </html>
