@@ -947,7 +947,7 @@ function setLifeOSVoiceMode(enabled) {
           error
         );
 
-        scheduleLifeOSListen(200);
+        scheduleLifeOSListen(100);
       });
     }
 
@@ -966,7 +966,7 @@ function setLifeOSVoiceMode(enabled) {
 
   lifeosVoicePausedByUser = "";
   input.value = "";
-  scheduleLifeOSListen(200);
+  scheduleLifeOSListen(100);
 }
 
 function scheduleLifeOSListen(delay = 750) {
