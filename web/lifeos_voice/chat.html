@@ -872,6 +872,7 @@ let lifeosVoiceMode = false;
 let lifeosSending = false;
 let lifeosRestartTimer = null;
 let lifeosVoiceResolve = null;
+let lifeosBrowserVoiceResolve = null;
 let lifeosVoicePausedByUser = "";
 
 function updateLifeOSVoiceButton(label) {
@@ -974,6 +975,13 @@ function scheduleLifeOSListen(delay = 750) {
 
   if (!lifeosVoiceMode) return;
 
+  if (
+    document.body.classList.contains("lifeos-vc-on") &&
+    window.lifeosVCMicMuted === true
+  ) {
+    return;
+  }
+
   lifeosRestartTimer = setTimeout(
     startLifeOSListen,
     delay
@@ -982,6 +990,10 @@ function scheduleLifeOSListen(delay = 750) {
 
 function startLifeOSListen() {
   if (
+    (
+      document.body.classList.contains("lifeos-vc-on") &&
+      window.lifeosVCMicMuted === true
+    ) ||
     !lifeosVoiceMode ||
     !lifeosRecognition ||
     lifeosListening ||
@@ -1011,6 +1023,15 @@ function browserVoiceFallback(text) {
     const utterance = new SpeechSynthesisUtterance(text);
     const voices = window.speechSynthesis.getVoices();
 
+    const finish = () => {
+      if (lifeosBrowserVoiceResolve === finish) {
+        lifeosBrowserVoiceResolve = null;
+      }
+      resolve();
+    };
+
+    lifeosBrowserVoiceResolve = finish;
+
     utterance.voice =
       voices.find(voice => /^en-GB/i.test(voice.lang)) ||
       voices.find(voice => /^en/i.test(voice.lang)) ||
@@ -1019,8 +1040,10 @@ function browserVoiceFallback(text) {
     utterance.lang = "en-GB";
     utterance.rate = 0.94;
     utterance.pitch = 1;
-    utterance.onend = resolve;
-    utterance.onerror = resolve;
+    utterance.volume =
+      window.lifeosVCSpeakerEnabled === false ? 0 : 1;
+    utterance.onend = finish;
+    utterance.onerror = finish;
 
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utterance);
@@ -1041,11 +1064,27 @@ async function speakLifeOS(text) {
   }
 
   try {
-    const response = await fetch("/api/voice-read", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: spokenText })
-    });
+    const voiceController =
+      typeof AbortController === "function"
+        ? new AbortController()
+        : null;
+
+    const voiceTimeout = setTimeout(() => {
+      if (voiceController) voiceController.abort();
+    }, 6000);
+
+    let response;
+
+    try {
+      response = await fetch("/api/voice-read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: spokenText }),
+        signal: voiceController ? voiceController.signal : undefined
+      });
+    } finally {
+      clearTimeout(voiceTimeout);
+    }
 
     const data = await response.json();
 
@@ -1139,7 +1178,12 @@ if (!LifeOSSpeechRecognition) {
       : "";
 
     input.value = (prefix + transcript).trim();
-    input.focus();
+
+    if (document.body.classList.contains("lifeos-vc-on")) {
+      input.blur();
+    } else {
+      input.focus();
+    }
   });
 
   lifeosRecognition.addEventListener(
@@ -1159,7 +1203,11 @@ if (!LifeOSSpeechRecognition) {
       return;
     }
 
-    input.focus();
+    if (document.body.classList.contains("lifeos-vc-on")) {
+      input.blur();
+    } else {
+      input.focus();
+    }
   }
 );
 
@@ -1648,9 +1696,22 @@ body.lifeos-vc-on #lifeosVC{display:flex}
   document.body.classList.add("lifeos-vc-on");
   startButton.disabled = true;
 
+  window.lifeosVCMicMuted = false;
+  window.lifeosVCSpeakerEnabled = true;
+
+  input.blur();
+  input.readOnly = true;
+  input.setAttribute("inputmode", "none");
+  input.setAttribute("tabindex", "-1");
+
+  if (lifeosRecognition) {
+    lifeosRecognition.interimResults = false;
+  }
+
   let callActive = false;
   let micMuted = false;
   let speakerEnabled = true;
+  window.lifeosVCSpeakerEnabled = true;
   let selectedVoiceURI = "";
   let selectedOutputId = "";
 
@@ -1762,8 +1823,12 @@ body.lifeos-vc-on #lifeosVC{display:flex}
 
   saveThread = () => {};
 
-  const setStatus = (label, active = false) => {
+  orb.appendChild(status);
+  orb.appendChild(note);
+
+  const setStatus = (label, active = false, detail = "") => {
     status.textContent = label;
+    if (detail) note.textContent = detail;
     orb.classList.toggle("on", active);
   };
 
@@ -1822,7 +1887,7 @@ body.lifeos-vc-on #lifeosVC{display:flex}
 
         utterance.addEventListener(
           "start",
-          () => setStatus("Speaking", true),
+          () => setStatus("SOPHIA SPEAKING", true, "Listen to the decision response."),
           { once: true }
         );
 
@@ -1830,7 +1895,7 @@ body.lifeos-vc-on #lifeosVC{display:flex}
           "end",
           () => {
             if (callActive && !micMuted) {
-              setStatus("Listening", true);
+              setStatus("LISTENING", true, "Speak naturally. Sophia is listening.");
             }
           },
           { once: true }
@@ -1846,14 +1911,14 @@ body.lifeos-vc-on #lifeosVC{display:flex}
       "start",
       () => {
         if (callActive && !micMuted) {
-          setStatus("Listening", true);
+          setStatus("LISTENING", true, "Speak naturally. Sophia is listening.");
         }
       }
     );
 
     lifeosRecognition.addEventListener(
       "result",
-      () => setStatus("Thinking")
+      () => setStatus("PROCESSING", true, "Your speech was received. Preparing the decision response.")
     );
   }
 
@@ -1862,7 +1927,7 @@ body.lifeos-vc-on #lifeosVC{display:flex}
       "play",
       () => {
         if (speakerEnabled) {
-          setStatus("Speaking", true);
+          setStatus("SOPHIA SPEAKING", true, "Listen to the decision response.");
         }
       }
     );
@@ -1871,7 +1936,7 @@ body.lifeos-vc-on #lifeosVC{display:flex}
       "ended",
       () => {
         if (callActive && !micMuted) {
-          setStatus("Listening", true);
+          setStatus("LISTENING", true, "Speak naturally. Sophia is listening.");
         }
       }
     );
@@ -1889,11 +1954,20 @@ body.lifeos-vc-on #lifeosVC{display:flex}
       lifeosRecognition.lang = selectedVoice.lang;
     }
 
+    setStatus(
+      "ACCENT UPDATED",
+      callActive && !micMuted,
+      selectedVoice
+        ? selectedVoice.name + " is selected."
+        : "The default system voice is selected."
+    );
+
     writeVoiceState().catch(() => {});
   };
 
   micButton.onclick = () => {
     micMuted = !micMuted;
+    window.lifeosVCMicMuted = micMuted;
 
     micButton.textContent = micMuted
       ? "Unmute Mic"
@@ -1911,23 +1985,37 @@ body.lifeos-vc-on #lifeosVC{display:flex}
         } catch (error) {}
       }
 
-      setStatus("Microphone muted");
+      setStatus(
+        "MIC MUTED",
+        false,
+        "Your microphone is off. Sophia remains audible."
+      );
     } else if (callActive) {
-      setStatus("Listening", true);
+      setStatus(
+        "MIC ACTIVE",
+        true,
+        "Your microphone is listening again."
+      );
       scheduleLifeOSListen(150);
+    } else {
+      setStatus(
+        "MIC ACTIVE",
+        false,
+        "Start the conversation when you are ready."
+      );
     }
   };
 
   speakerButton.onclick = () => {
     speakerEnabled = !speakerEnabled;
+    window.lifeosVCSpeakerEnabled = speakerEnabled;
 
     speakerButton.textContent = speakerEnabled
       ? "Speaker On"
       : "Speaker Off";
 
     if (lifeosVoicePlayer) {
-      lifeosVoicePlayer.muted =
-        !speakerEnabled;
+      lifeosVoicePlayer.muted = !speakerEnabled;
     }
 
     if (
@@ -1937,14 +2025,18 @@ body.lifeos-vc-on #lifeosVC{display:flex}
     ) {
       speechSynthesis.cancel();
 
-      if (callActive && !micMuted) {
-        scheduleLifeOSListen(200);
+      if (lifeosBrowserVoiceResolve) {
+        lifeosBrowserVoiceResolve();
       }
     }
 
-    note.textContent = speakerEnabled
-      ? "AI voice is audible."
-      : "AI voice is muted.";
+    setStatus(
+      speakerEnabled ? "SPEAKER ON" : "SPEAKER OFF",
+      callActive && !micMuted,
+      speakerEnabled
+        ? "Sophia's voice is audible."
+        : "Sophia's voice is muted. Your microphone state is unchanged."
+    );
   };
 
   outputButton.onclick = async () => {
@@ -1956,9 +2048,11 @@ body.lifeos-vc-on #lifeosVC{display:flex}
       typeof lifeosVoicePlayer.setSinkId !==
         "function"
     ) {
-      note.textContent =
-        "Private output selection is unavailable " +
-        "on this browser.";
+      setStatus(
+        "OUTPUT UNAVAILABLE",
+        false,
+        "Private audio-output selection is unavailable on this browser."
+      );
 
       return;
     }
@@ -1977,13 +2071,19 @@ body.lifeos-vc-on #lifeosVC{display:flex}
       outputButton.textContent =
         device.label || "Output Selected";
 
-      note.textContent =
-        "AI audio output changed.";
+      setStatus(
+        "OUTPUT UPDATED",
+        callActive && !micMuted,
+        "Sophia will use the selected audio output."
+      );
 
       writeVoiceState().catch(() => {});
     } catch (error) {
-      note.textContent =
-        "Audio output was not changed.";
+      setStatus(
+        "OUTPUT UNCHANGED",
+        false,
+        "The previous audio output remains active."
+      );
     }
   };
 
@@ -1999,7 +2099,11 @@ body.lifeos-vc-on #lifeosVC{display:flex}
     render();
 
     await clearVoiceState();
-    setStatus("Voice memory cleared");
+    setStatus(
+      "VOICE MEMORY CLEARED",
+      false,
+      "This device will begin a fresh voice decision thread."
+    );
   };
 
   startButton.onclick = () => {
@@ -2011,18 +2115,29 @@ body.lifeos-vc-on #lifeosVC{display:flex}
 
     if (callActive) {
       micMuted = false;
+      window.lifeosVCMicMuted = false;
       micButton.textContent = "Mute Mic";
 
       setLifeOSVoiceMode(true);
-      setStatus("Listening", true);
+      setStatus(
+        "LISTENING",
+        true,
+        "Speak naturally. Sophia will respond after you finish."
+      );
     } else {
+      window.lifeosVCMicMuted = true;
       setLifeOSVoiceMode(false);
-      setStatus("Conversation paused");
+      setStatus(
+        "CONVERSATION PAUSED",
+        false,
+        "Tap Start Conversation to continue."
+      );
     }
   };
 
   const leaveVoicePage = () => {
     callActive = false;
+    window.lifeosVCMicMuted = true;
 
     try {
       setLifeOSVoiceMode(false);
@@ -2070,8 +2185,8 @@ body.lifeos-vc-on #lifeosVC{display:flex}
 
       setStatus(
         current.length
-          ? "Ready to continue"
-          : "Ready"
+          ? "READY TO CONTINUE"
+          : "READY"
       );
 
       startButton.disabled = false;
@@ -2080,7 +2195,7 @@ body.lifeos-vc-on #lifeosVC{display:flex}
       current = [];
       render();
 
-      setStatus("Ready");
+      setStatus("READY", false, "Tap Start Conversation, then speak naturally.");
       startButton.disabled = false;
     });
 })();
@@ -2678,6 +2793,57 @@ img[src*="lifeos-logo-transparent.webp"]:not(#lifeosVCLogo) {
 })();
 </script>
 <!-- LIFEOS_SMALL_LOGO_HOME_LINK_V5_END -->
+
+
+<!-- LIFEOS_VOICE_CONVERSATION_REPAIR_V13_START -->
+<style id="lifeos-vc-conversation-repair-v13">
+body.lifeos-vc-on #input {
+  pointer-events:none !important;
+  caret-color:transparent !important;
+}
+
+#lifeosVC .vcOrb {
+  position:relative !important;
+}
+
+#lifeosVC .vcStatus,
+#lifeosVC .vcNote {
+  position:absolute !important;
+  left:50% !important;
+  width:min(88%, 300px) !important;
+  margin:0 !important;
+  z-index:12 !important;
+  transform:translateX(-50%) !important;
+  text-align:center !important;
+  pointer-events:none !important;
+  box-sizing:border-box !important;
+  text-shadow:0 2px 12px rgba(0,0,0,.95) !important;
+}
+
+#lifeosVC .vcStatus {
+  top:43% !important;
+  padding:7px 11px !important;
+  border:1px solid rgba(255,195,56,.72) !important;
+  border-radius:12px !important;
+  background:rgba(0,0,0,.62) !important;
+  color:#fff2bf !important;
+  font-size:clamp(1rem,4.5vw,1.2rem) !important;
+  font-weight:800 !important;
+  line-height:1.12 !important;
+  letter-spacing:.045em !important;
+}
+
+#lifeosVC .vcNote {
+  top:58% !important;
+  padding:5px 9px !important;
+  border-radius:9px !important;
+  background:rgba(0,0,0,.48) !important;
+  color:rgba(255,255,255,.9) !important;
+  font-size:clamp(.72rem,3.1vw,.86rem) !important;
+  line-height:1.25 !important;
+}
+</style>
+<!-- LIFEOS_VOICE_CONVERSATION_REPAIR_V13_END -->
 
 </body>
 </html>

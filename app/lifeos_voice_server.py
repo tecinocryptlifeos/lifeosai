@@ -64,6 +64,7 @@ TONE_MAP = {
 }
 
 
+# LIFEOS_VOICE_CONVERSATION_REPAIR_V13
 class LifeOSVoiceHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         return
@@ -228,7 +229,7 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
             )
 
             prompt = f"""
-You are Sophia, the LifeOS AI decision intelligence assistant.
+You are Sophia, the LifeOS AI decision-intelligence assistant.
 
 The user is continuing one decision conversation.
 
@@ -239,23 +240,26 @@ Compact conversation context:
 {conversation}
 
 Your job:
-Continue the same decision thread clearly.
+Answer the exact decision question being asked and continue the same thread.
 
-Rules:
-- Do not restart the whole audit unless the user starts a new decision.
+Decision-clarity rules:
+- Identify the action, the alternative, and whether the user is asking about doing it or not doing it.
+- Answer the user's exact condition first. If they ask what happens if they do not act, begin with the likely future outcome of not acting.
+- Explain both paths when useful: likely outcome if they act and likely outcome if they do not act.
+- Include short-term and longer-term consequences when the decision has financial, career, relationship, health, or business effects.
+- Separate likely outcomes, possible outcomes, and unknowns. Never present an uncertain future as guaranteed.
+- State the main risk, hidden cost, opportunity cost, better move, and one practical next action.
+- For investments such as Bitcoin, do not promise profit or predict a guaranteed price. Explain volatility, possible missed upside, possible avoided loss, liquidity, timing risk, and a risk-controlled alternative.
 - If the user says they do not understand, explain the previous answer in simpler language.
-- If the user asks what to do, give one practical next action.
-- If the user's latest message is short, use the previous context to understand it.
-- Use LifeOS language naturally: future outcome, main risk, hidden cost, better move, next action, final truth.
+- If the user's latest message is short, use the prior context rather than restarting the audit.
 - Do not use markdown symbols like **.
 - Give a complete answer. Never stop mid-word or mid-sentence.
-- Keep it direct, clear, and useful.
-- Keep it between 70 and 150 words.
+- Keep it direct, clear, natural, and between 90 and 170 words.
 """
 
             try:
                 client = GeminiClient()
-                reply = client.generate_text(prompt, timeout=10, retries=1, max_output_tokens=430).strip()
+                reply = client.generate_text(prompt, timeout=8, retries=1, max_output_tokens=420).strip()
             except Exception as e:
                 err = f"{type(e).__name__}: {e}"
                 reply = (
