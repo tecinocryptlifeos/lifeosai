@@ -679,20 +679,48 @@
     return;
   }
 
-  var script =
-    document.createElement("script");
+  function loadLifeOSRealtimeScript(
+    source,
+    role,
+    onLoaded
+  ) {
+    var script =
+      document.createElement("script");
 
-  script.src =
-    "/assets/realtime_voice_v1.js";
+    script.src = source;
+    script.async = true;
 
-  script.async = true;
+    script.setAttribute(
+      "data-lifeos-realtime-module",
+      role
+    );
 
-  script.setAttribute(
-    "data-lifeos-realtime-module",
-    "v1"
+    if (typeof onLoaded === "function") {
+      script.onload = onLoaded;
+    }
+
+    script.onerror = function () {
+      if (window.console) {
+        window.console.error(
+          "LifeOS realtime script failed:",
+          source
+        );
+      }
+    };
+
+    document.head.appendChild(script);
+  }
+
+  loadLifeOSRealtimeScript(
+    "/assets/realtime_voice_v1.js",
+    "controller-v1",
+    function () {
+      loadLifeOSRealtimeScript(
+        "/assets/realtime_voice_bridge_v1.js",
+        "bridge-v1"
+      );
+    }
   );
-
-  document.head.appendChild(script);
 }());
 </script>
 

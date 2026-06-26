@@ -61,6 +61,7 @@
       this._responseActive = false;
       this._responseId = null;
       this._remoteMuted = false;
+      this._microphoneMuted = false;
       ["onStateChange", "onEvent", "onError", "onConnectionChange", "onMicrophoneLevel", "onSophiaLevel", "onInterrupt", "onFallbackRequired"].forEach((name) => {
         this[name] = typeof options[name] === "function" ? options[name] : null;
       });
@@ -230,6 +231,23 @@
 
     stopSpeaking() { return this.interrupt("stop_requested"); }
 
+    setMicrophoneMuted(muted) {
+      this._microphoneMuted = Boolean(muted);
+      if (this.localMicrophoneStream) {
+        this.localMicrophoneStream.getAudioTracks().forEach((track) => {
+          track.enabled = !this._microphoneMuted;
+        });
+      }
+      return this.snapshot();
+    }
+
+    setSpeakerMuted(muted) {
+      const nextMuted = Boolean(muted);
+      if (nextMuted) this._muteRemote(true);
+      else this._resumeRemote();
+      return this.snapshot();
+    }
+
     _serverEvent(event) {
       this._emit("onEvent", event);
       switch (event && event.type) {
@@ -360,6 +378,9 @@
             video: false
           });
           this.localMicrophoneStream = stream;
+          stream.getAudioTracks().forEach((audioTrack) => {
+            audioTrack.enabled = !this._microphoneMuted;
+          });
           this._setMicAnalyser(stream);
           this._peer();
           const track = stream.getAudioTracks()[0];
@@ -416,6 +437,7 @@
       this._responseId = null;
       this._voiceLocked = false;
       this._remoteMuted = false;
+      this._microphoneMuted = false;
       this._connecting = null;
       if (!options.preserveState) this._state(STATES.STOPPED, { reason: "disconnect" });
       return this.snapshot();
@@ -436,6 +458,8 @@
         dataChannelState: this.dataChannel ? this.dataChannel.readyState : "closed",
         voiceLocked: this._voiceLocked,
         responseInProgress: this._responseActive,
+        microphoneMuted: this._microphoneMuted,
+        speakerMuted: this._remoteMuted,
         preferences: { ...this.preferences }
       };
     }
