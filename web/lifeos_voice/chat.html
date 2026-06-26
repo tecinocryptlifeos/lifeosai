@@ -663,6 +663,39 @@
 }
 </style>
 
+
+<!-- LIFEOS_REALTIME_FRONTEND_LOADER_V1 -->
+<script id="lifeos-realtime-loader-v1">
+(function () {
+  "use strict";
+
+  var enabled = false;
+  // LIFEOS_REALTIME_FRONTEND_ENABLED_V1
+
+  window.LIFEOS_REALTIME_FRONTEND_ENABLED =
+    enabled;
+
+  if (!enabled) {
+    return;
+  }
+
+  var script =
+    document.createElement("script");
+
+  script.src =
+    "/assets/realtime_voice_v1.js";
+
+  script.async = true;
+
+  script.setAttribute(
+    "data-lifeos-realtime-module",
+    "v1"
+  );
+
+  document.head.appendChild(script);
+}());
+</script>
+
 </head>
 <body>
   <main class="app">
