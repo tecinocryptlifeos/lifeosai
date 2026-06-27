@@ -5,6 +5,7 @@ import mimetypes
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote
+import uuid
 
 try:
     from gemini_client import GeminiClient
@@ -518,6 +519,10 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         path = self._path()
+        # LIFEOS_REALTIME_STATUS_ROUTE_V3
+        if path == "/api/realtime-status":
+            self._handle_realtime_status_v3()
+            return
 
         # LIFEOS_ROUTE_LOCK_START
         if path in ("/", "/index.html"):
@@ -583,6 +588,187 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
 
         self._send_bytes(404, b"Not found")
 
+
+    # LIFEOS_REALTIME_GATEWAY_V3_START
+    def _handle_realtime_status_v3(self):
+        self._send_json(
+            200,
+            {
+                "ok": True,
+                "realtime_gateway": True,
+                "openai_key_configured": bool(
+                    os.environ.get("OPENAI_API_KEY", "").strip()
+                ),
+                "model": os.environ.get(
+                    "LIFEOS_REALTIME_MODEL",
+                    "gpt-realtime-2",
+                ),
+                "voice": os.environ.get(
+                    "LIFEOS_REALTIME_VOICE",
+                    "marin",
+                ),
+            },
+        )
+
+
+    def _handle_realtime_session_v3(self):
+        try:
+            api_key = os.environ.get("OPENAI_API_KEY", "").strip()
+            if not api_key:
+                self._send_json(
+                    503,
+                    {
+                        "ok": False,
+                        "error": "OPENAI_API_KEY is not configured on the server.",
+                    },
+                )
+                return
+
+            content_type = self.headers.get("Content-Type", "")
+            if not content_type.lower().startswith("application/sdp"):
+                self._send_json(
+                    415,
+                    {
+                        "ok": False,
+                        "error": "Content-Type must be application/sdp.",
+                    },
+                )
+                return
+
+            length = int(self.headers.get("Content-Length", "0"))
+            if length <= 0:
+                raise ValueError("SDP offer is required.")
+            if length > 250000:
+                raise ValueError("SDP offer is too large.")
+
+            offer_sdp = self.rfile.read(length).decode(
+                "utf-8",
+                errors="strict",
+            ).strip()
+            if not offer_sdp.startswith("v=0") or "m=audio" not in offer_sdp:
+                raise ValueError("Invalid WebRTC SDP offer.")
+
+            model = os.environ.get(
+                "LIFEOS_REALTIME_MODEL",
+                "gpt-realtime-2",
+            ).strip() or "gpt-realtime-2"
+            voice = os.environ.get(
+                "LIFEOS_REALTIME_VOICE",
+                "marin",
+            ).strip() or "marin"
+
+            session_config = {
+                "type": "realtime",
+                "model": model,
+                "instructions": (
+                    "You are Sophia, the LifeOS realtime decision-intelligence "
+                    "assistant. Speak in natural contemporary London English "
+                    "with warm, clear articulation, varied intonation and "
+                    "measured pacing. Sound human and conversational, never "
+                    "robotic or like a walkie-talkie. The visitor may interrupt "
+                    "at any moment; stop immediately, listen fully, and answer "
+                    "the latest words. Give direct future-outcome guidance, the "
+                    "main risk, the better move, and one practical next action."
+                ),
+                "audio": {
+                    "input": {
+                        "noise_reduction": {"type": "near_field"},
+                        "turn_detection": {
+                            "type": "server_vad",
+                            "threshold": 0.5,
+                            "prefix_padding_ms": 300,
+                            "silence_duration_ms": 500,
+                            "create_response": True,
+                            "interrupt_response": True,
+                        },
+                    },
+                    "output": {"voice": voice},
+                },
+            }
+
+            boundary = "----LifeOSRealtime" + uuid.uuid4().hex
+            chunks = []
+
+            def add_part(name, value, part_type):
+                chunks.extend(
+                    [
+                        f"--{boundary}\r\n".encode("utf-8"),
+                        (
+                            f'Content-Disposition: form-data; name="{name}"\r\n'
+                        ).encode("utf-8"),
+                        f"Content-Type: {part_type}\r\n\r\n".encode("utf-8"),
+                        value.encode("utf-8"),
+                        b"\r\n",
+                    ]
+                )
+
+            add_part("sdp", offer_sdp, "application/sdp")
+            add_part(
+                "session",
+                json.dumps(session_config, separators=(",", ":")),
+                "application/json",
+            )
+            chunks.append(f"--{boundary}--\r\n".encode("utf-8"))
+            request_body = b"".join(chunks)
+
+            forwarded = self.headers.get("X-Forwarded-For", "")
+            client_ip = forwarded.split(",", 1)[0].strip()
+            if not client_ip and getattr(self, "client_address", None):
+                client_ip = str(self.client_address[0])
+            user_agent = self.headers.get("User-Agent", "")[:160]
+            safety_id = hashlib.sha256(
+                ("lifeos-realtime:" + client_ip + ":" + user_agent).encode("utf-8")
+            ).hexdigest()
+
+            request = urllib.request.Request(
+                "https://api.openai.com/v1/realtime/calls",
+                data=request_body,
+                method="POST",
+                headers={
+                    "Authorization": "Bearer " + api_key,
+                    "Content-Type": "multipart/form-data; boundary=" + boundary,
+                    "Accept": "application/sdp, text/plain",
+                    "OpenAI-Safety-Identifier": safety_id,
+                    "User-Agent": "LifeOS-Realtime-Gateway/3",
+                },
+            )
+
+            with urllib.request.urlopen(request, timeout=35) as response:
+                answer_sdp = response.read()
+                upstream_type = response.headers.get(
+                    "Content-Type",
+                    "application/sdp",
+                )
+                upstream_status = int(getattr(response, "status", 200))
+
+            if not answer_sdp.lstrip().startswith(b"v=0"):
+                raise RuntimeError("OpenAI returned an invalid SDP answer.")
+
+            self._send_bytes(
+                upstream_status,
+                answer_sdp,
+                upstream_type,
+            )
+        except urllib.error.HTTPError as error:
+            detail = error.read().decode("utf-8", errors="replace")[:1000]
+            self._send_json(
+                502,
+                {
+                    "ok": False,
+                    "error": "OpenAI Realtime session request failed.",
+                    "upstream_status": error.code,
+                    "detail": detail,
+                },
+            )
+        except Exception as error:
+            self._send_json(
+                500,
+                {
+                    "ok": False,
+                    "error": f"{type(error).__name__}: {error}",
+                },
+            )
+    # LIFEOS_REALTIME_GATEWAY_V3_END
 
     def _handle_chat_decision(self):
         try:
@@ -781,6 +967,10 @@ Mandatory decision-clarity rules:
             return lifeos_handle_realtime_session(self)
 
         path = self._path()
+        # LIFEOS_REALTIME_SESSION_ROUTE_V3
+        if path == "/api/realtime-session":
+            self._handle_realtime_session_v3()
+            return
 
         if path == "/api/chat-decision":
             self._handle_chat_decision()

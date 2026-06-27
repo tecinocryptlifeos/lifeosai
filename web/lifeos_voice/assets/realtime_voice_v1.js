@@ -2,7 +2,7 @@
 (function (global) {
   "use strict";
 
-  const VERSION = "1.1.1-controller-inactive";
+  const VERSION = "1.2.0-live";
   const STATES = Object.freeze({
     IDLE: "idle", CONNECTING: "connecting", USER_SPEAKING: "user_speaking",
     ANALYSING: "analysing", SOPHIA_SPEAKING: "sophia_speaking",
@@ -114,6 +114,7 @@
         event_id: makeId("session_update"),
         type: "session.update",
         session: {
+          type: "realtime",
           instructions: this._instructions(),
           audio: {
             input: {

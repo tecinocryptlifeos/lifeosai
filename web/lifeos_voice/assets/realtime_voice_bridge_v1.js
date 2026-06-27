@@ -361,9 +361,9 @@ body.lifeos-realtime-active #lifeosVC .vcOrb.lifeos-rt-error #lifeosVCLogo {
         case API.states.ERROR:
           orb.classList.add("lifeos-rt-error");
           setStatus(
-            "REALTIME VOICE UNAVAILABLE",
+            "REALTIME VOICE ERROR",
             false,
-            "The standard LifeOS voice remains available."
+            "Realtime voice could not start. Check the server configuration and try again."
           );
           break;
 
@@ -661,8 +661,6 @@ body.lifeos-realtime-active #lifeosVC .vcOrb.lifeos-rt-error #lifeosVCLogo {
         ) {
           return;
         }
-
-        if (fallbackMode) return;
 
         event.preventDefault();
         event.stopPropagation();
