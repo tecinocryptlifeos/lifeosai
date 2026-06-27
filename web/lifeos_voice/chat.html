@@ -724,6 +724,22 @@
 }());
 </script>
 
+
+<!-- LIFEOS_GEMINI_LIVE_VOICE1_REDIRECT_V1_START -->
+<script id="lifeos-gemini-live-voice1-redirect-v1">
+(function () {
+    "use strict";
+    var parameters = new URLSearchParams(window.location.search);
+    if (parameters.get("voice") === "1") {
+        var destination = "/gemini-live";
+        if (window.location.pathname !== destination) {
+            window.location.replace(destination);
+        }
+    }
+}());
+</script>
+<!-- LIFEOS_GEMINI_LIVE_VOICE1_REDIRECT_V1_END -->
+
 </head>
 <body>
   <main class="app">
