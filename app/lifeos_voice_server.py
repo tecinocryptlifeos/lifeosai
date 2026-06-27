@@ -7,6 +7,22 @@ from pathlib import Path
 from urllib.parse import unquote
 import uuid
 
+
+# LIFEOS_GEMINI_LIVE_V1_IMPORT_START
+try:
+    from gemini_live_gateway import (
+        GeminiLiveRateLimit,
+        create_gemini_live_token,
+        gemini_live_status,
+    )
+except ImportError:
+    from app.gemini_live_gateway import (
+        GeminiLiveRateLimit,
+        create_gemini_live_token,
+        gemini_live_status,
+    )
+# LIFEOS_GEMINI_LIVE_V1_IMPORT_END
+
 try:
     from gemini_client import GeminiClient
 except ImportError:
@@ -519,6 +535,17 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         path = self._path()
+
+
+        # LIFEOS_GEMINI_LIVE_V1_GET_ROUTES_START
+        if path == "/api/gemini-live-status":
+            self._send_json(200, gemini_live_status())
+            return
+
+        if path in ("/gemini-live", "/gemini-live.html"):
+            self._serve_file(WEB_DIR / "gemini_live.html")
+            return
+        # LIFEOS_GEMINI_LIVE_V1_GET_ROUTES_END
         # LIFEOS_REALTIME_STATUS_ROUTE_V3
         if path == "/api/realtime-status":
             self._handle_realtime_status_v3()
@@ -961,12 +988,58 @@ Mandatory decision-clarity rules:
                 },
             )
 
+
+
+    # LIFEOS_GEMINI_LIVE_V1_HANDLER_START
+    def _handle_gemini_live_token_v1(self):
+        try:
+            client_id = (
+                self.headers.get("X-Forwarded-For", "")
+                .split(",", 1)[0]
+                .strip()
+            )
+            if not client_id:
+                client_id = str(
+                    self.client_address[0]
+                    if self.client_address
+                    else "unknown"
+                )
+            self._send_json(
+                200,
+                create_gemini_live_token(client_id),
+            )
+        except GeminiLiveRateLimit as error:
+            self._send_json(
+                429,
+                {
+                    "ok": False,
+                    "error": str(error),
+                    "retry_after": error.retry_after,
+                },
+            )
+        except Exception as error:
+            self._send_json(
+                502,
+                {
+                    "ok": False,
+                    "error": f"{type(error).__name__}: {error}"[:500],
+                },
+            )
+    # LIFEOS_GEMINI_LIVE_V1_HANDLER_END
+
     def do_POST(self):
         # LIFEOS_REALTIME_ROUTE_V1
         if self.path.split("?", 1)[0] == "/api/realtime-session":
             return lifeos_handle_realtime_session(self)
 
         path = self._path()
+
+
+        # LIFEOS_GEMINI_LIVE_V1_POST_ROUTE_START
+        if path == "/api/gemini-live-token":
+            self._handle_gemini_live_token_v1()
+            return
+        # LIFEOS_GEMINI_LIVE_V1_POST_ROUTE_END
         # LIFEOS_REALTIME_SESSION_ROUTE_V3
         if path == "/api/realtime-session":
             self._handle_realtime_session_v3()
