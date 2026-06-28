@@ -1,3 +1,4 @@
+/* LIFEOS_GOLDEN_VOICE_VISUALIZER_V5 */
 /* LIFEOS_VOICE_FINAL_TOUCHES_V4 */
 /* LIFEOS_VOICE_BACKGROUND_VOLUME_REPAIR_V1 */
 /* LIFEOS_IDENTITY_ATTRIBUTION_UPGRADE_V2 */
@@ -158,6 +159,7 @@ async function ensureOutputContext(){
     outputCompressor.attack.value=0.003;
     outputCompressor.release.value=0.22;
     outputGain.connect(outputCompressor);
+    window.LifeOSGoldenVisualizer?.attachSophiaNode(outputGain,outputContext);
     outputCompressor.connect(outputDestination);
     audioElement.srcObject=outputDestination.stream;
     audioElement.muted=false;
