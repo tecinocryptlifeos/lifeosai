@@ -1,6 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- LIFEOS_LOGO_HOME_AND_VOICE_ROUTE_REPAIR_V1_EARLY_VOICE_ROUTE_START -->
+<style id="lifeos-voice-route-prepaint-v1">
+html.lifeos-voice-route-pending-v1 body {
+  visibility:hidden !important;
+  opacity:0 !important;
+}
+</style>
+<script id="lifeos-voice-route-prepaint-script-v1">
+(function () {
+  "use strict";
+  var params = new URLSearchParams(window.location.search);
+  if (params.get("voice") === "1") {
+    document.documentElement.classList.add(
+      "lifeos-voice-route-pending-v1"
+    );
+    window.location.replace("/gemini-live");
+  }
+}());
+</script>
+<!-- LIFEOS_LOGO_HOME_AND_VOICE_ROUTE_REPAIR_V1_EARLY_VOICE_ROUTE_END -->
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LifeOS AI — Decision Chat</title>
@@ -775,13 +796,38 @@ img[src="/assets/lifeos-logo-2026.png"] {
 }
 </style>
 
+
+<!-- LIFEOS_LOGO_HOME_AND_VOICE_ROUTE_REPAIR_V1_LOGO_STYLE_START -->
+<style id="lifeos-logo-home-link-style-v1">
+.lifeos-home-logo-link-v1 {
+  display:inline-grid !important;
+  place-items:center !important;
+  line-height:0 !important;
+  text-decoration:none !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  border-radius:0 !important;
+  cursor:pointer !important;
+}
+
+.lifeos-home-logo-link-v1 img,
+img[src^="/assets/lifeos-logo-2026.png"] {
+  display:block !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  border-color:transparent !important;
+}
+</style>
+<!-- LIFEOS_LOGO_HOME_AND_VOICE_ROUTE_REPAIR_V1_LOGO_STYLE_END -->
+
 </head>
 <body>
   <main class="app">
     <section class="inner">
       <header class="topbar">
         <div class="brand">
-          <div class="logo"><img src="/assets/lifeos-logo-2026.png" alt="LifeOS logo"></div>
+          <div class="logo"><a class="lifeos-home-logo-link-v1" href="/" aria-label="Return to the LifeOS homepage"><img src="/assets/lifeos-logo-2026.png" alt="LifeOS logo"></a></div>
           <div>
             <div class="brand-title">LifeOS AI</div>
             <div class="brand-sub">Decision Chat</div>
@@ -3186,5 +3232,6 @@ html body.lifeos-vc-on #lifeosVC .vcOrb.ai-speaking #lifeosVCLogo {
 </style>
 <!-- LIFEOS_VOICE_CONVERSATION_REPAIR_V14_END -->
 
+<!-- LIFEOS_LOGO_HOME_AND_VOICE_ROUTE_REPAIR_V1 -->
 </body>
 </html>
