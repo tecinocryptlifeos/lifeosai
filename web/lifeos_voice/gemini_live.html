@@ -55,6 +55,49 @@ a{color:#ebc25c}
 }
 </style>
 
+
+<!-- LIFEOS_VOICE_BACKGROUND_VOLUME_REPAIR_V1_BACKGROUND_START -->
+<style id="lifeos-original-voice-background-v1">
+html,
+body {
+  background:#030302 !important;
+}
+
+body,
+body.embedded {
+  position:relative;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0,0,0,.18) 0%,
+      rgba(0,0,0,.24) 52%,
+      rgba(0,0,0,.42) 100%
+    ),
+    url("/assets/lifeos-bg.jpg") center center / cover no-repeat fixed !important;
+}
+
+body::before {
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  background:
+    radial-gradient(
+      circle at 50% 38%,
+      rgba(255,194,46,.16),
+      transparent 42%
+    );
+}
+
+main {
+  background:rgba(4,6,10,.34) !important;
+  backdrop-filter:blur(2px) !important;
+  -webkit-backdrop-filter:blur(2px) !important;
+}
+</style>
+<!-- LIFEOS_VOICE_BACKGROUND_VOLUME_REPAIR_V1_BACKGROUND_END -->
+
 </head>
 <body>
 <main>

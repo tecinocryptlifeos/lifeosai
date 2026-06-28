@@ -1,3 +1,4 @@
+/* LIFEOS_VOICE_BACKGROUND_VOLUME_REPAIR_V1 */
 /* LIFEOS_IDENTITY_ATTRIBUTION_UPGRADE_V2 */
 /* LIFEOS_SYNTHETIC_INTELLIGENCE_IDENTITY_LOCK_V1 */
 /* LIFEOS_GEMINI_LIVE_V1 */
@@ -16,7 +17,7 @@ const orb=document.getElementById("orb");
 const audioElement=document.getElementById("sophiaAudio");
 
 let socket=null,micStream=null,inputContext=null,inputSource=null,processor=null,muteGain=null;
-let outputContext=null,outputDestination=null,outputGain=null,nextOutputTime=0;
+let outputContext=null,outputDestination=null,outputGain=null,outputCompressor=null,nextOutputTime=0;
 let outputSources=new Set();
 let starting=false,active=false,setupReady=false,closingNormally=false;
 let micMuted=false,speakerEnabled=true,selectedSinkId="default",selectedSinkLabel="phone default";
@@ -148,8 +149,15 @@ async function ensureOutputContext(){
     outputContext=new AudioContextClass({sampleRate:OUTPUT_RATE});
     outputDestination=outputContext.createMediaStreamDestination();
     outputGain=outputContext.createGain();
-    outputGain.gain.value=speakerEnabled?1:0;
-    outputGain.connect(outputDestination);
+    outputCompressor=outputContext.createDynamicsCompressor();
+    outputGain.gain.value=speakerEnabled?3.2:0;
+    outputCompressor.threshold.value=-20;
+    outputCompressor.knee.value=18;
+    outputCompressor.ratio.value=5;
+    outputCompressor.attack.value=0.003;
+    outputCompressor.release.value=0.22;
+    outputGain.connect(outputCompressor);
+    outputCompressor.connect(outputDestination);
     audioElement.srcObject=outputDestination.stream;
     audioElement.muted=false;
     audioElement.volume=1;
@@ -196,7 +204,7 @@ function setMicMuted(nextMuted){
 function setSpeakerEnabled(nextEnabled){
   speakerEnabled=Boolean(nextEnabled);
   if(outputGain&&outputContext){
-    outputGain.gain.setValueAtTime(speakerEnabled?1:0,outputContext.currentTime);
+    outputGain.gain.setValueAtTime(speakerEnabled?3.2:0,outputContext.currentTime);
   }
   if(!speakerEnabled)clearOutput();
   refreshControls();
