@@ -255,22 +255,139 @@ main {
 </style>
 <!-- LIFEOS_VOICE_FINAL_TOUCHES_V4_STYLE_END -->
 
+
+<style id="lifeos-global-logo-2026-v6">
+img[src="/assets/lifeos-logo-2026.png"] {
+  object-fit:contain !important;
+  object-position:center !important;
+  background:transparent !important;
+}
+</style>
+
+
+<!-- LIFEOS_VOICE_LOGO_LAYOUT_V6_STYLE_START -->
+<style id="lifeos-voice-logo-layout-v6">
+main {
+  min-height:calc(100svh - 28px) !important;
+  display:flex !important;
+  flex-direction:column !important;
+}
+
+.brand {
+  order:1 !important;
+}
+
+.brand-emblem.lifeos-supplied-logo {
+  position:relative !important;
+  width:68px !important;
+  height:68px !important;
+  flex:0 0 68px !important;
+  display:inline-grid !important;
+  place-items:center !important;
+  border-radius:0 !important;
+}
+
+.brand-emblem.lifeos-supplied-logo img {
+  width:66px !important;
+  height:66px !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  object-fit:contain !important;
+  filter:drop-shadow(0 0 7px rgba(240,193,85,.46));
+}
+
+h1 {
+  order:2 !important;
+}
+
+#orb {
+  order:3 !important;
+  width:270px !important;
+  height:270px !important;
+  margin:28px auto 22px !important;
+  flex:0 0 270px !important;
+  border-radius:50% !important;
+}
+
+#liveButton {
+  order:4 !important;
+  width:76% !important;
+  min-height:42px !important;
+  margin:8px auto 0 !important;
+  padding:8px 12px !important;
+  font-size:14px !important;
+}
+
+.controls {
+  order:5 !important;
+  width:76% !important;
+  margin:8px auto 0 !important;
+  gap:6px !important;
+}
+
+.control {
+  min-height:38px !important;
+  padding:6px 4px !important;
+  font-size:10.5px !important;
+}
+
+#status {
+  order:6 !important;
+  min-height:18px !important;
+  margin:14px 0 0 !important;
+  font-size:13px !important;
+}
+
+#outputLabel {
+  order:7 !important;
+  min-height:17px !important;
+  margin:8px 0 5px !important;
+  font-size:11px !important;
+}
+
+#sophiaAudio {
+  order:8 !important;
+}
+
+.lifeos-voice-footer {
+  order:9 !important;
+  margin-top:auto !important;
+  padding:10px 8px 2px !important;
+}
+
+@media (max-width:390px) {
+  .brand-emblem.lifeos-supplied-logo {
+    width:62px !important;
+    height:62px !important;
+    flex-basis:62px !important;
+  }
+
+  .brand-emblem.lifeos-supplied-logo img {
+    width:60px !important;
+    height:60px !important;
+  }
+
+  #orb {
+    width:250px !important;
+    height:250px !important;
+    flex-basis:250px !important;
+    margin:24px auto 18px !important;
+  }
+
+  #liveButton,
+  .controls {
+    width:82% !important;
+  }
+}
+</style>
+<!-- LIFEOS_VOICE_LOGO_LAYOUT_V6_STYLE_END -->
+
 </head>
 <body>
 <main>
-  <div class="brand"><span class="brand-emblem" aria-hidden="true">
-      <img src="/assets/lifeos-logo.jpg" alt="">
-      <svg class="pisces-ring" viewBox="0 0 100 100" focusable="false">
-        <path class="fish fish-left"
-          d="M50 13 C31 15 21 29 23 43 C25 55 36 61 48 58
-             C38 53 34 43 38 34 C42 25 52 20 63 22
-             C58 17 54 14 50 13 Z"/>
-        <path class="fish fish-right"
-          d="M50 87 C69 85 79 71 77 57 C75 45 64 39 52 42
-             C62 47 66 57 62 66 C58 75 48 80 37 78
-             C42 83 46 86 50 87 Z"/>
-        <circle cx="50" cy="50" r="42" class="ring-outline"/>
-      </svg>
+  <div class="brand"><span class="brand-emblem lifeos-supplied-logo" aria-hidden="true">
+      <img src="/assets/lifeos-logo-2026.png" alt="">
     </span><span>LIFE OS</span></div>
   <h1>LifeOS Synthetic Intelligence</h1>
 <div id="orb" class="orb" aria-hidden="true"></div>
@@ -309,5 +426,6 @@ main {
 <!-- LIFEOS_VOICE_LAYOUT_FOOTER_REPAIR_V1 -->
 <!-- LIFEOS_VOICE_FOOTER_TEXT_UPGRADE_V3 -->
 <!-- LIFEOS_VOICE_FINAL_TOUCHES_V4 -->
+<!-- LIFEOS_VOICE_LOGO_LAYOUT_V6 -->
 </body>
 </html>
