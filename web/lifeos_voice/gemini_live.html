@@ -36,26 +36,6 @@ h1{margin:4px 0 0;font-size:clamp(25px,7vw,37px);letter-spacing:-.035em}
 a{color:#ebc25c}
 @media(max-width:390px){main{padding:21px 15px 17px}.control{font-size:11px}}
 </style>
-
-<style id="lifeos-synthetic-intelligence-identity-style">
-.identity-credit {
-  margin:16px auto 0;
-  max-width:390px;
-  padding:12px 14px;
-  border:1px solid rgba(234,190,83,.28);
-  border-radius:13px;
-  background:rgba(5,7,11,.58);
-  color:rgba(255,247,223,.66);
-  font-size:11px;
-  line-height:1.55;
-}
-.identity-credit strong {
-  color:#f0c968;
-  font-weight:800;
-}
-</style>
-
-
 <!-- LIFEOS_VOICE_BACKGROUND_VOLUME_REPAIR_V1_BACKGROUND_START -->
 <style id="lifeos-original-voice-background-v1">
 html,
@@ -98,13 +78,72 @@ main {
 </style>
 <!-- LIFEOS_VOICE_BACKGROUND_VOLUME_REPAIR_V1_BACKGROUND_END -->
 
+
+<!-- LIFEOS_VOICE_LAYOUT_FOOTER_REPAIR_V1_STYLE_START -->
+<style id="lifeos-voice-layout-footer-repair-v1">
+main {
+  min-height:min(1110px,calc(100svh - 30px)) !important;
+  display:flex !important;
+  flex-direction:column !important;
+}
+
+#orb {
+  width:172px !important;
+  height:172px !important;
+  margin:30px auto 42px !important;
+  flex:0 0 auto !important;
+}
+
+#liveButton {
+  margin-top:auto !important;
+}
+
+.controls {
+  margin-top:12px !important;
+}
+
+#status {
+  margin-top:18px !important;
+}
+
+#outputLabel {
+  margin-top:8px !important;
+}
+
+.note {
+  margin-top:16px !important;
+}
+
+.lifeos-voice-footer {
+  margin-top:24px !important;
+  padding:14px 10px 2px !important;
+  border-top:1px solid rgba(234,190,83,.42) !important;
+  color:rgba(255,247,223,.76) !important;
+  font-size:11px !important;
+  line-height:1.55 !important;
+  text-align:center !important;
+}
+
+@media (max-width:390px) {
+  #orb {
+    width:160px !important;
+    height:160px !important;
+    margin:26px auto 36px !important;
+  }
+
+  .lifeos-voice-footer {
+    font-size:10.5px !important;
+  }
+}
+</style>
+<!-- LIFEOS_VOICE_LAYOUT_FOOTER_REPAIR_V1_STYLE_END -->
+
 </head>
 <body>
 <main>
   <div class="brand"><img src="/assets/lifeos-logo.jpg" alt=""><span>LIFE OS</span></div>
   <h1>LifeOS Synthetic Intelligence</h1>
-  <p class="subtitle">Real-time voice decision intelligence by LifeOS AI.</p>
-  <div id="orb" class="orb" aria-hidden="true"></div>
+<div id="orb" class="orb" aria-hidden="true"></div>
   <button id="liveButton" class="primary" type="button">Start Live Conversation</button>
   <div class="controls" aria-label="Voice controls">
     <button id="micButton" class="control active" type="button" disabled>Mic On</button>
@@ -116,14 +155,10 @@ main {
   <audio id="sophiaAudio" autoplay playsinline aria-hidden="true"></audio>
   <p class="note">No clear-conversation control is used.<span id="returnLink"><br><a href="/chat">Return to Decision Chat</a></span></p>
 
-  <p class="identity-credit">
-    Built by <strong>LifeOS AI</strong><br>
-    Powered by <strong>Hansafrique LTD</strong> and
-    <strong>Tecino's Channel</strong><br>
-    Founder and brain: <strong>Enofe Edo</strong><br>
-    Creator, owner, builder and manufacturer:
-    <strong>Mr. Patrick Okeya Tochukwu</strong>
-  </p>
+  <footer id="lifeosVoiceFooterV1" class="lifeos-voice-footer">
+    LFOSAI Voice synthetic intelligent agent.<br>
+    Powered by Hansa Freak Ltd, built by Life OsDaily and Tecino's channel.
+  </footer>
 
 </main>
 <script>
@@ -142,5 +177,6 @@ main {
 <!-- LIFEOS_GEMINI_LIVE_INTERFACE_AUDIO_V2 -->
 <!-- LIFEOS_SYNTHETIC_INTELLIGENCE_IDENTITY_LOCK_V1 -->
 <!-- LIFEOS_IDENTITY_ATTRIBUTION_UPGRADE_V2 -->
+<!-- LIFEOS_VOICE_LAYOUT_FOOTER_REPAIR_V1 -->
 </body>
 </html>
