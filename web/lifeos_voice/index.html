@@ -408,6 +408,31 @@ img[src="/assets/lifeos-logo-2026.png"] {
 }
 </style>
 
+
+<!-- LIFEOS_HOME_LOGO_LINK_V1_STYLE_START -->
+<style id="lifeos-home-logo-link-v1">
+.lifeos-home-logo-link {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  line-height:0;
+  border-radius:12px;
+  text-decoration:none;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+
+.lifeos-home-logo-link:focus-visible {
+  outline:2px solid rgba(255,209,91,.95);
+  outline-offset:4px;
+}
+
+.lifeos-home-logo-link img {
+  display:block;
+}
+</style>
+<!-- LIFEOS_HOME_LOGO_LINK_V1_STYLE_END -->
+
 </head>
 
 <body>
@@ -415,7 +440,11 @@ img[src="/assets/lifeos-logo-2026.png"] {
     <div class="inner">
       <header class="topbar">
         <div class="brand">
-          <img class="logo" src="/assets/lifeos-logo-2026.png" alt="LifeOS AI logo" />
+          <!-- LIFEOS_HOME_LOGO_LINK_V1_START -->
+<a class="lifeos-home-logo-link" href="/" aria-label="Return to LifeOS homepage" title="LifeOS homepage">
+  <img class="logo" src="/assets/lifeos-logo-2026.png" alt="LifeOS AI logo" />
+</a>
+<!-- LIFEOS_HOME_LOGO_LINK_V1_END -->
           <div class="brand-text">
             <strong>LifeOS AI</strong>
             <span>Synthetic Intelligence</span>
