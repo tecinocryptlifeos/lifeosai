@@ -138,10 +138,140 @@ main {
 </style>
 <!-- LIFEOS_VOICE_LAYOUT_FOOTER_REPAIR_V1_STYLE_END -->
 
+
+<!-- LIFEOS_VOICE_FINAL_TOUCHES_V4_STYLE_START -->
+<style id="lifeos-voice-final-touches-v4">
+.brand {
+  gap:12px !important;
+}
+
+.brand-emblem {
+  position:relative !important;
+  width:52px !important;
+  height:52px !important;
+  flex:0 0 52px !important;
+  display:inline-grid !important;
+  place-items:center !important;
+  border-radius:50% !important;
+}
+
+.brand-emblem img {
+  width:39px !important;
+  height:39px !important;
+  padding:2px !important;
+  border-radius:50% !important;
+  object-fit:contain !important;
+  border:0 !important;
+  background:rgba(0,0,0,.52) !important;
+  z-index:2 !important;
+}
+
+.pisces-ring {
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  overflow:visible !important;
+  filter:drop-shadow(0 0 4px rgba(240,193,85,.46));
+  z-index:1 !important;
+}
+
+.pisces-ring .fish {
+  fill:rgba(240,193,85,.88) !important;
+  stroke:rgba(255,226,145,.72) !important;
+  stroke-width:1 !important;
+}
+
+.pisces-ring .ring-outline {
+  fill:none !important;
+  stroke:rgba(240,193,85,.46) !important;
+  stroke-width:1.5 !important;
+}
+
+#orb {
+  width:184px !important;
+  height:184px !important;
+  margin:26px auto 30px !important;
+}
+
+#liveButton {
+  min-height:46px !important;
+  width:88% !important;
+  margin:18px auto 0 !important;
+  padding:10px 14px !important;
+  font-size:15px !important;
+}
+
+.controls {
+  width:88% !important;
+  margin:10px auto 0 !important;
+  gap:7px !important;
+}
+
+.control {
+  min-height:42px !important;
+  padding:7px 5px !important;
+  font-size:11px !important;
+}
+
+#status {
+  order:6 !important;
+  margin:14px 0 0 !important;
+  min-height:20px !important;
+}
+
+#outputLabel {
+  order:7 !important;
+  margin:14px 0 2px !important;
+  min-height:18px !important;
+}
+
+.lifeos-voice-footer {
+  margin-top:6px !important;
+}
+
+@media (max-width:390px) {
+  .brand-emblem {
+    width:48px !important;
+    height:48px !important;
+    flex-basis:48px !important;
+  }
+
+  .brand-emblem img {
+    width:36px !important;
+    height:36px !important;
+  }
+
+  #orb {
+    width:172px !important;
+    height:172px !important;
+  }
+
+  #liveButton,
+  .controls {
+    width:92% !important;
+  }
+}
+</style>
+<!-- LIFEOS_VOICE_FINAL_TOUCHES_V4_STYLE_END -->
+
 </head>
 <body>
 <main>
-  <div class="brand"><img src="/assets/lifeos-logo.jpg" alt=""><span>LIFE OS</span></div>
+  <div class="brand"><span class="brand-emblem" aria-hidden="true">
+      <img src="/assets/lifeos-logo.jpg" alt="">
+      <svg class="pisces-ring" viewBox="0 0 100 100" focusable="false">
+        <path class="fish fish-left"
+          d="M50 13 C31 15 21 29 23 43 C25 55 36 61 48 58
+             C38 53 34 43 38 34 C42 25 52 20 63 22
+             C58 17 54 14 50 13 Z"/>
+        <path class="fish fish-right"
+          d="M50 87 C69 85 79 71 77 57 C75 45 64 39 52 42
+             C62 47 66 57 62 66 C58 75 48 80 37 78
+             C42 83 46 86 50 87 Z"/>
+        <circle cx="50" cy="50" r="42" class="ring-outline"/>
+      </svg>
+    </span><span>LIFE OS</span></div>
   <h1>LifeOS Synthetic Intelligence</h1>
 <div id="orb" class="orb" aria-hidden="true"></div>
   <button id="liveButton" class="primary" type="button">Start Live Conversation</button>
@@ -153,11 +283,10 @@ main {
   <div id="status" role="status" aria-live="polite">Ready</div>
   <div id="outputLabel">Output: phone default</div>
   <audio id="sophiaAudio" autoplay playsinline aria-hidden="true"></audio>
-  <p class="note">No clear-conversation control is used.<span id="returnLink"><br><a href="/chat">Return to Decision Chat</a></span></p>
-
-  <footer id="lifeosVoiceFooterV1" class="lifeos-voice-footer">
+<footer id="lifeosVoiceFooterV1" class="lifeos-voice-footer">
     LFOSAI Voice synthetic intelligent agent.<br>
-    Powered by Hansafrique Ltd, built by LifeOsdaily, Engineered &amp; Structured by Tecino's Channel.
+    Powered by Hansafrique Ltd, built by LifeOsdaily,
+    Engineered &amp; Structured by Tecino's Channel, 2026 ©.
   </footer>
 
 </main>
@@ -179,5 +308,6 @@ main {
 <!-- LIFEOS_IDENTITY_ATTRIBUTION_UPGRADE_V2 -->
 <!-- LIFEOS_VOICE_LAYOUT_FOOTER_REPAIR_V1 -->
 <!-- LIFEOS_VOICE_FOOTER_TEXT_UPGRADE_V3 -->
+<!-- LIFEOS_VOICE_FINAL_TOUCHES_V4 -->
 </body>
 </html>

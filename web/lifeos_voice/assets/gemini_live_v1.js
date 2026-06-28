@@ -1,3 +1,4 @@
+/* LIFEOS_VOICE_FINAL_TOUCHES_V4 */
 /* LIFEOS_VOICE_BACKGROUND_VOLUME_REPAIR_V1 */
 /* LIFEOS_IDENTITY_ATTRIBUTION_UPGRADE_V2 */
 /* LIFEOS_SYNTHETIC_INTELLIGENCE_IDENTITY_LOCK_V1 */
@@ -34,7 +35,7 @@ function setStatus(text,state){
 }
 
 function refreshControls(){
-  micButton.textContent=micMuted?"Mic Muted":"Mic On";
+  micButton.textContent=micMuted?"Unmute":"Mute";
   micButton.classList.toggle("active",!micMuted);
   micButton.classList.toggle("warn",micMuted);
   speakerButton.textContent=speakerEnabled?"Speaker On":"Speaker Off";
