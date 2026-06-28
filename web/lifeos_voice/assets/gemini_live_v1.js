@@ -1,3 +1,4 @@
+/* LIFEOS_VOICE_HEADER_STATUS_REFINEMENT_V1 */
 /* LIFEOS_GOLDEN_VOICE_VISUALIZER_V5 */
 /* LIFEOS_VOICE_FINAL_TOUCHES_V4 */
 /* LIFEOS_VOICE_BACKGROUND_VOLUME_REPAIR_V1 */
@@ -270,7 +271,7 @@ async function startConversation(){
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){setStatus("This browser does not support microphone streaming.","error");return;}
   starting=true;
   closingNormally=false;
-  setStatus("Connecting to Gemini Live…","");
+  setStatus("Connecting to LifeOS Synthetic Intelligence…","");
   try{
     await ensureOutputContext();
     const response=await fetch("/api/gemini-live-token",{method:"POST",headers:{"Accept":"application/json"},cache:"no-store"});

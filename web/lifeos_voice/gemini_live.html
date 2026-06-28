@@ -408,6 +408,111 @@ img[src^="/assets/lifeos-logo-2026.png"] {
 </style>
 <!-- LIFEOS_LOGO_HOME_AND_VOICE_ROUTE_REPAIR_V1_LOGO_STYLE_END -->
 
+
+<!-- LIFEOS_VOICE_HEADER_STATUS_REFINEMENT_V1_STYLE_START -->
+<style id="lifeos-voice-header-status-refinement-v1">
+main {
+  position:relative !important;
+  padding-top:26px !important;
+}
+
+.brand {
+  position:absolute !important;
+  top:16px !important;
+  left:16px !important;
+  right:auto !important;
+  width:auto !important;
+  margin:0 !important;
+  padding:0 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:8px !important;
+  z-index:20 !important;
+  text-align:left !important;
+}
+
+.brand .lifeos-home-logo-link-v1,
+.brand > a {
+  display:inline-grid !important;
+  place-items:center !important;
+  flex:0 0 auto !important;
+  margin:0 !important;
+}
+
+.brand-emblem.lifeos-supplied-logo,
+.brand .brand-emblem,
+.brand img[src^="/assets/lifeos-logo-2026.png"] {
+  margin:0 !important;
+}
+
+.brand img[src^="/assets/lifeos-logo-2026.png"] {
+  width:58px !important;
+  height:58px !important;
+  object-fit:contain !important;
+  background:transparent !important;
+  filter:drop-shadow(0 0 7px rgba(240,193,85,.38)) !important;
+}
+
+.brand .wordmark,
+.brand > span:not(.brand-emblem),
+.brand > strong {
+  display:none !important;
+}
+
+h1 {
+  width:min(100%, 520px) !important;
+  margin:78px auto 0 !important;
+  padding:0 18px !important;
+  text-align:center !important;
+  font-size:clamp(30px, 7vw, 46px) !important;
+  line-height:1.08 !important;
+  letter-spacing:-0.035em !important;
+  text-wrap:balance !important;
+}
+
+.subtitle {
+  width:min(88%, 440px) !important;
+  margin:11px auto 0 !important;
+  padding:0 12px !important;
+  color:rgba(255,244,215,.68) !important;
+  font-size:clamp(12px, 3.3vw, 15px) !important;
+  font-weight:500 !important;
+  line-height:1.45 !important;
+  letter-spacing:.015em !important;
+  text-align:center !important;
+  text-wrap:balance !important;
+}
+
+@media (max-width:390px) {
+  main {
+    padding-top:22px !important;
+  }
+
+  .brand {
+    top:13px !important;
+    left:13px !important;
+  }
+
+  .brand img[src^="/assets/lifeos-logo-2026.png"] {
+    width:52px !important;
+    height:52px !important;
+  }
+
+  h1 {
+    margin-top:70px !important;
+    padding:0 14px !important;
+    font-size:clamp(28px, 8vw, 38px) !important;
+  }
+
+  .subtitle {
+    width:92% !important;
+    margin-top:9px !important;
+  }
+}
+</style>
+<!-- LIFEOS_VOICE_HEADER_STATUS_REFINEMENT_V1_STYLE_END -->
+
 </head>
 <body>
 <main>
@@ -415,6 +520,7 @@ img[src^="/assets/lifeos-logo-2026.png"] {
       <a class="lifeos-home-logo-link-v1" href="/" aria-label="Return to the LifeOS homepage"><img src="/assets/lifeos-logo-2026.png" alt=""></a>
     </span><span>LIFE OS</span></div>
   <h1>LifeOS Synthetic Intelligence</h1>
+  <p class="subtitle">Real-time voice decision intelligence by LifeOS AI.</p>
 <div id="orb" class="orb" aria-hidden="true"></div>
   <button id="liveButton" class="primary" type="button">Start Live Conversation</button>
   <div class="controls" aria-label="Voice controls">
@@ -455,5 +561,6 @@ img[src^="/assets/lifeos-logo-2026.png"] {
 <!-- LIFEOS_VOICE_FINAL_TOUCHES_V4 -->
 <!-- LIFEOS_VOICE_LOGO_LAYOUT_V6 -->
 <!-- LIFEOS_LOGO_HOME_AND_VOICE_ROUTE_REPAIR_V1 -->
+<!-- LIFEOS_VOICE_HEADER_STATUS_REFINEMENT_V1 -->
 </body>
 </html>
