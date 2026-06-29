@@ -513,14 +513,49 @@ h1 {
 </style>
 <!-- LIFEOS_VOICE_HEADER_STATUS_REFINEMENT_V1_STYLE_END -->
 
+
+<!-- LIFEOS_VOICE_HEADING_AMBIENT_REFINEMENT_V2_STYLE_START -->
+<style id="lifeos-voice-heading-ambient-refinement-v2">
+main { position:relative !important; overflow:hidden !important; isolation:isolate !important; padding-top:22px !important; }
+main > *:not(.lifeos-ambient-motion-v2) { position:relative !important; z-index:2 !important; }
+.brand { position:absolute !important; top:14px !important; left:14px !important; right:auto !important; width:92px !important; margin:0 !important; padding:0 !important; display:flex !important; flex-direction:column !important; align-items:flex-start !important; justify-content:flex-start !important; gap:5px !important; text-align:left !important; z-index:6 !important; }
+.brand .lifeos-home-logo-link-v1, .brand > a { display:inline-grid !important; place-items:center !important; margin:0 !important; padding:0 !important; line-height:0 !important; }
+.brand img[src^="/assets/lifeos-logo-2026.png"] { display:block !important; width:56px !important; height:56px !important; object-fit:contain !important; margin:0 !important; background:transparent !important; filter:drop-shadow(0 0 7px rgba(242,191,65,.46)) !important; }
+.brand .lifeos-brand-caption-v2 { display:block !important; width:92px !important; margin:0 !important; color:rgba(255,226,142,.88) !important; font-size:9px !important; font-weight:700 !important; line-height:1.22 !important; letter-spacing:.02em !important; text-transform:none !important; text-align:left !important; text-wrap:balance !important; }
+.brand .wordmark, .brand > span:not(.brand-emblem):not(.lifeos-brand-caption-v2), .brand > strong { display:none !important; }
+h1 { width:min(76%,470px) !important; margin:18px auto 0 !important; padding:0 6px !important; color:#f2bf41 !important; font-size:clamp(28px,7.3vw,44px) !important; font-weight:900 !important; line-height:1.08 !important; letter-spacing:-.035em !important; text-align:center !important; text-wrap:balance !important; text-shadow:0 0 8px rgba(238,183,45,.22),0 2px 14px rgba(0,0,0,.48) !important; }
+.subtitle { display:none !important; }
+.lifeos-ambient-motion-v2 { position:absolute !important; inset:0 !important; z-index:1 !important; pointer-events:none !important; overflow:hidden !important; }
+.lifeos-gold-wave-v2 { position:absolute !important; left:5% !important; width:90% !important; height:20% !important; border-radius:50% !important; opacity:.48 !important; filter:blur(1.2px) drop-shadow(0 0 9px rgba(245,186,49,.52)) !important; background:radial-gradient(ellipse at center,transparent 58%,rgba(248,196,70,.12) 64%,rgba(255,220,119,.50) 68%,rgba(210,133,16,.18) 72%,transparent 78%) !important; transform-origin:center !important; animation:lifeosGoldWaveDriftV2 10s ease-in-out infinite !important; }
+.lifeos-gold-wave-v2.wave-one { top:24% !important; }
+.lifeos-gold-wave-v2.wave-two { top:66% !important; opacity:.34 !important; transform:scaleX(.92) rotate(180deg) !important; animation-delay:-5s !important; }
+.lifeos-hand-glow-v2 { position:absolute !important; top:49% !important; width:24% !important; height:19% !important; border-radius:50% !important; opacity:.34 !important; filter:blur(18px) !important; background:radial-gradient(ellipse at center,rgba(255,226,137,.58) 0%,rgba(248,182,47,.36) 30%,rgba(185,99,0,.12) 58%,transparent 76%) !important; animation:lifeosHandGlowV2 6.5s ease-in-out infinite !important; }
+.lifeos-hand-glow-v2.hand-left { left:14% !important; }
+.lifeos-hand-glow-v2.hand-right { right:14% !important; animation-delay:-3.25s !important; }
+@keyframes lifeosGoldWaveDriftV2 { 0%,100% { transform:translate3d(0,0,0) scaleX(.94) scaleY(.96) !important; opacity:.34 !important; } 50% { transform:translate3d(0,-8px,0) scaleX(1.03) scaleY(1.05) !important; opacity:.58 !important; } }
+@keyframes lifeosHandGlowV2 { 0%,100% { transform:translate3d(0,0,0) scale(.92) !important; opacity:.22 !important; } 50% { transform:translate3d(0,-5px,0) scale(1.08) !important; opacity:.50 !important; } }
+@media (max-width:390px) { .brand { top:12px !important; left:12px !important; width:84px !important; } .brand img[src^="/assets/lifeos-logo-2026.png"] { width:52px !important; height:52px !important; } .brand .lifeos-brand-caption-v2 { width:84px !important; font-size:8.5px !important; } h1 { width:74% !important; margin-top:16px !important; font-size:clamp(26px,7.5vw,36px) !important; } .lifeos-hand-glow-v2 { top:50% !important; width:27% !important; } .lifeos-hand-glow-v2.hand-left { left:10% !important; } .lifeos-hand-glow-v2.hand-right { right:10% !important; } }
+@media (prefers-reduced-motion:reduce) { .lifeos-gold-wave-v2,.lifeos-hand-glow-v2 { animation:none !important; } }
+</style>
+<!-- LIFEOS_VOICE_HEADING_AMBIENT_REFINEMENT_V2_STYLE_END -->
+
 </head>
 <body>
 <main>
+
+<div class="lifeos-ambient-motion-v2" aria-hidden="true">
+  <span class="lifeos-gold-wave-v2 wave-one"></span>
+  <span class="lifeos-gold-wave-v2 wave-two"></span>
+  <span class="lifeos-hand-glow-v2 hand-left"></span>
+  <span class="lifeos-hand-glow-v2 hand-right"></span>
+</div>
+
   <div class="brand"><span class="brand-emblem lifeos-supplied-logo" aria-hidden="true">
       <a class="lifeos-home-logo-link-v1" href="/" aria-label="Return to the LifeOS homepage"><img src="/assets/lifeos-logo-2026.png" alt=""></a>
-    </span><span>LIFE OS</span></div>
-  <h1>LifeOS Synthetic Intelligence</h1>
-  <p class="subtitle">Real-time voice decision intelligence by LifeOS AI.</p>
+    </span><span>LIFE OS</span>
+<span class="lifeos-brand-caption-v2">LifeOs synthetic intelligence</span>
+</div>
+  <h1>Voice conversation decision intelligent by LifeOs SAi.</h1>
 <div id="orb" class="orb" aria-hidden="true"></div>
   <button id="liveButton" class="primary" type="button">Start Live Conversation</button>
   <div class="controls" aria-label="Voice controls">
@@ -562,5 +597,6 @@ h1 {
 <!-- LIFEOS_VOICE_LOGO_LAYOUT_V6 -->
 <!-- LIFEOS_LOGO_HOME_AND_VOICE_ROUTE_REPAIR_V1 -->
 <!-- LIFEOS_VOICE_HEADER_STATUS_REFINEMENT_V1 -->
+<!-- LIFEOS_VOICE_HEADING_AMBIENT_REFINEMENT_V2 -->
 </body>
 </html>
