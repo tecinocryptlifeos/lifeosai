@@ -537,6 +537,36 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
         path = self._path()
 
 
+        # LIFEOS_ADSENSE_PUBLIC_V1_GET_ROUTES_START
+        public_pages_v1 = {
+            "/about": "about.html",
+            "/about.html": "about.html",
+            "/how-it-works": "how_it_works.html",
+            "/how-it-works.html": "how_it_works.html",
+            "/decision-intelligence": "decision_intelligence.html",
+            "/decision-intelligence.html": "decision_intelligence.html",
+            "/community": "community.html",
+            "/community.html": "community.html",
+            "/guides": "guides.html",
+            "/guides.html": "guides.html",
+            "/contact": "contact.html",
+            "/contact.html": "contact.html",
+            "/privacy": "privacy.html",
+            "/privacy.html": "privacy.html",
+            "/terms": "terms.html",
+            "/terms.html": "terms.html",
+            "/disclaimer": "disclaimer.html",
+            "/disclaimer.html": "disclaimer.html",
+            "/robots.txt": "robots.txt",
+            "/sitemap.xml": "sitemap.xml",
+            "/voice": "gemini_live.html",
+        }
+        if path in public_pages_v1:
+            self._serve_file(WEB_DIR / public_pages_v1[path])
+            return
+        # LIFEOS_ADSENSE_PUBLIC_V1_GET_ROUTES_END
+
+
         # LIFEOS_GEMINI_LIVE_V1_GET_ROUTES_START
         if path == "/api/gemini-live-status":
             self._send_json(200, gemini_live_status())

@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /chat
+Disallow: /voice
+Disallow: /gemini-live
+Disallow: /api/
+Sitemap: https://lifeos-ai-voice-app.onrender.com/sitemap.xml
