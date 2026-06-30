@@ -464,19 +464,52 @@ img[src^="/assets/lifeos-logo-2026.png"] {
 
 <body>
 <!-- LIFEOS_ADSENSE_PUBLIC_V1 -->
-<nav class="los-public-nav" aria-label="LifeOS AI main navigation">
-  <a class="los-public-brand" href="/">LifeOS <span>AI</span></a>
-  <div class="los-public-links">
-    <a href="/about">About</a>
+<!-- LIFEOS_HOME_NAV_REPAIR_V2_START -->
+<nav class="los-home-menu-v2" aria-label="LifeOS AI information navigation">
+  <button class="los-home-menu-button-v2" type="button" aria-expanded="false" aria-controls="los-home-menu-panel-v2" aria-label="Open LifeOS AI information menu">
+    <span class="los-home-menu-icon-v2" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="los-home-menu-text-v2">Menu</span>
+  </button>
+  <div id="los-home-menu-panel-v2" class="los-home-menu-panel-v2" hidden>
+    <a href="/about">About Us</a>
     <a href="/how-it-works">How It Works</a>
     <a href="/decision-intelligence">Decision Intelligence</a>
     <a href="/community">Community</a>
     <a href="/guides">Guides</a>
     <a href="/contact">Contact</a>
-    <a class="los-app-link" href="/chat">Decision Chat</a>
-    <a class="los-app-link" href="/voice">Voice</a>
   </div>
 </nav>
+<script id="los-home-menu-script-v2">
+(function(){
+  "use strict";
+  var nav=document.querySelector(".los-home-menu-v2");
+  if(!nav){return;}
+  var button=nav.querySelector(".los-home-menu-button-v2");
+  var panel=nav.querySelector(".los-home-menu-panel-v2");
+  function closeMenu(){
+    panel.hidden=true;
+    button.setAttribute("aria-expanded","false");
+    button.setAttribute("aria-label","Open LifeOS AI information menu");
+  }
+  function openMenu(){
+    panel.hidden=false;
+    button.setAttribute("aria-expanded","true");
+    button.setAttribute("aria-label","Close LifeOS AI information menu");
+  }
+  button.addEventListener("click",function(event){
+    event.stopPropagation();
+    if(panel.hidden){openMenu();}else{closeMenu();}
+  });
+  panel.addEventListener("click",function(event){event.stopPropagation();});
+  panel.querySelectorAll("a").forEach(function(link){link.addEventListener("click",closeMenu);});
+  document.addEventListener("click",closeMenu);
+  document.addEventListener("keydown",function(event){
+    if(event.key==="Escape"){closeMenu();button.focus();}
+  });
+  closeMenu();
+}());
+</script>
+<!-- LIFEOS_HOME_NAV_REPAIR_V2_END -->
   <main class="page">
     <div class="inner">
       <header class="topbar">
@@ -521,7 +554,18 @@ img[src^="/assets/lifeos-logo-2026.png"] {
         LifeOS Synthetic Artificial Intelligence (LOSAI) helps you see the future outcome of a decision before you act—guiding you toward better choices and away from costly mistakes.
         <br />
         Powered by Hansafrique LTD, <a href="https://lifeosdaily.blogspot.com/">LifeOS Daily</a>, and Tecino’s Channel. © 2026
-      </footer>
+      <!-- LIFEOS_HOME_NAV_REPAIR_V2_FOOTER_START -->
+<nav class="los-home-legal-v2" aria-label="LifeOS AI legal information">
+  <a href="/privacy">Privacy</a>
+  <span aria-hidden="true">·</span>
+  <a href="/terms">Terms</a>
+  <span aria-hidden="true">·</span>
+  <a href="/disclaimer">Disclaimer</a>
+  <span aria-hidden="true">·</span>
+  <a href="/contact">Contact</a>
+</nav>
+<!-- LIFEOS_HOME_NAV_REPAIR_V2_FOOTER_END -->
+</footer>
     </div>
   </main>
 
