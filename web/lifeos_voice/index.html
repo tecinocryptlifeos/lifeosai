@@ -570,6 +570,52 @@ img[src^="/assets/lifeos-logo-2026.png"] {
 }());
 </script>
 <!-- LIFEOS_HOMEPAGE_REFERENCE_V5_END -->
+<!-- LIFEOS_V5_DUPLICATE_CLEANUP_V6_START -->
+<script id="lifeos-v5-duplicate-cleanup-v6">
+(function(){
+"use strict";
+function t(e){return((e&&e.textContent)||"").replace(/\s+/g," ").trim();}
+function hide(e,r){if(!e)return;e.hidden=true;e.setAttribute("aria-hidden","true");e.setAttribute("data-lifeos-v6-removed",r);e.style.setProperty("display","none","important");}
+function run(){
+ var fresh=document.querySelector(".los-reference-header-v5");
+ if(!fresh)return;
+ var hero=[].slice.call(document.querySelectorAll("h1,h2,h3")).find(function(e){return/Reveal the future/i.test(t(e));});
+ var root=hero?(hero.closest("main,section,article,.hero,.card,.panel")||hero.parentElement):document.body;
+
+ [].slice.call(root.querySelectorAll("img")).forEach(function(img){
+   if(fresh.contains(img))return;
+   var a=(img.getAttribute("alt")||"")+" "+(img.getAttribute("src")||"");
+   if(!/LifeOS.*logo|lifeos-logo/i.test(a))return;
+   var p=img.parentElement,best=img;
+   for(var i=0;p&&i<6;i++,p=p.parentElement){
+     var x=t(p);
+     if(/Reveal the future/i.test(x))break;
+     best=p;
+     if(/LifeOS\s*AI/i.test(x)&&/SYNTHETIC\s+INTELLIGENCE/i.test(x))break;
+   }
+   hide(best,"old-identity");
+ });
+
+ [].slice.call(root.querySelectorAll("div,section,header,aside,p,span")).forEach(function(e){
+   if(fresh.contains(e)||e.hidden)return;
+   var x=t(e);
+   if(x.length<180&&/LifeOS\s*AI/i.test(x)&&/SYNTHETIC\s+INTELLIGENCE/i.test(x)&&!/Reveal the future/i.test(x))
+     hide(e,"old-brand-text");
+ });
+
+ [].slice.call(root.querySelectorAll("div,span,p,button")).forEach(function(e){
+   if(fresh.contains(e)||e.hidden||t(e)!=="Online")return;
+   var b=e.closest(".status,.online,.live,.badge,.pill,[class*='status'],[class*='online'],[class*='badge'],[class*='pill']")||e;
+   if(!fresh.contains(b))hide(b,"old-online-badge");
+ });
+
+ document.documentElement.setAttribute("data-lifeos-v6-cleanup","complete");
+}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",run,{once:true});else run();
+}());
+</script>
+<!-- LIFEOS_V5_DUPLICATE_CLEANUP_V6_END -->
+
 
 <header class="los-home-header-v3" aria-label="LifeOSAI identity and status">
   <div class="los-home-logo-column-v3">
