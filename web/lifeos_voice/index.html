@@ -462,12 +462,10 @@ img[src^="/assets/lifeos-logo-2026.png"] {
   <link rel="stylesheet" href="/assets/adsense_public_v1.css">
 </head>
 
-<body class="lifeos-home-v3 lifeos-home-v4">
+<body class="lifeos-home-v3">
 <!-- LIFEOS_ADSENSE_PUBLIC_V1 -->
 <!-- LIFEOS_HOME_HEADER_BOARD_V3_START -->
 <div class="los-home-board-v3">
-<!-- LIFEOS_HOME_HEADER_VOICE_V4_1_START -->
-<div class="los-home-board-v4">
 <!-- LIFEOS_HOME_NAV_REPAIR_V2_START -->
 <nav class="los-home-menu-v2" aria-label="LifeOS AI information navigation">
   <button class="los-home-menu-button-v2" type="button" aria-expanded="false" aria-controls="los-home-menu-panel-v2" aria-label="Open LifeOS AI information menu">
@@ -514,35 +512,64 @@ img[src^="/assets/lifeos-logo-2026.png"] {
 }());
 </script>
 <!-- LIFEOS_HOME_NAV_REPAIR_V2_END -->
-<header class="los-home-header-v4" aria-label="LifeOs Ai identity and status">
-  <div class="los-home-logo-column-v4">
-    <img class="los-home-logo-v4" src="/assets/lifeos-logo-2026.png" alt="LifeOs Ai emblem">
-    <div class="los-home-online-v4" role="status" aria-label="Website online">
-      <span class="los-home-online-dot-v4" aria-hidden="true"></span><span>Online</span>
-    </div>
-  </div>
-  <div class="los-home-title-v4">
-    <div class="los-home-name-v4">LifeOs Ai</div>
-    <div class="los-home-subtitle-v4" aria-label="Synthetic Artificial Intelligence">
-      <span><b>S</b><em>YNTHETIC</em></span>
-      <span><b>A</b><em>RTIFICIAL</em></span>
-      <span><b>I</b><em>NTELLIGENCE</em></span>
-    </div>
-  </div>
-</header>
-<script id="los-home-header-cleanup-v4">
+<!-- LIFEOS_HOMEPAGE_REFERENCE_V5_START -->
+<script id="lifeos-homepage-reference-v5">
 (function(){
   "use strict";
-  function textOf(el){return (el.textContent||"").replace(/\s+/g," ").trim();}
-  function clean(){
-    var fresh=document.querySelector(".los-home-header-v4"); if(!fresh){return;}
-    var originalLogo=document.querySelector('img[alt="LifeOS AI logo"]');
-    if(originalLogo){var w=originalLogo.closest("header,.brand,.hero-brand,.topbar,.identity")||originalLogo.parentElement;if(w&&!w.classList.contains("los-home-header-v4")){w.style.display="none";}else{originalLogo.style.display="none";}}
-    document.querySelectorAll("body *").forEach(function(el){if(fresh.contains(el)||el.children.length){return;}var t=textOf(el);if(t==="Online"||t==="Public Live"){var p=el.closest(".status,.online,.live,.badge,.pill")||el.parentElement;if(p&&!fresh.contains(p)){p.style.display="none";}}});
+  function norm(v){return (v||"").replace(/\s+/g," ").trim();}
+  function text(el){return norm(el&&el.textContent);}
+  function findIdentity(){
+    var candidates=[].slice.call(document.querySelectorAll("header,.brand,.hero-brand,.topbar,.identity,main>div,main>section"));
+    for(var i=0;i<candidates.length;i++){
+      var t=text(candidates[i]);
+      if((/LifeOS\s*AI/i.test(t)||/LiveOSAI/i.test(t)) && /Online/i.test(t) && !/Reveal the future/i.test(t)){
+        return candidates[i];
+      }
+    }
+    var logos=[].slice.call(document.querySelectorAll('img[alt*="LifeOS" i],img[src*="lifeos-logo" i]'));
+    for(var j=0;j<logos.length;j++){
+      var p=logos[j].parentElement;
+      for(var depth=0;p&&depth<5;depth++,p=p.parentElement){
+        var pt=text(p);
+        if(/Online/i.test(pt) && !/Reveal the future/i.test(pt)){return p;}
+      }
+    }
+    return null;
   }
-  if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",clean,{once:true});}else{clean();}
+  function apply(){
+    var identity=findIdentity();
+    if(!identity){document.documentElement.setAttribute("data-lifeos-v5-error","identity-not-found");return;}
+    var logo=identity.querySelector('img');
+    if(!logo){document.documentElement.setAttribute("data-lifeos-v5-error","logo-not-found");return;}
+    var src=logo.getAttribute("src");
+    identity.className="los-reference-header-v5";
+    identity.innerHTML=
+      '<div class="los-reference-left-v5">'+
+        '<img class="los-reference-logo-v5" src="'+src+'" alt="LifeOs Ai emblem">'+
+        '<div class="los-reference-online-v5" role="status"><span></span>Online</div>'+
+      '</div>'+
+      '<div class="los-reference-center-v5">'+
+        '<div class="los-reference-name-v5">LifeOs Ai</div>'+
+        '<div class="los-reference-full-v5">Synthetic Artificial Intelligence</div>'+
+        '<div class="los-reference-sai-v5" aria-label="SAI"><b>S</b><b>A</b><b>I</b></div>'+
+      '</div>'+
+      '<div class="los-reference-menu-slot-v5"></div>';
+    var menu=document.querySelector(".los-home-menu-v2");
+    var slot=identity.querySelector(".los-reference-menu-slot-v5");
+    if(menu&&slot){slot.appendChild(menu);}
+    var heroHeading=[].slice.call(document.querySelectorAll("h1,h2")).find(function(el){
+      return /Reveal the future/i.test(text(el));
+    });
+    if(heroHeading){
+      var board=heroHeading.closest("main,section,article,.hero")||heroHeading.parentElement;
+      if(board){board.classList.add("los-reference-board-v5");}
+    }
+  }
+  if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",apply,{once:true});}
+  else{apply();}
 }());
 </script>
+<!-- LIFEOS_HOMEPAGE_REFERENCE_V5_END -->
 
 <header class="los-home-header-v3" aria-label="LifeOSAI identity and status">
   <div class="los-home-logo-column-v3">
@@ -732,7 +759,5 @@ header img:first-of-type {
 <!-- LIFEOS_LOGO_HOME_AND_VOICE_ROUTE_REPAIR_V1 -->
 </div>
 <!-- LIFEOS_HOME_HEADER_BOARD_V3_END -->
-</div>
-<!-- LIFEOS_HOME_HEADER_VOICE_V4_1_END -->
 </body>
 </html>
