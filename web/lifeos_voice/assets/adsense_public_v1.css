@@ -23,3 +23,36 @@
 .los-home-legal-v2 a{color:#e8ca70;text-decoration:none;font-weight:700}
 .los-home-legal-v2 a:hover,.los-home-legal-v2 a:focus-visible{color:#fff0b8;text-decoration:underline;outline:none}
 @media(max-width:520px){.los-home-menu-v2{width:calc(100% - 28px);margin:8px auto 6px}.los-home-menu-button-v2{min-width:98px;height:42px;padding:0 13px}.los-home-menu-panel-v2{top:49px}.los-home-legal-v2{font-size:11px}}
+
+
+/* LIFEOS_HOME_HEADER_BOARD_V3 */
+body.lifeos-home-v3{padding-top:0!important}
+body.lifeos-home-v3 .los-home-board-v3{position:relative;width:min(650px,calc(100% - 18px));margin:2px auto 0;padding:10px 12px 0;border:1px solid rgba(229,180,52,.36);border-radius:28px 28px 0 0;background:linear-gradient(180deg,rgba(8,7,3,.98),rgba(2,4,8,.98));overflow:visible;box-sizing:border-box}
+body.lifeos-home-v3 .los-home-board-v3>main{width:100%!important;max-width:none!important;margin:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
+body.lifeos-home-v3 .los-home-menu-v2{position:absolute!important;top:12px!important;right:12px!important;z-index:1100!important;width:auto!important;min-height:0!important;margin:0!important}
+body.lifeos-home-v3 .los-home-menu-button-v2{min-width:70px!important;width:70px!important;height:38px!important;padding:0 9px!important;gap:6px!important;border-radius:11px!important;font-size:11px!important}
+body.lifeos-home-v3 .los-home-menu-icon-v2{width:15px!important;gap:3px!important}
+body.lifeos-home-v3 .los-home-menu-icon-v2 span{width:15px!important;height:1.5px!important}
+body.lifeos-home-v3 .los-home-menu-panel-v2{top:44px!important;right:0!important}
+body.lifeos-home-v3 .los-home-header-v3{position:relative;display:grid;grid-template-columns:74px 1fr 74px;align-items:start;min-height:118px;padding:2px 0 8px;z-index:20}
+body.lifeos-home-v3 .los-home-logo-column-v3{grid-column:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;width:66px;margin:0}
+body.lifeos-home-v3 .los-home-logo-v3{display:block!important;width:50px!important;height:50px!important;max-width:50px!important;max-height:50px!important;object-fit:contain;margin:0!important;filter:drop-shadow(0 4px 10px rgba(218,165,32,.22))}
+body.lifeos-home-v3 .los-home-online-v3{display:inline-flex;align-items:center;justify-content:center;gap:4px;margin-top:3px;padding:0;background:none!important;border:0!important;box-shadow:none!important;color:#5bf29b;font:800 9px/1.1 Inter,ui-sans-serif,system-ui,sans-serif;letter-spacing:.01em;white-space:nowrap}
+body.lifeos-home-v3 .los-home-online-dot-v3{display:block;width:5px;height:5px;border-radius:50%;background:#55f09a;box-shadow:0 0 8px rgba(85,240,154,.68)}
+body.lifeos-home-v3 .los-home-title-v3{grid-column:2;align-self:start;text-align:center;padding:7px 4px 0;min-width:0}
+body.lifeos-home-v3 .los-home-name-v3{color:#f0c85a;font:900 clamp(24px,7.2vw,38px)/1 Inter,ui-sans-serif,system-ui,sans-serif;letter-spacing:.015em;text-shadow:0 3px 18px rgba(214,163,37,.2)}
+body.lifeos-home-v3 .los-home-subtitle-v3{margin-top:7px;color:#fff;font:500 clamp(12px,3.8vw,18px)/1.2 Inter,ui-sans-serif,system-ui,sans-serif;letter-spacing:.055em}
+body.lifeos-home-v3 .los-home-header-v3+main,
+body.lifeos-home-v3 .los-home-header-v3~main{margin-top:0!important}
+@media(max-width:520px){
+ body.lifeos-home-v3 .los-home-board-v3{width:calc(100% - 12px);margin-top:0;padding:8px 8px 0;border-radius:23px 23px 0 0}
+ body.lifeos-home-v3 .los-home-menu-v2{top:10px!important;right:9px!important}
+ body.lifeos-home-v3 .los-home-menu-button-v2{width:64px!important;min-width:64px!important;height:36px!important;padding:0 7px!important}
+ body.lifeos-home-v3 .los-home-header-v3{grid-template-columns:62px 1fr 62px;min-height:104px;padding-top:1px}
+ body.lifeos-home-v3 .los-home-logo-column-v3{width:56px}
+ body.lifeos-home-v3 .los-home-logo-v3{width:43px!important;height:43px!important;max-width:43px!important;max-height:43px!important}
+ body.lifeos-home-v3 .los-home-online-v3{font-size:8px;gap:3px;margin-top:2px}
+ body.lifeos-home-v3 .los-home-online-dot-v3{width:4px;height:4px}
+ body.lifeos-home-v3 .los-home-title-v3{padding-top:7px}
+ body.lifeos-home-v3 .los-home-subtitle-v3{margin-top:5px;letter-spacing:.035em}
+}

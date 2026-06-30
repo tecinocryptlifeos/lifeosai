@@ -462,8 +462,10 @@ img[src^="/assets/lifeos-logo-2026.png"] {
   <link rel="stylesheet" href="/assets/adsense_public_v1.css">
 </head>
 
-<body>
+<body class="lifeos-home-v3">
 <!-- LIFEOS_ADSENSE_PUBLIC_V1 -->
+<!-- LIFEOS_HOME_HEADER_BOARD_V3_START -->
+<div class="los-home-board-v3">
 <!-- LIFEOS_HOME_NAV_REPAIR_V2_START -->
 <nav class="los-home-menu-v2" aria-label="LifeOS AI information navigation">
   <button class="los-home-menu-button-v2" type="button" aria-expanded="false" aria-controls="los-home-menu-panel-v2" aria-label="Open LifeOS AI information menu">
@@ -510,6 +512,46 @@ img[src^="/assets/lifeos-logo-2026.png"] {
 }());
 </script>
 <!-- LIFEOS_HOME_NAV_REPAIR_V2_END -->
+<header class="los-home-header-v3" aria-label="LifeOSAI identity and status">
+  <div class="los-home-logo-column-v3">
+    <img class="los-home-logo-v3" src="/assets/lifeos-logo-2026.png" alt="LifeOSAI emblem">
+    <div class="los-home-online-v3" role="status" aria-label="Website online">
+      <span class="los-home-online-dot-v3" aria-hidden="true"></span>
+      <span>Online</span>
+    </div>
+  </div>
+  <div class="los-home-title-v3">
+    <div class="los-home-name-v3">LiveOSAI</div>
+    <div class="los-home-subtitle-v3">Synthetic Intelligent</div>
+  </div>
+</header>
+<script id="los-home-header-cleanup-v3">
+(function(){
+  "use strict";
+  function textOf(el){return (el.textContent||"").replace(/\s+/g," ").trim();}
+  function hideOriginalIdentity(){
+    var fresh=document.querySelector(".los-home-header-v3");
+    if(!fresh){return;}
+    var originalLogo=document.querySelector('img[alt="LifeOS AI logo"]');
+    if(originalLogo){
+      var wrapper=originalLogo.closest("header,.brand,.hero-brand,.topbar,.identity")||originalLogo.parentElement;
+      if(wrapper && !wrapper.classList.contains("los-home-header-v3")){wrapper.style.display="none";}
+      else{originalLogo.style.display="none";}
+    }
+    document.querySelectorAll("body *").forEach(function(el){
+      if(fresh.contains(el) || el.children.length){return;}
+      var t=textOf(el);
+      if(t==="Online" || t==="Public Live"){
+        var p=el.closest(".status,.online,.live,.badge,.pill")||el.parentElement;
+        if(p && !fresh.contains(p)){p.style.display="none";}
+      }
+    });
+  }
+  if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",hideOriginalIdentity,{once:true});}
+  else{hideOriginalIdentity();}
+}());
+</script>
+
   <main class="page">
     <div class="inner">
       <header class="topbar">
@@ -656,5 +698,7 @@ header img:first-of-type {
 <!-- LIFEOS_HEADER_LOGO_HOME_LINK_V3_END -->
 
 <!-- LIFEOS_LOGO_HOME_AND_VOICE_ROUTE_REPAIR_V1 -->
+</div>
+<!-- LIFEOS_HOME_HEADER_BOARD_V3_END -->
 </body>
 </html>
