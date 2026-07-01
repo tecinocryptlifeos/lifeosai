@@ -56,3 +56,158 @@ body.lifeos-home-v3 .los-home-header-v3~main{margin-top:0!important}
  body.lifeos-home-v3 .los-home-title-v3{padding-top:7px}
  body.lifeos-home-v3 .los-home-subtitle-v3{margin-top:5px;letter-spacing:.035em}
 }
+
+
+/* LIFEOS_HOME_CROWN_MOBILE_BRAND_V1
+   Restores the original crowned-man artwork and keeps the homepage responsive.
+*/
+html{
+  width:100%;
+  min-height:100%;
+  background:#030302;
+}
+
+body.lifeos-home-crown-mobile-v1{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  width:100%;
+  min-width:0;
+  min-height:100vh;
+  min-height:100svh;
+  min-height:100dvh;
+  margin:0;
+  padding-top:max(4px,env(safe-area-inset-top));
+  padding-right:env(safe-area-inset-right);
+  padding-bottom:env(safe-area-inset-bottom);
+  padding-left:env(safe-area-inset-left);
+  overflow-x:hidden;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0,0,0,.06) 0%,
+      rgba(0,0,0,.12) 48%,
+      rgba(0,0,0,.30) 100%
+    ),
+    url("/assets/lifeos-bg.jpg") center top / cover no-repeat fixed !important;
+  background-color:#030302 !important;
+  box-sizing:border-box;
+}
+
+body.lifeos-home-crown-mobile-v1 *,
+body.lifeos-home-crown-mobile-v1 *::before,
+body.lifeos-home-crown-mobile-v1 *::after{
+  box-sizing:border-box;
+}
+
+body.lifeos-home-crown-mobile-v1 .los-home-menu-v2,
+body.lifeos-home-crown-mobile-v1 main,
+body.lifeos-home-crown-mobile-v1 footer{
+  width:min(650px,calc(100% - 12px)) !important;
+  max-width:650px !important;
+  min-width:0 !important;
+  margin-left:auto !important;
+  margin-right:auto !important;
+}
+
+body.lifeos-home-crown-mobile-v1 main{
+  position:relative;
+  z-index:1;
+  flex:1 0 auto;
+  margin-top:0 !important;
+  margin-bottom:6px !important;
+}
+
+body.lifeos-home-crown-mobile-v1 footer{
+  position:relative !important;
+  inset:auto !important;
+  z-index:2;
+  flex:0 0 auto;
+  margin-top:auto !important;
+  margin-bottom:0 !important;
+  padding-bottom:max(10px,env(safe-area-inset-bottom)) !important;
+  overflow:visible !important;
+  transform:none !important;
+}
+
+body.lifeos-home-crown-mobile-v1 img{
+  max-width:100%;
+  height:auto;
+}
+
+@media(max-width:520px){
+  body.lifeos-home-crown-mobile-v1{
+    background-attachment:scroll !important;
+    background-position:center top !important;
+    background-size:cover !important;
+  }
+
+  body.lifeos-home-crown-mobile-v1 .los-home-menu-v2{
+    min-height:38px !important;
+    margin-top:2px !important;
+    margin-bottom:2px !important;
+  }
+
+  body.lifeos-home-crown-mobile-v1 main{
+    width:calc(100% - 8px) !important;
+    margin-top:0 !important;
+    margin-bottom:3px !important;
+    padding:8px 9px 10px !important;
+    border-radius:18px !important;
+  }
+
+  body.lifeos-home-crown-mobile-v1 main h1{
+    max-width:100%;
+    margin-top:5px !important;
+    margin-bottom:7px !important;
+    font-size:clamp(27px,8.6vw,41px) !important;
+    line-height:1.02 !important;
+    overflow-wrap:anywhere;
+  }
+
+  body.lifeos-home-crown-mobile-v1 main p{
+    max-width:100%;
+    margin-top:6px !important;
+    margin-bottom:6px !important;
+    font-size:clamp(13px,3.55vw,16px) !important;
+    line-height:1.36 !important;
+    overflow-wrap:anywhere;
+  }
+
+  body.lifeos-home-crown-mobile-v1 main a,
+  body.lifeos-home-crown-mobile-v1 main button{
+    max-width:100%;
+  }
+
+  body.lifeos-home-crown-mobile-v1 footer{
+    width:calc(100% - 8px) !important;
+    margin-top:3px !important;
+    padding:8px 7px max(9px,env(safe-area-inset-bottom)) !important;
+    font-size:11px !important;
+    line-height:1.32 !important;
+  }
+
+  body.lifeos-home-crown-mobile-v1 .los-home-legal-v2{
+    display:flex !important;
+    flex-wrap:wrap !important;
+    justify-content:center !important;
+    gap:4px 7px !important;
+    width:100% !important;
+    margin-top:5px !important;
+  }
+}
+
+@media(max-width:360px){
+  body.lifeos-home-crown-mobile-v1 main{
+    padding-left:7px !important;
+    padding-right:7px !important;
+  }
+
+  body.lifeos-home-crown-mobile-v1 main h1{
+    font-size:clamp(25px,8.2vw,34px) !important;
+  }
+
+  body.lifeos-home-crown-mobile-v1 footer{
+    font-size:10px !important;
+  }
+}
