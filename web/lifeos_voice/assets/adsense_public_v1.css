@@ -535,3 +535,52 @@ body.lifeos-home-reference-v1 .panel{
       ) !important;
   }
 }
+
+
+/* LIFEOS_PUBLIC_NAV_BOARD_REMOVAL_V1
+   Removes only the visible navigation board.
+   The LifeOS AI brand keeps its original desktop coordinates.
+*/
+.los-public-page .los-public-nav{
+  align-items:flex-start !important;
+  margin:14px auto 0 !important;
+  padding:13px 16px 0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  -webkit-backdrop-filter:none !important;
+  backdrop-filter:none !important;
+  box-shadow:none !important;
+}
+
+.los-public-page .los-public-links{
+  align-items:flex-start !important;
+  justify-content:flex-end !important;
+}
+
+.los-public-page .los-public-main{
+  padding-top:20px !important;
+}
+
+@media(max-width:760px){
+  .los-public-page .los-public-nav{
+    align-items:flex-start !important;
+    flex-direction:column !important;
+    gap:7px !important;
+    margin:14px auto 0 !important;
+    padding:13px 16px 0 !important;
+  }
+
+  .los-public-page .los-public-links{
+    justify-content:flex-start !important;
+    gap:3px !important;
+  }
+
+  .los-public-page .los-public-links a{
+    padding:7px 9px !important;
+  }
+
+  .los-public-page .los-public-main{
+    padding-top:18px !important;
+  }
+}
