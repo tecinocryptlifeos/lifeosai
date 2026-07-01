@@ -572,6 +572,112 @@ h1 { width:min(76%,470px) !important; margin:18px auto 0 !important; padding:0 6
 .lifeos-voice-agent-v5{margin:5px auto 0;color:#f0c85a;font:800 12px/1.25 Inter,ui-sans-serif,system-ui,sans-serif;letter-spacing:.05em;text-align:center}
 </style>
 
+
+<!-- LIFEOS_COORDINATED_THREE_ADJUSTMENTS_V1_VOICE_STYLE_START -->
+<style id="lifeos-coordinated-three-adjustments-v1-style">
+main{
+  position:relative !important;
+}
+
+.brand{
+  position:static !important;
+  width:0 !important;
+  min-width:0 !important;
+  height:0 !important;
+  min-height:0 !important;
+  margin:0 !important;
+  padding:0 !important;
+  gap:0 !important;
+  overflow:visible !important;
+  color:transparent !important;
+  font-size:0 !important;
+}
+
+.brand > :not(.brand-emblem):not(img){
+  display:none !important;
+}
+
+.brand .brand-emblem,
+.brand > img{
+  position:absolute !important;
+  top:8px !important;
+  left:8px !important;
+  z-index:40 !important;
+  display:grid !important;
+  place-items:center !important;
+  width:48px !important;
+  height:48px !important;
+  max-width:48px !important;
+  max-height:48px !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
+  font-size:initial !important;
+  color:initial !important;
+  transform:none !important;
+}
+
+.brand .brand-emblem img,
+.brand > img{
+  width:100% !important;
+  height:100% !important;
+  max-width:100% !important;
+  max-height:100% !important;
+  object-fit:contain !important;
+}
+
+.lifeos-voice-title-order-v1{
+  display:block !important;
+  position:relative !important;
+  z-index:12 !important;
+  max-width:calc(100% - 116px) !important;
+  margin:0 auto 5px !important;
+  padding:0 !important;
+  text-align:center !important;
+}
+
+.lifeos-voice-subtitle-order-v1{
+  display:block !important;
+  position:relative !important;
+  z-index:12 !important;
+  max-width:calc(100% - 100px) !important;
+  margin:0 auto 12px !important;
+  padding:0 !important;
+  color:#f0c85a !important;
+  font-weight:800 !important;
+  text-align:center !important;
+  letter-spacing:.045em !important;
+}
+
+@media(max-width:520px){
+  .brand .brand-emblem,
+  .brand > img{
+    top:6px !important;
+    left:6px !important;
+    width:40px !important;
+    height:40px !important;
+    max-width:40px !important;
+    max-height:40px !important;
+  }
+
+  .lifeos-voice-title-order-v1{
+    max-width:calc(100% - 92px) !important;
+    margin-bottom:4px !important;
+    font-size:clamp(24px,7.2vw,34px) !important;
+    line-height:1.05 !important;
+  }
+
+  .lifeos-voice-subtitle-order-v1{
+    max-width:calc(100% - 76px) !important;
+    margin-bottom:10px !important;
+    font-size:clamp(10px,3vw,13px) !important;
+    line-height:1.2 !important;
+  }
+}
+</style>
+<!-- LIFEOS_COORDINATED_THREE_ADJUSTMENTS_V1_VOICE_STYLE_END -->
+
 </head>
 <body>
 <main>
@@ -588,7 +694,8 @@ h1 { width:min(76%,470px) !important; margin:18px auto 0 !important; padding:0 6
     </span><span>LIFE OS</span>
 <span class="lifeos-brand-caption-v2">LifeOs synthetic intelligence</span>
 </div>
-  <h1>LifeOs Ai Voice Assistant</h1>
+  <h1 class="lifeos-voice-title-order-v1">LifeOs Ai Voice Assistant</h1>
+  <p class="subtitle lifeos-voice-subtitle-order-v1">Synthetic Intelligent Agent</p>
   <p class="lifeos-voice-agent-v5">Synthetic Intelligent Agent</p>
 <div id="orb" class="orb" aria-hidden="true"></div>
   <button id="liveButton" class="primary" type="button">Start Live Conversation</button>
@@ -634,5 +741,6 @@ h1 { width:min(76%,470px) !important; margin:18px auto 0 !important; padding:0 6
 <!-- LIFEOS_VOICE_HEADING_AMBIENT_REFINEMENT_V2 -->
 <!-- LIFEOS_VOICE_HEADING_COLOR_MIX_V3 -->
 <!-- LIFEOS_VOICE_AGENT_REFERENCE_V5 -->
+<!-- LIFEOS_COORDINATED_THREE_ADJUSTMENTS_V1 -->
 </body>
 </html>
