@@ -584,3 +584,19 @@ body.lifeos-home-reference-v1 .panel{
     padding-top:18px !important;
   }
 }
+
+
+/* LIFEOS_SOCIAL_SUPPORT_FOOTER_V2 */
+.lifeos-social-footer-v1{width:min(920px,100%);margin:22px auto 4px;padding:20px 16px 4px;border-top:1px solid rgba(241,199,91,.20);text-align:center}
+.lifeos-social-heading-v1{margin:0 0 14px;color:#f2d57e;font-size:clamp(1rem,2.5vw,1.2rem);font-weight:850;letter-spacing:.02em}
+.lifeos-social-icons-v1{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
+.lifeos-social-link-v1{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border:1px solid rgba(241,199,91,.28);border-radius:50%;background:rgba(255,255,255,.045);color:#f4f7fb;text-decoration:none;box-shadow:0 8px 24px rgba(0,0,0,.18);font-size:1.15rem;font-weight:900;line-height:1;transition:transform .18s ease,border-color .18s ease,background .18s ease}
+a.lifeos-social-link-v1:hover,a.lifeos-social-link-v1:focus-visible{transform:translateY(-2px);border-color:rgba(241,199,91,.72);background:rgba(241,199,91,.12);outline:none}
+.lifeos-social-disabled-v1{opacity:.38;cursor:not-allowed;filter:saturate(.35)}
+.lifeos-social-note-v1{max-width:680px;margin:13px auto 0;color:#9da9b7;font-size:.78rem;line-height:1.45}
+.lifeos-contact-email-v1{color:#f1c75b;font-weight:800;overflow-wrap:anywhere}
+.lifeos-faq-v1 details{margin:10px 0;padding:14px 16px;border:1px solid rgba(255,255,255,.09);border-radius:14px;background:rgba(255,255,255,.025)}
+.lifeos-faq-v1 summary{cursor:pointer;color:#f5d987;font-weight:800}
+.lifeos-faq-v1 details p{margin:10px 0 0}
+.footer .lifeos-social-footer-v1{margin-top:20px;padding-bottom:0}
+@media(max-width:520px){.lifeos-social-footer-v1{padding-left:8px;padding-right:8px}.lifeos-social-icons-v1{gap:8px}.lifeos-social-link-v1{width:41px;height:41px}}
