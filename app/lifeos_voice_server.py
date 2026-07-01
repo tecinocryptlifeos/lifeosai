@@ -501,6 +501,11 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", content_type)
         self.send_header("Cache-Control", "no-store")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
+        self.send_header("CDN-Cache-Control", "no-store")
+        self.send_header("Surrogate-Control", "no-store")
+        self.send_header("X-LifeOS-Release", "lifeos-final-v3-20260701")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         if self.command != "HEAD":

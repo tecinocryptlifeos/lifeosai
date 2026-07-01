@@ -1,24 +1,5 @@
-const CACHE_NAME = "lifeos-visible-motion-1781790083";
-
-self.addEventListener("install", (event) => {
-  self.skipWaiting();
-});
-
-self.addEventListener("activate", (event) => {
-  event.waitUntil((async () => {
-    const keys = await caches.keys();
-    await Promise.all(keys.map((key) => caches.delete(key)));
-    await self.clients.claim();
-  })());
-});
-
-self.addEventListener("fetch", (event) => {
-  const request = event.request;
-
-  if (request.mode === "navigate") {
-    event.respondWith(fetch(request, { cache: "no-store" }));
-    return;
-  }
-
-  event.respondWith(fetch(request).catch(() => caches.match(request)));
-});
+/* LIFEOS_FINAL_RENDER_VISUAL_FIX_V3 */
+const LIFEOS_RELEASE='lifeos-final-v3-20260701';
+self.addEventListener("install",e=>e.waitUntil(self.skipWaiting()));
+self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(n=>Promise.all(n.map(x=>caches.delete(x)))).then(()=>self.clients.claim())));
+self.addEventListener("fetch",e=>{const q=e.request;if(q.method!=="GET")return;const u=new URL(q.url);if(u.origin!==self.location.origin)return;const fresh=q.mode==="navigate"||["document","style","script"].includes(q.destination);if(fresh)e.respondWith(fetch(q,{cache:"no-store"}));});

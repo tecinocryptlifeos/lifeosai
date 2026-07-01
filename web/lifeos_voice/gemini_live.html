@@ -681,6 +681,15 @@ main{
 </style>
 <!-- LIFEOS_PREMIUM_OVERLAY_VOICE_IDENTITY_V2_VOICE_STYLE_END -->
 
+<!-- LIFEOS_FINAL_RENDER_VISUAL_FIX_V3_VOICE --><style id="lifeos-final-v3-voice">
+main{position:relative!important;display:flex!important;flex-direction:column!important}
+.brand.lifeos-voice-logo-only-v2{position:absolute!important;top:10px!important;left:10px!important;right:auto!important;z-index:50!important;width:48px!important;height:48px!important;min-width:48px!important;min-height:48px!important;margin:0!important;padding:0!important}
+.brand.lifeos-voice-logo-only-v2 .brand-emblem,.brand.lifeos-voice-logo-only-v2 .lifeos-home-logo-link-v1,.brand.lifeos-voice-logo-only-v2 img{width:48px!important;height:48px!important;max-width:48px!important;max-height:48px!important;margin:0!important;transform:none!important}
+.lifeos-voice-title-v3{order:1!important;display:block!important;position:relative!important;z-index:12!important;width:min(76%,470px)!important;max-width:calc(100% - 108px)!important;margin:18px auto 0!important;padding:0 6px!important;color:#f2bf41!important;font-size:clamp(28px,7.3vw,44px)!important;font-weight:900!important;line-height:1.08!important;text-align:center!important}
+.lifeos-voice-subtitle-v3{order:2!important;display:block!important;position:relative!important;z-index:12!important;width:min(88%,440px)!important;max-width:calc(100% - 82px)!important;margin:8px auto 12px!important;padding:0 8px!important;color:#fff7e8!important;font-size:clamp(12px,3.3vw,15px)!important;font-weight:700!important;line-height:1.35!important;text-align:center!important}
+#orb{order:3!important}#liveButton{order:4!important}.controls{order:5!important}#status{order:6!important}#outputLabel{order:7!important}#sophiaAudio{order:8!important}.lifeos-voice-footer{order:9!important}
+@media(max-width:390px){.brand.lifeos-voice-logo-only-v2{top:8px!important;left:8px!important;width:42px!important;height:42px!important;min-width:42px!important;min-height:42px!important}.brand.lifeos-voice-logo-only-v2 .brand-emblem,.brand.lifeos-voice-logo-only-v2 .lifeos-home-logo-link-v1,.brand.lifeos-voice-logo-only-v2 img{width:42px!important;height:42px!important;max-width:42px!important;max-height:42px!important}.lifeos-voice-title-v3{width:74%!important;max-width:calc(100% - 92px)!important;margin-top:16px!important;font-size:clamp(26px,7.5vw,36px)!important}}
+</style>
 </head>
 <body>
 <main>
@@ -697,9 +706,8 @@ main{
       <a class="lifeos-home-logo-link-v1" href="/" aria-label="Return to the LifeOS homepage"><img src="/assets/lifeos-logo-2026.png" alt=""></a>
     </span>
 </div>
-  <h1 class="lifeos-voice-title-v2">LifeOs Ai Voice Assistant</h1>
-  <p class="subtitle lifeos-voice-subtitle-v2">Synthetic Intelligent Agent</p>
-
+  <h1 class="lifeos-voice-title-v3">LifeOs Ai Voice Assistant</h1>
+  <p class="subtitle lifeos-voice-subtitle-v3">Synthetic Intelligent Agent</p>
 
 <div id="orb" class="orb" aria-hidden="true"></div>
   <button id="liveButton" class="primary" type="button">Start Live Conversation</button>
@@ -711,11 +719,7 @@ main{
   <div id="status" role="status" aria-live="polite">Ready</div>
   <div id="outputLabel">Output: phone default</div>
   <audio id="sophiaAudio" autoplay playsinline aria-hidden="true"></audio>
-<footer id="lifeosVoiceFooterV1" class="lifeos-voice-footer">
-    LFOSAI Voice synthetic intelligent agent.<br>
-    Powered by Hansafrique Ltd, built by LifeOsdaily,
-    Engineered &amp; Structured by Tecino's Channel, 2026 ©.
-  </footer>
+<footer id="lifeosVoiceFooterV1" class="lifeos-voice-footer">Powered by Hansafrique Ltd, built by LifeOsdaily, Engineered &amp; Structured by Tecino's Channel, 2026 ©.</footer>
 
 </main>
 <script>
@@ -746,5 +750,6 @@ main{
 <!-- LIFEOS_VOICE_HEADING_COLOR_MIX_V3 -->
 <!-- LIFEOS_VOICE_AGENT_REFERENCE_V5 -->
 
+<!-- LIFEOS_FINAL_RENDER_VISUAL_FIX_V3_CACHE --><script id="lifeos-final-cache-reset-v3">(()=>{"use strict";const r="lifeos-final-v3-20260701",k="lifeos-release-cache-reset";const f=async()=>{if("serviceWorker" in navigator){const x=await navigator.serviceWorker.register("/service-worker.js?v="+encodeURIComponent(r),{updateViaCache:"none"});await x.update()}if("caches" in window){const n=await caches.keys();await Promise.all(n.map(x=>caches.delete(x)))}};if(localStorage.getItem(k)!==r)f().finally(()=>localStorage.setItem(k,r));})();</script>
 </body>
 </html>
