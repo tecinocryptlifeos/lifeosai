@@ -462,11 +462,31 @@ img[src^="/assets/lifeos-logo-2026.png"] {
   <link rel="stylesheet" href="/assets/adsense_public_v1.css">
 </head>
 
-<body class="lifeos-home-v3 lifeos-home-crown-mobile-v1">
+<body class="lifeos-home-reference-v1">
 <!-- LIFEOS_ADSENSE_PUBLIC_V1 -->
-<!-- LIFEOS_HOME_HEADER_BOARD_V3_START -->
-<div class="los-home-board-v3">
-<!-- LIFEOS_HOME_NAV_REPAIR_V2_START -->
+
+  <main class="page">
+    <div class="inner">
+      <header class="topbar lifeos-reference-header" aria-label="LifeOs Ai identity and status">
+        <div class="lifeos-reference-logo-cluster">
+          <a class="lifeos-reference-logo-link" href="/" aria-label="Return to LifeOs Ai homepage">
+            <img class="lifeos-reference-logo" src="/assets/lifeos-logo-2026.png" alt="LifeOs Ai logo" />
+          </a>
+          <div class="lifeos-reference-online" role="status" aria-label="Website online">
+            <span class="lifeos-reference-online-dot" aria-hidden="true"></span>
+            <span>Online</span>
+          </div>
+        </div>
+
+        <div class="lifeos-reference-identity">
+          <strong class="lifeos-reference-name">LifeOs Ai</strong>
+          <span class="lifeos-reference-subtitle">Synthetic Artificial Intelligence</span>
+          <div class="lifeos-reference-sai" aria-label="SAI">
+            <span>S</span><span>A</span><span>I</span>
+          </div>
+        </div>
+
+        <!-- LIFEOS_HOME_NAV_REPAIR_V2_START -->
 <nav class="los-home-menu-v2" aria-label="LifeOs Ai information navigation">
   <button class="los-home-menu-button-v2" type="button" aria-expanded="false" aria-controls="los-home-menu-panel-v2" aria-label="Open LifeOs Ai information menu">
     <span class="los-home-menu-icon-v2" aria-hidden="true"><span></span><span></span><span></span></span>
@@ -512,65 +532,6 @@ img[src^="/assets/lifeos-logo-2026.png"] {
 }());
 </script>
 <!-- LIFEOS_HOME_NAV_REPAIR_V2_END -->
-<header class="los-home-header-v3" aria-label="LifeOSAI identity and status">
-  <div class="los-home-logo-column-v3">
-    <img class="los-home-logo-v3" src="/assets/lifeos-logo-2026.png" alt="LifeOSAI emblem">
-    <div class="los-home-online-v3" role="status" aria-label="Website online">
-      <span class="los-home-online-dot-v3" aria-hidden="true"></span>
-      <span>Online</span>
-    </div>
-  </div>
-  <div class="los-home-title-v3">
-    <div class="los-home-name-v3">LifeOs Ai</div>
-    <div class="los-home-subtitle-v3">Synthetic Intelligent</div>
-  </div>
-</header>
-<script id="los-home-header-cleanup-v3">
-(function(){
-  "use strict";
-  function textOf(el){return (el.textContent||"").replace(/\s+/g," ").trim();}
-  function hideOriginalIdentity(){
-    var fresh=document.querySelector(".los-home-header-v3");
-    if(!fresh){return;}
-    var originalLogo=document.querySelector('img[alt="LifeOS AI logo"]');
-    if(originalLogo){
-      var wrapper=originalLogo.closest("header,.brand,.hero-brand,.topbar,.identity")||originalLogo.parentElement;
-      if(wrapper && !wrapper.classList.contains("los-home-header-v3")){wrapper.style.display="none";}
-      else{originalLogo.style.display="none";}
-    }
-    document.querySelectorAll("body *").forEach(function(el){
-      if(fresh.contains(el) || el.children.length){return;}
-      var t=textOf(el);
-      if(t==="Online" || t==="Public Live"){
-        var p=el.closest(".status,.online,.live,.badge,.pill")||el.parentElement;
-        if(p && !fresh.contains(p)){p.style.display="none";}
-      }
-    });
-  }
-  if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",hideOriginalIdentity,{once:true});}
-  else{hideOriginalIdentity();}
-}());
-</script>
-
-  <main class="page">
-    <div class="inner">
-      <header class="topbar">
-        <div class="brand">
-          <!-- LIFEOS_HOME_LOGO_LINK_V1_START -->
-<a class="lifeos-home-logo-link" href="/" aria-label="Return to LifeOS homepage" title="LifeOS homepage">
-  <a class="lifeos-home-logo-link-v1" href="/" aria-label="Return to the LifeOS homepage"><img class="logo" src="/assets/lifeos-logo-2026.png" alt="LifeOs Ai logo" /></a>
-</a>
-<!-- LIFEOS_HOME_LOGO_LINK_V1_END -->
-          <div class="brand-text">
-            <strong>LifeOs Ai</strong>
-            <span>Synthetic Intelligence</span>
-          </div>
-        </div>
-
-        <div class="status">
-          <span class="dot"></span>
-          <span>Online</span>
-        </div>
       </header>
 
       <section class="hero">
@@ -698,8 +659,6 @@ header img:first-of-type {
 <!-- LIFEOS_HEADER_LOGO_HOME_LINK_V3_END -->
 
 <!-- LIFEOS_LOGO_HOME_AND_VOICE_ROUTE_REPAIR_V1 -->
-</div>
-<!-- LIFEOS_HOME_HEADER_BOARD_V3_END -->
-<!-- LIFEOS_HOME_CROWN_MOBILE_BRAND_V1 -->
+<!-- LIFEOS_REFERENCE_HOMEPAGE_V1 -->
 </body>
 </html>
