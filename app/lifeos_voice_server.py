@@ -497,7 +497,8 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
     def _path(self):
         return unquote(self.path.split("?", 1)[0])
 
-    def _send_bytes(self, status, body, content_type="text/plain; charset=utf-8"):
+    # LIFEOS_ARCHITECTURE_FINALIZER_V1_HEADERS
+    def _send_bytes(self, status, body, content_type="text/plain; charset=utf-8", extra_headers=None):
         self.send_response(status)
         self.send_header("Content-Type", content_type)
         self.send_header("Cache-Control", "no-store")
@@ -505,7 +506,9 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
         self.send_header("Expires", "0")
         self.send_header("CDN-Cache-Control", "no-store")
         self.send_header("Surrogate-Control", "no-store")
-        self.send_header("X-LifeOS-Release", "lifeos-final-v3-20260701")
+        self.send_header("X-LifeOS-Release", "lifeos-architecture-v1-20260701")
+        for name, value in (extra_headers or {}).items():
+            self.send_header(name, value)
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         if self.command != "HEAD":
@@ -513,7 +516,12 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
 
     def _send_json(self, status, payload):
         body = json.dumps(payload).encode("utf-8")
-        self._send_bytes(status, body, "application/json; charset=utf-8")
+        self._send_bytes(
+            status,
+            body,
+            "application/json; charset=utf-8",
+            {"X-Robots-Tag": "noindex, nofollow, noarchive"},
+        )
 
     def _safe_file(self, root, relative_path):
         root = root.resolve()
@@ -527,13 +535,23 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
 
         return target
 
-    def _serve_file(self, file_path):
+    def _serve_file(self, file_path, extra_headers=None):
         if not file_path or not file_path.exists() or not file_path.is_file():
             self._send_bytes(404, b"Not found")
             return
-
         content_type = mimetypes.guess_type(str(file_path))[0] or "application/octet-stream"
-        self._send_bytes(200, file_path.read_bytes(), content_type)
+        self._send_bytes(200, file_path.read_bytes(), content_type, extra_headers)
+
+    def _redirect(self, location, status=301):
+        self._send_bytes(
+            status,
+            ("Redirecting to " + location).encode("utf-8"),
+            "text/plain; charset=utf-8",
+            {
+                "Location": location,
+                "X-Robots-Tag": "noindex, nofollow, noarchive",
+            },
+        )
 
     def do_HEAD(self):
         self.do_GET()
@@ -541,114 +559,98 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = self._path()
 
-
-        # LIFEOS_ADSENSE_PUBLIC_V1_GET_ROUTES_START
-        public_pages_v1 = {
+        # LIFEOS_ARCHITECTURE_FINALIZER_V1_ROUTES
+        public_pages = {
+            "/": "index.html",
             "/about": "about.html",
-            "/about.html": "about.html",
             "/how-it-works": "how_it_works.html",
-            "/how-it-works.html": "how_it_works.html",
             "/decision-intelligence": "decision_intelligence.html",
-            "/decision-intelligence.html": "decision_intelligence.html",
             "/community": "community.html",
-            "/community.html": "community.html",
             "/guides": "guides.html",
-            "/guides.html": "guides.html",
             "/contact": "contact.html",
-            "/contact.html": "contact.html",
             "/privacy": "privacy.html",
-            "/privacy.html": "privacy.html",
             "/terms": "terms.html",
-            "/terms.html": "terms.html",
             "/disclaimer": "disclaimer.html",
-            "/disclaimer.html": "disclaimer.html",
             "/robots.txt": "robots.txt",
             "/sitemap.xml": "sitemap.xml",
-            "/voice": "gemini_live.html",
         }
-        if path in public_pages_v1:
-            self._serve_file(WEB_DIR / public_pages_v1[path])
+        redirects = {
+            "/index.html": "/",
+            "/home": "/",
+            "/home.html": "/",
+            "/about.html": "/about",
+            "/how-it-works.html": "/how-it-works",
+            "/decision-intelligence.html": "/decision-intelligence",
+            "/community.html": "/community",
+            "/guides.html": "/guides",
+            "/contact.html": "/contact",
+            "/privacy.html": "/privacy",
+            "/terms.html": "/terms",
+            "/disclaimer.html": "/disclaimer",
+            "/chat.html": "/chat",
+            "/voice.html": "/voice",
+            "/gemini-live": "/voice",
+            "/gemini-live.html": "/voice",
+            "/manifest.json": "/manifest.webmanifest",
+        }
+
+        if path in redirects:
+            self._redirect(redirects[path])
             return
-        # LIFEOS_ADSENSE_PUBLIC_V1_GET_ROUTES_END
+        if path in public_pages:
+            self._serve_file(WEB_DIR / public_pages[path])
+            return
 
-
-        # LIFEOS_GEMINI_LIVE_V1_GET_ROUTES_START
+        private_headers = {
+            "X-Robots-Tag": "noindex, nofollow, noarchive",
+        }
+        if path == "/chat":
+            self._serve_file(WEB_DIR / "chat.html", private_headers)
+            return
+        if path == "/voice":
+            self._serve_file(WEB_DIR / "gemini_live.html", private_headers)
+            return
+        if path == "/health":
+            self._send_bytes(200, b"OK", "text/plain; charset=utf-8", private_headers)
+            return
         if path == "/api/gemini-live-status":
             self._send_json(200, gemini_live_status())
             return
-
-        if path in ("/gemini-live", "/gemini-live.html"):
-            self._serve_file(WEB_DIR / "gemini_live.html")
-            return
-        # LIFEOS_GEMINI_LIVE_V1_GET_ROUTES_END
-        # LIFEOS_REALTIME_STATUS_ROUTE_V3
         if path == "/api/realtime-status":
             self._handle_realtime_status_v3()
             return
-
-        # LIFEOS_ROUTE_LOCK_START
-        if path in ("/", "/index.html"):
-            self._serve_file(WEB_DIR / "index.html")
-            return
-
-        if path in ("/chat", "/chat.html"):
-            self._serve_file(WEB_DIR / "chat.html")
-            return
-
-        if path in ("/home", "/home.html"):
-            self.send_response(302)
-            self.send_header("Location", "/")
-            self.send_header("Cache-Control", "no-store")
-            self.end_headers()
-            return
-        # LIFEOS_ROUTE_LOCK_END
-
-
-
-
-
-
-
-        if path == "/health":
-            self._send_bytes(200, b"OK", "text/plain; charset=utf-8")
-            return
-
-        if path in ("/", "/index.html"):
-            self._serve_file(WEB_DIR / "chat.html")
-            return
-
-        if path in ("/home", "/home.html"):
-            self._serve_file(WEB_DIR / "index.html")
-            return
-
-        if path in ("/chat", "/chat.html"):
-            self._serve_file(WEB_DIR / "chat.html")
-            return
-
-        if path in ("/manifest.webmanifest", "/manifest.json"):
+        if path == "/manifest.webmanifest":
             self._serve_file(WEB_DIR / "manifest.webmanifest")
             return
-
         if path == "/service-worker.js":
-            self._serve_file(WEB_DIR / "service-worker.js")
+            self._serve_file(
+                WEB_DIR / "service-worker.js",
+                {"Service-Worker-Allowed": "/"},
+            )
             return
-
         if path.startswith("/icons/"):
-            file_path = self._safe_file(WEB_DIR / "icons", path.replace("/icons/", "", 1))
-            self._serve_file(file_path)
+            self._serve_file(
+                self._safe_file(WEB_DIR / "icons", path.replace("/icons/", "", 1))
+            )
             return
-
         if path.startswith("/assets/"):
-            file_path = self._safe_file(WEB_DIR / "assets", path.replace("/assets/", "", 1))
-            self._serve_file(file_path)
+            self._serve_file(
+                self._safe_file(WEB_DIR / "assets", path.replace("/assets/", "", 1))
+            )
             return
-
         if path.startswith("/audio/"):
-            file_path = self._safe_file(AUDIO_DIR, path.replace("/audio/", "", 1))
-            self._serve_file(file_path)
+            self._serve_file(
+                self._safe_file(AUDIO_DIR, path.replace("/audio/", "", 1)),
+                private_headers,
+            )
             return
 
-        self._send_bytes(404, b"Not found")
+        self._send_bytes(
+            404,
+            b"Not found",
+            "text/plain; charset=utf-8",
+            private_headers,
+        )
 
 
     # LIFEOS_REALTIME_GATEWAY_V3_START
