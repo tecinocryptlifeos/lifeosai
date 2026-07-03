@@ -1,1049 +1,879 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LifeOs Ai — Synthetic Decision Intelligence</title>
-  <meta name="description" content="LifeOS provides decision-intelligence frameworks, risk examination, trade-off comparison and practical next-action guidance." />
-  <meta name="theme-color" content="#050403" />
-  <meta name="lifeos-build" content="20260618141906" />
-  <link rel="manifest" href="/manifest.webmanifest?v=20260618141906" />
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LifeOS AI — Synthetic Decision Intelligence</title>
+  <meta name="description" content="LifeOS provides decision-intelligence frameworks, risk examination, trade-off comparison and practical next-action guidance.">
+  <meta name="theme-color" content="#050403">
+  <meta name="lifeos-build" content="homepage-reconstruction-approved-v1-20260703">
+  <link rel="manifest" href="/manifest.webmanifest">
   <style>
     :root {
+      --page: #030302;
+      --surface: #0a0906;
+      --surface-2: #11100b;
+      --surface-3: #17140d;
       --gold: #f4c75d;
-      --soft-gold: #fff1a6;
-      --line: rgba(255,255,255,.13);
-      --text: rgba(255,255,255,.93);
-      --muted: rgba(255,255,255,.72);
+      --gold-soft: #ffe8a1;
+      --ivory: #f7f2e7;
+      --text: rgba(255,255,255,.94);
+      --muted: rgba(255,255,255,.70);
+      --line: rgba(244,199,93,.20);
+      --line-soft: rgba(255,255,255,.10);
+      --shadow: 0 30px 90px rgba(0,0,0,.46);
+      --radius: 24px;
+      --container: 1380px;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
-    html,
-    body {
-      margin: 0;
+    html {
       width: 100%;
-      height: 100%;
       min-height: 100%;
-      background: #030302;
-      color: var(--text);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      overflow: hidden;
+      background: var(--page);
+      color-scheme: dark;
+      scroll-behavior: smooth;
     }
 
     body {
-      height: 100svh;
-      padding: 10px;
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+      overflow-x: hidden;
       background:
-        radial-gradient(circle at 20% 10%, rgba(244,199,93,.12), transparent 32%),
-        linear-gradient(180deg, #050403, #010101 88%);
+        radial-gradient(circle at 16% 2%, rgba(244,199,93,.10), transparent 28%),
+        linear-gradient(180deg, #060503 0%, #020201 72%, #000 100%);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
     }
 
-    .page {
-      width: min(980px, 100%);
-      height: calc(100svh - 20px);
-      margin: 0 auto;
-      border: 1px solid var(--line);
-      border-radius: 26px;
+    a { color: inherit; }
+    img { max-width: 100%; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+
+    .container {
+      width: min(var(--container), calc(100% - 40px));
+      margin-inline: auto;
+    }
+
+    .site-header {
+      position: relative;
+      z-index: 100;
+      border-bottom: 1px solid rgba(244,199,93,.16);
+      background: rgba(4,4,2,.94);
+      box-shadow: 0 14px 34px rgba(0,0,0,.24);
+    }
+
+    .header-row {
+      min-height: 94px;
+      display: grid;
+      grid-template-columns: auto minmax(0,1fr) auto;
+      align-items: center;
+      gap: 26px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+      text-decoration: none;
+    }
+
+    .brand-logo {
+      width: 74px;
+      height: 74px;
+      flex: 0 0 74px;
+      object-fit: contain;
+      object-position: center;
+      filter: drop-shadow(0 0 18px rgba(244,199,93,.20));
+    }
+
+    .brand-copy { min-width: 0; }
+
+    .brand-name {
+      display: block;
+      color: var(--gold-soft);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 25px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: .02em;
+      white-space: nowrap;
+    }
+
+    .brand-subtitle {
+      display: block;
+      margin-top: 5px;
+      color: rgba(255,255,255,.68);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .brand-sai {
+      display: inline-flex;
+      gap: 8px;
+      margin-top: 7px;
+      color: var(--gold);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: .22em;
+    }
+
+    .primary-nav {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .primary-nav a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 9px 10px;
+      border-radius: 999px;
+      color: rgba(255,255,255,.80);
+      font-size: 13px;
+      font-weight: 760;
+      line-height: 1.1;
+      text-align: center;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .primary-nav a:hover,
+    .primary-nav a:focus-visible,
+    .primary-nav a[aria-current="page"] {
+      color: var(--gold-soft);
+      background: rgba(244,199,93,.10);
+      outline: none;
+    }
+
+    .header-cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 10px 17px;
+      border: 1px solid rgba(244,199,93,.55);
+      border-radius: 999px;
+      color: #110e07;
+      background: linear-gradient(135deg, var(--gold), var(--gold-soft));
+      box-shadow: 0 12px 28px rgba(244,199,93,.14);
+      font-size: 13px;
+      font-weight: 900;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .menu-toggle {
+      display: none;
+      width: 46px;
+      height: 46px;
+      border: 1px solid rgba(244,199,93,.30);
+      border-radius: 14px;
+      color: var(--gold-soft);
+      background: rgba(0,0,0,.40);
+      cursor: pointer;
+    }
+
+    .menu-toggle span {
+      display: block;
+      width: 20px;
+      height: 2px;
+      margin: 4px auto;
+      border-radius: 999px;
+      background: currentColor;
+      transition: transform .18s ease, opacity .18s ease;
+    }
+
+    .menu-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+    .menu-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+    .menu-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+    main { display: block; }
+
+    .hero-wrap {
+      padding: 26px 0 0;
+    }
+
+    .hero {
+      min-height: 620px;
+      display: grid;
+      grid-template-columns: minmax(0,1.06fr) minmax(360px,.94fr);
+      align-items: center;
       overflow: hidden;
       position: relative;
       isolation: isolate;
+      border: 1px solid rgba(244,199,93,.22);
+      border-radius: 30px;
       background:
-        linear-gradient(90deg, rgba(0,0,0,.64) 0%, rgba(0,0,0,.45) 44%, rgba(0,0,0,.28) 100%),
-        linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.44)),
-        url("/assets/lifeos-home-king-bg.webp?v=20260618141906");
-      background-size: auto 92%;
-      background-position: center 2%;
-      background-repeat: no-repeat;
-      background-color: #030302;
-      box-shadow: 0 30px 100px rgba(0,0,0,.72);
+        linear-gradient(90deg, rgba(0,0,0,.65) 0%, rgba(0,0,0,.65) 46%, rgba(0,0,0,.65) 100%),
+        linear-gradient(180deg, rgba(0,0,0,.44), rgba(0,0,0,.72)),
+        url("/assets/lifeos-home-king-bg.webp") right 4% center / auto 116% no-repeat;
+      box-shadow: var(--shadow);
     }
 
-    .page::before {
+    .hero::before {
       content: "";
       position: absolute;
       inset: 0;
       z-index: -1;
       pointer-events: none;
       background:
-        radial-gradient(circle at 18% 18%, rgba(255,216,115,.08), transparent 34%),
-        radial-gradient(circle at 76% 16%, rgba(255,216,115,.07), transparent 36%),
-        linear-gradient(180deg, transparent 0%, rgba(0,0,0,.42) 86%);
+        radial-gradient(circle at 15% 18%, rgba(244,199,93,.12), transparent 30%),
+        linear-gradient(180deg, transparent 55%, rgba(0,0,0,.34));
     }
 
-    .inner {
-      height: 100%;
-      padding: clamp(13px, 3.4vw, 34px);
-      display: flex;
-      flex-direction: column;
-      gap: clamp(8px, 1.7svh, 18px);
+    .hero-content {
+      max-width: 760px;
+      padding: clamp(38px,6vw,82px);
     }
 
-    .topbar {
+    .eyebrow,
+    .section-kicker {
+      margin: 0;
+      color: var(--gold);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+
+    .hero h1 {
+      max-width: 760px;
+      margin: 15px 0 18px;
+      color: #fff;
+      font-size: clamp(48px,6vw,82px);
+      font-weight: 950;
+      line-height: .96;
+      letter-spacing: -.055em;
+      text-shadow: 0 4px 22px rgba(0,0,0,.76);
+    }
+
+    .hero h1 .gold { color: var(--gold); }
+
+    .hero-lead {
+      max-width: 690px;
+      margin: 0;
+      color: rgba(255,255,255,.86);
+      font-size: clamp(17px,1.55vw,22px);
+      line-height: 1.58;
+      text-shadow: 0 2px 12px rgba(0,0,0,.72);
+    }
+
+    .hero-actions {
       display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
+      flex-wrap: wrap;
       gap: 12px;
-      flex: 0 0 auto;
+      margin-top: 28px;
     }
 
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: clamp(10px, 2.6vw, 18px);
-      min-width: 0;
-    }
-
-    .logo {
-      width: clamp(96px, 22vw, 152px);
-      height: clamp(96px, 22vw, 152px);
-      object-fit: contain;
-      background: transparent;
-      border: none;
-      box-shadow: none;
-      opacity: .96;
-      mix-blend-mode: screen;
-      filter: drop-shadow(0 0 16px rgba(244,199,93,.20));
-      flex: 0 0 auto;
-    }
-
-    .brand-text strong {
-      display: block;
-      font-size: clamp(18px, 4.8vw, 34px);
-      line-height: 1;
-      letter-spacing: .045em;
-      text-transform: uppercase;
-      text-shadow: 0 3px 14px rgba(0,0,0,.35);
-      white-space: nowrap;
-    }
-
-    .brand-text span {
-      display: block;
-      margin-top: 6px;
-      color: var(--muted);
-      font-size: clamp(10px, 2.8vw, 16px);
-      letter-spacing: .28em;
-      text-transform: uppercase;
-      text-shadow: 0 2px 10px rgba(0,0,0,.35);
-    }
-
-    .status {
+    .button {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 10px 13px;
+      justify-content: center;
+      min-height: 50px;
+      padding: 13px 20px;
       border-radius: 999px;
-      border: 1px solid rgba(110,255,171,.24);
-      background: rgba(24,82,46,.38);
-      color: #b9ffd2;
-      font-size: clamp(13px, 3vw, 17px);
+      font-size: 15px;
       font-weight: 900;
-      white-space: nowrap;
-      flex: 0 0 auto;
+      text-decoration: none;
+      transition: transform .18s ease, border-color .18s ease, background .18s ease;
     }
 
-    .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #78f6a7;
-      box-shadow: 0 0 18px rgba(120,246,167,.85);
+    .button:hover,
+    .button:focus-visible { transform: translateY(-2px); outline: none; }
+
+    .button-primary {
+      color: #100d06;
+      background: linear-gradient(135deg, var(--gold), var(--gold-soft));
+      box-shadow: 0 16px 38px rgba(244,199,93,.18);
     }
 
-    .hero {
-      max-width: 760px;
-      flex: 0 0 auto;
+    .button-secondary {
+      border: 1px solid rgba(244,199,93,.36);
+      color: var(--gold-soft);
+      background: rgba(0,0,0,.42);
     }
 
-    h1 {
-      margin: 0;
-      max-width: 760px;
-      font-size: clamp(33px, 8.7vw, 78px);
-      line-height: .96;
-      letter-spacing: -.065em;
-      font-weight: 950;
-      text-shadow: 0 4px 18px rgba(0,0,0,.32);
+    .credibility-strip {
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 1px;
+      margin-top: 18px;
+      overflow: hidden;
+      border: 1px solid rgba(244,199,93,.20);
+      border-radius: 20px;
+      background: rgba(244,199,93,.15);
     }
 
-    h1 .gold {
+    .credibility-item {
+      min-height: 92px;
+      display: grid;
+      align-content: center;
+      gap: 5px;
+      padding: 18px 20px;
+      background: #090806;
+    }
+
+    .credibility-item small {
       color: var(--gold);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .14em;
+      text-transform: uppercase;
     }
 
-    .lead {
-      max-width: 720px;
-      margin: clamp(10px, 2svh, 18px) 0 0;
-      font-size: clamp(15px, 3.7vw, 24px);
-      line-height: 1.34;
-      color: rgba(255,255,255,.84);
-      text-shadow: 0 2px 8px rgba(0,0,0,.35);
-    }
-
-    .panel {
-      margin-top: auto;
-      max-width: 780px;
-      padding: clamp(14px, 3.4vw, 30px);
-      border: 1px solid var(--line);
-      border-radius: clamp(24px, 6vw, 34px);
-      background: rgba(0,0,0,.48);
-      backdrop-filter: blur(18px);
-      box-shadow: 0 22px 80px rgba(0,0,0,.45);
-      flex: 0 0 auto;
-    }
-
-    .brief {
-      padding: clamp(14px, 3.6vw, 22px);
-      border: 1px solid rgba(255,255,255,.11);
-      border-radius: 22px;
-      background: rgba(0,0,0,.38);
+    .credibility-item strong {
       color: rgba(255,255,255,.88);
-      font-size: clamp(15px, 3.6vw, 23px);
-      line-height: 1.42;
+      font-size: 14px;
+      line-height: 1.45;
     }
 
-    .brief strong {
-      color: var(--soft-gold);
-      font-weight: 950;
+    .section {
+      padding: clamp(54px,7vw,96px) 0;
     }
 
-    .cta {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      margin-top: clamp(14px, 2.7svh, 24px);
-      padding: clamp(14px, 3.5vw, 20px) 20px;
-      border-radius: 999px;
-      text-decoration: none;
-      color: #090703;
-      background: linear-gradient(135deg, #f4c75d, #fff1a6);
-      font-size: clamp(16px, 3.8vw, 24px);
-      font-weight: 950;
-      box-shadow: 0 18px 50px rgba(244,199,93,.22);
+    .section + .section {
+      border-top: 1px solid rgba(255,255,255,.07);
     }
 
-    .secondary {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      margin-top: 11px;
-      padding: clamp(13px, 3.2vw, 18px) 20px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.16);
-      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
-      color: rgba(255,255,255,.93);
-      font-size: clamp(15px, 3.4vw, 21px);
+    .section-head {
+      max-width: 830px;
+      margin-bottom: 30px;
+    }
+
+    .section h2 {
+      margin: 10px 0 14px;
+      color: #fff;
+      font-size: clamp(34px,4.5vw,58px);
+      line-height: 1.02;
+      letter-spacing: -.035em;
+    }
+
+    .section-intro {
+      margin: 0;
+      color: var(--muted);
+      font-size: clamp(16px,1.6vw,20px);
+      line-height: 1.7;
+    }
+
+    .mission-grid {
+      display: grid;
+      grid-template-columns: minmax(0,1.45fr) minmax(320px,.55fr);
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    .mission-card,
+    .mission-values,
+    .card,
+    .responsible-use,
+    .ownership-card {
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.015));
+      box-shadow: 0 22px 60px rgba(0,0,0,.18);
+    }
+
+    .mission-card {
+      padding: clamp(26px,4vw,46px);
+    }
+
+    .mission-card p {
+      margin: 0;
+      color: rgba(255,255,255,.82);
+      font-size: clamp(17px,1.6vw,21px);
+      line-height: 1.78;
+    }
+
+    .text-link {
+      display: inline-flex;
+      margin-top: 22px;
+      color: var(--gold-soft);
       font-weight: 900;
+      text-decoration: none;
     }
 
-    .subscribe {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 9px;
-      width: 100%;
-      margin-top: 11px;
-      padding: clamp(12px, 3vw, 16px) 16px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.14);
-      background: rgba(0,0,0,.34);
-      color: #fff0a9;
-      font-size: clamp(13px, 3.1vw, 19px);
-      font-weight: 950;
-      line-height: 1.15;
-      text-align: center;
+    .mission-values {
+      display: grid;
+      grid-template-rows: repeat(3,1fr);
+      overflow: hidden;
     }
 
-    .subscribe::before {
-      content: "";
-      width: 9px;
-      height: 9px;
+    .value-item {
+      display: grid;
+      align-content: center;
+      gap: 6px;
+      padding: 24px;
+    }
+
+    .value-item + .value-item { border-top: 1px solid var(--line-soft); }
+    .value-item strong { color: var(--gold-soft); font-size: 17px; }
+    .value-item span { color: var(--muted); line-height: 1.55; }
+
+    .process-grid,
+    .capability-grid,
+    .ecosystem-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .process-grid { grid-template-columns: repeat(4,minmax(0,1fr)); }
+    .capability-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+    .ecosystem-grid { grid-template-columns: repeat(5,minmax(0,1fr)); }
+
+    .card {
+      display: grid;
+      align-content: start;
+      gap: 10px;
+      min-height: 100%;
+      padding: 24px;
+      color: inherit;
+      text-decoration: none;
+      transition: transform .18s ease, border-color .18s ease, background .18s ease;
+    }
+
+    .card:hover,
+    .card:focus-visible {
+      transform: translateY(-3px);
+      border-color: rgba(244,199,93,.42);
+      background: linear-gradient(180deg, rgba(244,199,93,.08), rgba(255,255,255,.02));
+      outline: none;
+    }
+
+    .card-number {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
       border-radius: 50%;
-      background: #7af5a7;
-      box-shadow: 0 0 18px rgba(122,245,167,.7);
-      flex: 0 0 auto;
+      color: #130f06;
+      background: var(--gold);
+      font-weight: 950;
     }
 
-    .footer {
-      padding-top: clamp(8px, 1.4svh, 18px);
-      border-top: 1px solid rgba(255,255,255,.10);
-      text-align: center;
+    .card h3 {
+      margin: 3px 0 0;
+      color: #fff;
+      font-size: 19px;
+      line-height: 1.22;
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.58;
+    }
+
+    .capability-grid .card { min-height: 190px; }
+    .ecosystem-grid .card { min-height: 210px; padding: 22px; }
+
+    .responsibility-grid {
+      display: grid;
+      grid-template-columns: minmax(0,1.2fr) minmax(360px,.8fr);
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    .responsible-use,
+    .ownership-card {
+      padding: clamp(26px,4vw,42px);
+    }
+
+    .responsible-use { border-color: rgba(244,199,93,.28); }
+    .ownership-card { background: linear-gradient(135deg, rgba(244,199,93,.09), rgba(255,255,255,.015)); }
+
+    .responsible-use h2,
+    .ownership-card h2 {
+      margin-top: 0;
+      font-size: clamp(27px,3vw,40px);
+    }
+
+    .responsible-use p,
+    .ownership-card p {
+      color: var(--muted);
+      line-height: 1.72;
+    }
+
+    .ownership-card p:last-child { margin-bottom: 0; }
+
+    .site-footer {
+      margin-top: 0;
+      border-top: 1px solid rgba(244,199,93,.28);
+      background: linear-gradient(180deg, #0b0905, #000);
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: minmax(280px,1.15fr) repeat(2,minmax(180px,.55fr)) minmax(240px,.75fr);
+      gap: 34px;
+      padding: 52px 0 38px;
+    }
+
+    .footer-brand {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .footer-logo {
+      width: 62px;
+      height: 62px;
+      object-fit: contain;
+      flex: 0 0 62px;
+    }
+
+    .footer-brand h2,
+    .footer-col h2 {
+      margin: 0 0 13px;
+      color: var(--gold-soft);
+      font-size: 17px;
+    }
+
+    .footer-brand p,
+    .footer-col p {
+      margin: 0;
       color: rgba(255,255,255,.62);
-      font-size: clamp(10px, 2.45vw, 15px);
-      line-height: 1.34;
-      flex: 0 0 auto;
+      font-size: 13px;
+      line-height: 1.65;
     }
 
-    .footer strong,
-    .footer a {
-      color: #fff0a9;
-      font-weight: 900;
+    .footer-links {
+      display: grid;
+      gap: 9px;
+    }
+
+    .footer-links a {
+      color: rgba(255,255,255,.68);
+      font-size: 13px;
       text-decoration: none;
     }
 
-    @media (max-height: 760px) {
-      .inner {
-        padding: 10px 13px;
-        gap: 7px;
-      }
+    .footer-links a:hover,
+    .footer-links a:focus-visible { color: var(--gold-soft); outline: none; }
 
-      .logo {
-        width: 84px;
-        height: 84px;
-      }
+    .social-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 16px;
+    }
 
-      h1 {
-        font-size: clamp(29px, 8vw, 58px);
-      }
+    .social-link {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(244,199,93,.25);
+      border-radius: 50%;
+      color: var(--gold-soft);
+      background: rgba(255,255,255,.03);
+      font-size: 12px;
+      font-weight: 950;
+      text-decoration: none;
+    }
 
-      .lead {
-        font-size: clamp(13px, 3.4vw, 19px);
-        margin-top: 8px;
-      }
+    .social-link:hover,
+    .social-link:focus-visible { background: rgba(244,199,93,.10); outline: none; }
 
-      .brief {
-        font-size: clamp(13px, 3.3vw, 18px);
-        padding: 12px 14px;
-      }
+    .footer-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 22px 0 28px;
+      border-top: 1px solid rgba(255,255,255,.08);
+      color: rgba(255,255,255,.50);
+      font-size: 12px;
+      line-height: 1.5;
+    }
 
-      .panel {
+    .footer-bottom strong { color: rgba(255,255,255,.74); }
+
+    @media (max-width: 1180px) {
+      .header-row { grid-template-columns: auto minmax(0,1fr) auto; gap: 18px; }
+      .primary-nav { gap: 0; }
+      .primary-nav a { padding-inline: 8px; font-size: 12px; }
+      .header-cta { display: none; }
+      .hero { grid-template-columns: minmax(0,1.15fr) minmax(300px,.85fr); }
+      .ecosystem-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+    }
+
+    @media (max-width: 980px) {
+      .container { width: min(var(--container), calc(100% - 28px)); }
+      .header-row { min-height: 82px; grid-template-columns: auto 1fr auto; }
+      .brand-logo { width: 62px; height: 62px; flex-basis: 62px; }
+      .brand-name { font-size: 21px; }
+      .brand-subtitle { font-size: 9px; }
+      .brand-sai { font-size: 15px; }
+      .menu-toggle { display: block; }
+      .primary-nav {
+        display: none;
+        position: absolute;
+        left: 14px;
+        right: 14px;
+        top: calc(100% + 8px);
         padding: 12px;
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 8px;
+        border: 1px solid rgba(244,199,93,.24);
+        border-radius: 18px;
+        background: #050402;
+        box-shadow: 0 22px 50px rgba(0,0,0,.42);
       }
+      .primary-nav[data-open="true"] { display: grid; }
+      .primary-nav a { min-height: 44px; border: 1px solid rgba(255,255,255,.07); border-radius: 12px; font-size: 13px; white-space: normal; }
+      .hero { min-height: 610px; grid-template-columns: 1fr; background-position: 74% center; background-size: auto 108%; }
+      .hero-content { max-width: 690px; padding: 46px 36px 52px; }
+      .hero h1 { font-size: clamp(48px,8vw,70px); }
+      .credibility-strip { grid-template-columns: 1fr; }
+      .credibility-item + .credibility-item { border-top: 1px solid rgba(244,199,93,.15); }
+      .mission-grid, .responsibility-grid { grid-template-columns: 1fr; }
+      .process-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .capability-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .footer-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    }
 
-      .footer {
-        font-size: 10px;
-        line-height: 1.25;
-      }
+    @media (max-width: 640px) {
+      .container { width: calc(100% - 20px); }
+      .header-row { min-height: 72px; gap: 10px; }
+      .brand { gap: 9px; }
+      .brand-logo { width: 52px; height: 52px; flex-basis: 52px; }
+      .brand-name { font-size: 18px; }
+      .brand-subtitle { display: none; }
+      .brand-sai { margin-top: 4px; font-size: 13px; }
+      .menu-toggle { width: 44px; height: 44px; }
+      .primary-nav { left: 10px; right: 10px; grid-template-columns: 1fr; }
+      .hero-wrap { padding-top: 12px; }
+      .hero { min-height: 650px; border-radius: 22px; background-position: 66% center; background-size: auto 100%; }
+      .hero-content { align-self: end; padding: 36px 20px 34px; background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,.30) 18%, rgba(0,0,0,.78) 100%); }
+      .eyebrow { font-size: 10px; }
+      .hero h1 { max-width: 540px; font-size: clamp(42px,13vw,60px); line-height: .98; }
+      .hero-lead { font-size: 16px; line-height: 1.55; }
+      .hero-actions { display: grid; grid-template-columns: 1fr; }
+      .button { width: 100%; }
+      .credibility-item { min-height: 84px; }
+      .section { padding: 54px 0; }
+      .section h2 { font-size: 36px; }
+      .mission-card, .value-item, .card, .responsible-use, .ownership-card { padding: 20px; }
+      .process-grid, .capability-grid, .ecosystem-grid { grid-template-columns: 1fr; }
+      .card, .capability-grid .card, .ecosystem-grid .card { min-height: 0; }
+      .footer-grid { grid-template-columns: 1fr; gap: 28px; padding-top: 38px; }
+      .footer-bottom { align-items: flex-start; flex-direction: column; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition: none !important; }
     }
   </style>
-
-
-
-<!-- LIFEOS_VISIBLE_MOTION_HOME_START -->
-<style id="lifeos-visible-motion-home-style">
-  .page {
-    position: relative !important;
-    overflow: hidden !important;
-    isolation: isolate !important;
-  }
-
-  .page > .inner {
-    position: relative !important;
-    z-index: 5 !important;
-  }
-
-  .lifeos-home-dust-visible {
-    position: absolute;
-    inset: -12%;
-    z-index: 3;
-    pointer-events: none;
-    opacity: .55;
-    mix-blend-mode: screen;
-    filter: blur(.1px);
-    background:
-      radial-gradient(circle at 12% 18%, rgba(255,218,118,.85) 0 1.5px, transparent 3px),
-      radial-gradient(circle at 24% 76%, rgba(255,187,54,.55) 0 1.3px, transparent 3px),
-      radial-gradient(circle at 42% 38%, rgba(255,244,178,.48) 0 1.2px, transparent 2.8px),
-      radial-gradient(circle at 66% 24%, rgba(255,207,84,.58) 0 1.4px, transparent 3px),
-      radial-gradient(circle at 84% 70%, rgba(255,226,139,.42) 0 1.2px, transparent 2.8px);
-    background-size:
-      210px 210px,
-      280px 280px,
-      240px 240px,
-      310px 310px,
-      260px 260px;
-    animation: lifeosVisibleDustMove 18s linear infinite;
-  }
-
-  @keyframes lifeosVisibleDustMove {
-    0% {
-      transform: translate3d(0, 0, 0);
-    }
-    50% {
-      transform: translate3d(-18px, -24px, 0);
-    }
-    100% {
-      transform: translate3d(0, -48px, 0);
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .lifeos-home-dust-visible {
-      animation: none !important;
-    }
-  }
-</style>
-
-<script id="lifeos-visible-motion-home-script">
-(function () {
-  function run() {
-    var page = document.querySelector(".page");
-    if (!page) return;
-
-    if (!document.querySelector(".lifeos-home-dust-visible")) {
-      var dust = document.createElement("div");
-      dust.className = "lifeos-home-dust-visible";
-      page.insertBefore(dust, page.firstChild);
-    }
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", run);
-  } else {
-    run();
-  }
-})();
-</script>
-<!-- LIFEOS_VISIBLE_MOTION_HOME_END -->
-
-
-<style id="lifeos-global-logo-2026-v6">
-img[src="/assets/lifeos-logo-2026.png"] {
-  object-fit:contain !important;
-  object-position:center !important;
-  background:transparent !important;
-}
-</style>
-
-
-<!-- LIFEOS_HOME_LOGO_LINK_V1_STYLE_START -->
-<style id="lifeos-home-logo-link-v1">
-.lifeos-home-logo-link {
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  line-height:0;
-  border-radius:12px;
-  text-decoration:none;
-  cursor:pointer;
-  -webkit-tap-highlight-color:transparent;
-}
-
-.lifeos-home-logo-link:focus-visible {
-  outline:2px solid rgba(255,209,91,.95);
-  outline-offset:4px;
-}
-
-.lifeos-home-logo-link img {
-  display:block;
-}
-</style>
-<!-- LIFEOS_HOME_LOGO_LINK_V1_STYLE_END -->
-
-
-<!-- LIFEOS_LOGO_HOME_AND_VOICE_ROUTE_REPAIR_V1_LOGO_STYLE_START -->
-<style id="lifeos-logo-home-link-style-v1">
-.lifeos-home-logo-link-v1 {
-  display:inline-grid !important;
-  place-items:center !important;
-  line-height:0 !important;
-  text-decoration:none !important;
-  background:transparent !important;
-  border:0 !important;
-  box-shadow:none !important;
-  border-radius:0 !important;
-  cursor:pointer !important;
-}
-
-.lifeos-home-logo-link-v1 img,
-img[src^="/assets/lifeos-logo-2026.png"] {
-  display:block !important;
-  background:transparent !important;
-  box-shadow:none !important;
-  border-color:transparent !important;
-}
-</style>
-<!-- LIFEOS_LOGO_HOME_AND_VOICE_ROUTE_REPAIR_V1_LOGO_STYLE_END -->
-
-  <!-- LIFEOS_ADSENSE_PUBLIC_V1_HEAD -->
-  <link rel="stylesheet" href="/assets/adsense_public_v1.css?v=lifeos-social-support-v2-20260701">
-<!-- LIFEOS_HOMEPAGE_PREMIUM_REFINEMENT_V5 -->
-<style id="lifeos-home-premium-refinement-v5">
-body.lifeos-home-reference-v1 .page{background:linear-gradient(90deg,rgba(0,0,0,.65) 0%,rgba(0,0,0,.65) 46%,rgba(0,0,0,.65) 100%),linear-gradient(180deg,rgba(0,0,0,.44),rgba(0,0,0,.72)),url("/assets/lifeos-home-king-bg.webp?v=lifeos-home-premium-refinement-v5-20260701") center top/auto 100% no-repeat!important;background-color:#020201!important}
-body.lifeos-home-reference-v1 .page::before{background:radial-gradient(circle at 16% 16%,rgba(255,216,115,.06),transparent 30%),radial-gradient(circle at 76% 16%,rgba(255,216,115,.05),transparent 32%),linear-gradient(180deg,transparent 0%,rgba(0,0,0,.56) 86%)!important}
-body.lifeos-home-reference-v1 .hero{position:relative!important;z-index:6!important;padding:17px 19px 20px!important;border:1px solid rgba(242,198,90,.14)!important;border-radius:24px!important;background:linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,.40))!important;box-shadow:0 22px 54px rgba(0,0,0,.34)!important;-webkit-backdrop-filter:blur(1.2px)!important;backdrop-filter:blur(1.2px)!important}
-body.lifeos-home-reference-v1 .hero::before{content:none!important;display:none!important}
-body.lifeos-home-reference-v1 .hero h1{color:#fff!important;opacity:1!important;filter:none!important;text-rendering:geometricPrecision!important;-webkit-font-smoothing:antialiased!important;text-shadow:0 1px 0 rgba(255,255,255,.10),0 3px 14px rgba(0,0,0,.98),0 0 1px rgba(0,0,0,1)!important}
-body.lifeos-home-reference-v1 .hero h1 .gold{color:#ffd86a!important;text-shadow:0 1px 0 rgba(255,255,255,.15),0 3px 14px rgba(0,0,0,.98),0 0 12px rgba(244,199,93,.18)!important}
-body.lifeos-home-reference-v1 .hero .lead{color:rgba(255,255,255,.97)!important;opacity:1!important;filter:none!important;font-weight:620!important;text-rendering:optimizeLegibility!important;-webkit-font-smoothing:antialiased!important;text-shadow:0 2px 10px rgba(0,0,0,.98),0 0 1px rgba(0,0,0,1)!important}
-body.lifeos-home-reference-v1 .lifeos-reference-sai{margin-top:9px!important;column-gap:12px!important;color:#e0b24c!important}
-body.lifeos-home-reference-v1 .lifeos-reference-sai span{font:800 clamp(58px,14vw,92px)/.88 "Cinzel","Times New Roman",Georgia,serif!important;letter-spacing:.06em!important;text-shadow:0 4px 18px rgba(0,0,0,.56)!important}
-body.lifeos-home-reference-v1 .panel{display:grid!important;gap:14px!important;background:rgba(0,0,0,.62)!important;border-color:rgba(255,255,255,.16)!important;box-shadow:0 24px 70px rgba(0,0,0,.42)!important}
-body.lifeos-home-reference-v1 .brief{color:rgba(255,255,255,.97)!important;background:rgba(0,0,0,.48)!important;text-rendering:optimizeLegibility!important;-webkit-font-smoothing:antialiased!important;text-shadow:0 2px 10px rgba(0,0,0,.94)!important}
-body.lifeos-home-reference-v1 .brief strong{color:#fff0a6!important}
-body.lifeos-home-reference-v1 .lifeos-home-primary-cta-v5{margin-top:0!important}
-body.lifeos-home-reference-v1 .lifeos-home-coming-soon-v5{display:grid!important;gap:11px!important;padding:16px 16px 14px!important;border:1px solid rgba(255,255,255,.12)!important;border-radius:22px!important;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.03))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)!important}
-body.lifeos-home-reference-v1 .lifeos-home-coming-soon-label-v5{margin:0!important;color:#ffe39a!important;font:900 clamp(14px,3.2vw,18px)/1 Inter,ui-sans-serif,system-ui,sans-serif!important;letter-spacing:.08em!important;text-transform:uppercase!important;text-align:center!important}
-body.lifeos-home-reference-v1 .lifeos-home-coming-soon-grid-v5{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
-body.lifeos-home-reference-v1 .lifeos-home-coming-soon-item-v5{display:grid!important;gap:6px!important;min-height:100%!important;padding:14px 12px!important;border:1px solid rgba(255,255,255,.12)!important;border-radius:18px!important;background:rgba(0,0,0,.34)!important;text-align:center!important}
-body.lifeos-home-reference-v1 .lifeos-home-coming-soon-item-v5 strong{color:#fff3b7!important;font:900 clamp(14px,3.2vw,18px)/1.15 Inter,ui-sans-serif,system-ui,sans-serif!important}
-body.lifeos-home-reference-v1 .lifeos-home-coming-soon-item-v5 span{color:rgba(255,255,255,.82)!important;font:600 clamp(12px,2.85vw,15px)/1.4 Inter,ui-sans-serif,system-ui,sans-serif!important}
-body.lifeos-home-reference-v1 .footer{padding-top:12px!important;color:rgba(255,255,255,.74)!important}
-body.lifeos-home-reference-v1 .lifeos-footer-identity-v1{color:rgba(255,255,255,.95)!important}
-body.lifeos-home-reference-v1 .lifeos-social-footer-v1{margin-top:12px!important;padding-top:15px!important;border-top:1px solid rgba(241,199,91,.16)!important}
-body.lifeos-home-reference-v1 .lifeos-footer-legal-v1{color:rgba(255,255,255,.72)!important}
-body.lifeos-home-reference-v1 .lifeos-footer-credit-v1{color:rgba(255,255,255,.74)!important}
-@media(max-width:640px){body.lifeos-home-reference-v1 .lifeos-home-coming-soon-grid-v5{grid-template-columns:1fr!important}body.lifeos-home-reference-v1 .hero{padding:14px 13px 16px!important;border-radius:20px!important;background:linear-gradient(180deg,rgba(0,0,0,.30),rgba(0,0,0,.42))!important}}
-</style>
-
-<style id="lifeos-stage1-premium-universal-v1">
-html,body{min-height:100%;height:auto!important;overflow-x:hidden!important;overflow-y:auto!important}
-body.lifeos-home-reference-v1{padding:clamp(8px,1.2vw,18px)!important}
-body.lifeos-home-reference-v1 .page{width:min(1540px,100%)!important;height:auto!important;min-height:calc(100svh - 20px)!important;overflow:visible!important;background-attachment:scroll!important;background-size:auto min(100svh,980px)!important}
-body.lifeos-home-reference-v1 .inner{height:auto!important;min-height:calc(100svh - 20px)!important;padding:clamp(14px,2.2vw,34px)!important;gap:clamp(16px,2vw,30px)!important}
-body.lifeos-home-reference-v1 .hero,body.lifeos-home-reference-v1 .panel{max-width:860px!important}
-body.lifeos-home-reference-v1 .lifeos-projects-link-v1{display:flex;align-items:center;justify-content:center;min-height:48px;padding:12px 18px;border:1px solid rgba(244,199,93,.28);border-radius:999px;color:#ffe7a0;background:rgba(0,0,0,.32);font-weight:850;text-decoration:none;text-align:center}
-body.lifeos-home-reference-v1 .lifeos-home-content-v1{display:grid;gap:clamp(16px,2vw,24px);margin-top:4px}
-body.lifeos-home-reference-v1 .lifeos-home-section-v1,body.lifeos-home-reference-v1 .lifeos-limitations-v1,body.lifeos-home-reference-v1 .lifeos-owner-v1{padding:clamp(20px,2.5vw,34px);border:1px solid rgba(255,255,255,.12);border-radius:26px;background:linear-gradient(180deg,rgba(5,5,4,.90),rgba(0,0,0,.82));box-shadow:0 22px 60px rgba(0,0,0,.35)}
-body.lifeos-home-reference-v1 .lifeos-home-content-v1 h2{margin:.2em 0 .55em;color:#fff;font-size:clamp(25px,3vw,42px);line-height:1.08}
-body.lifeos-home-reference-v1 .lifeos-home-content-v1 p{margin:.45em 0;color:rgba(255,255,255,.84);font-size:clamp(15px,1.35vw,19px);line-height:1.65}
-body.lifeos-home-reference-v1 .lifeos-home-kicker-v1{color:#f4c75d!important;font-weight:900;letter-spacing:.12em;text-transform:uppercase;font-size:12px!important}
-body.lifeos-home-reference-v1 .lifeos-home-steps-v1{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0 0;padding:0;list-style:none;counter-reset:step}
-body.lifeos-home-reference-v1 .lifeos-home-steps-v1 li{counter-increment:step;display:grid;gap:7px;padding:18px;border:1px solid rgba(255,255,255,.10);border-radius:20px;background:rgba(255,255,255,.035)}
-body.lifeos-home-reference-v1 .lifeos-home-steps-v1 li::before{content:counter(step);display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#f4c75d;color:#100d06;font-weight:950}
-body.lifeos-home-reference-v1 .lifeos-home-steps-v1 span,body.lifeos-home-reference-v1 .lifeos-capability-grid-v1 span,body.lifeos-home-reference-v1 .lifeos-active-grid-v1 span{color:rgba(255,255,255,.72);line-height:1.5}
-body.lifeos-home-reference-v1 .lifeos-capability-grid-v1,body.lifeos-home-reference-v1 .lifeos-active-grid-v1{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:18px}
-body.lifeos-home-reference-v1 .lifeos-capability-grid-v1>div,body.lifeos-home-reference-v1 .lifeos-active-grid-v1>a{display:grid;gap:7px;padding:18px;border:1px solid rgba(255,255,255,.10);border-radius:20px;background:rgba(255,255,255,.035);color:#fff;text-decoration:none}
-body.lifeos-home-reference-v1 .lifeos-limitations-v1{border-color:rgba(244,199,93,.25)}
-body.lifeos-home-reference-v1 .lifeos-owner-v1{background:linear-gradient(135deg,rgba(244,199,93,.12),rgba(0,0,0,.86))}
-body.lifeos-home-reference-v1 .footer{margin-top:0!important;padding:22px 0 4px!important}
-@media(min-width:1050px){body.lifeos-home-reference-v1 .topbar{align-items:center!important}body.lifeos-home-reference-v1 .los-home-menu-button-v2{display:none!important}body.lifeos-home-reference-v1 #los-home-menu-panel-v2[hidden],body.lifeos-home-reference-v1 #los-home-menu-panel-v2{display:flex!important;position:static!important;flex-wrap:wrap!important;justify-content:flex-end!important;gap:6px!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important}body.lifeos-home-reference-v1 #los-home-menu-panel-v2 a{padding:10px 12px!important;border-radius:999px!important;white-space:nowrap!important}body.lifeos-home-reference-v1 #los-home-menu-panel-v2 a:hover,body.lifeos-home-reference-v1 #los-home-menu-panel-v2 a:focus-visible{background:rgba(244,199,93,.12)!important;color:#ffe39a!important}body.lifeos-home-reference-v1 .hero{margin-top:clamp(18px,4vh,58px)!important}body.lifeos-home-reference-v1 .panel{width:min(860px,64%)!important}.lifeos-home-section-v1:nth-child(1),.lifeos-home-section-v1:nth-child(2){grid-column:auto}.lifeos-home-content-v1{grid-template-columns:repeat(2,minmax(0,1fr))}.lifeos-home-section-v1:nth-child(3),.lifeos-home-section-v1:nth-child(4),.lifeos-limitations-v1,.lifeos-owner-v1{grid-column:1/-1}}
-@media(max-width:1049px){body.lifeos-home-reference-v1 .lifeos-home-steps-v1{grid-template-columns:repeat(2,minmax(0,1fr))}body.lifeos-home-reference-v1 .lifeos-capability-grid-v1,body.lifeos-home-reference-v1 .lifeos-active-grid-v1{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:640px){body.lifeos-home-reference-v1{padding:6px!important}body.lifeos-home-reference-v1 .page{border-radius:20px!important;background-size:auto 760px!important;background-position:center top!important}body.lifeos-home-reference-v1 .inner{padding:12px!important}body.lifeos-home-reference-v1 .lifeos-home-steps-v1,body.lifeos-home-reference-v1 .lifeos-capability-grid-v1,body.lifeos-home-reference-v1 .lifeos-active-grid-v1{grid-template-columns:1fr}body.lifeos-home-reference-v1 .lifeos-home-section-v1,body.lifeos-home-reference-v1 .lifeos-limitations-v1,body.lifeos-home-reference-v1 .lifeos-owner-v1{padding:18px 15px;border-radius:20px}}
-</style>
-
-<style id="lifeos-responsive-architecture-cleanup-v2">
-/*
-  Authoritative homepage responsive layer.
-  Replaces the three conflicting post-Stage-1 patch styles.
-*/
-
-html{
-  width:100%!important;
-  min-height:100%!important;
-  height:auto!important;
-  overflow-x:hidden!important;
-  overflow-y:auto!important;
-}
-
-body.lifeos-home-reference-v1{
-  width:100%!important;
-  max-width:none!important;
-  min-height:100%!important;
-  height:auto!important;
-  margin:0!important;
-  overflow-x:hidden!important;
-  overflow-y:auto!important;
-}
-
-body.lifeos-home-reference-v1 .page{
-  display:flex!important;
-  flex-direction:column!important;
-  width:min(1600px,calc(100vw - 20px))!important;
-  max-width:1600px!important;
-  min-height:0!important;
-  height:auto!important;
-  margin:10px auto 0!important;
-  overflow:hidden!important;
-}
-
-body.lifeos-home-reference-v1 .inner{
-  width:100%!important;
-  max-width:none!important;
-  min-height:0!important;
-  height:auto!important;
-  flex:0 0 auto!important;
-  padding-bottom:0!important;
-}
-
-/* Logo crop: enlarge the visible emblem, not merely the transparent canvas. */
-body.lifeos-home-reference-v1 .lifeos-reference-logo-link{
-  display:grid!important;
-  place-items:center!important;
-  width:88px!important;
-  height:88px!important;
-  min-width:88px!important;
-  overflow:hidden!important;
-  border-radius:18px!important;
-}
-
-body.lifeos-home-reference-v1 .lifeos-reference-logo{
-  width:100%!important;
-  height:100%!important;
-  min-width:0!important;
-  max-width:none!important;
-  object-fit:contain!important;
-  transform:scale(2.15)!important;
-  transform-origin:center!important;
-  opacity:1!important;
-  filter:drop-shadow(0 0 16px rgba(244,199,93,.25))!important;
-}
-
-/* Default: mobile navigation only. */
-body.lifeos-home-reference-v1 .lifeos-desktop-nav-overhaul-v1{
-  display:none!important;
-}
-
-body.lifeos-home-reference-v1 .los-home-menu-v2{
-  display:block!important;
-  width:100%!important;
-  position:relative!important;
-  z-index:60!important;
-}
-
-body.lifeos-home-reference-v1 .los-home-menu-button-v2{
-  display:inline-flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-}
-
-body.lifeos-home-reference-v1 #los-home-menu-panel-v2[hidden]{
-  display:none!important;
-}
-
-body.lifeos-home-reference-v1 #los-home-menu-panel-v2:not([hidden]){
-  display:grid!important;
-  grid-template-columns:1fr 1fr!important;
-  position:static!important;
-  width:100%!important;
-  max-width:none!important;
-  margin-top:8px!important;
-  gap:7px!important;
-  padding:10px!important;
-  border:1px solid rgba(255,255,255,.11)!important;
-  border-radius:16px!important;
-  background:rgba(0,0,0,.86)!important;
-  box-shadow:none!important;
-}
-
-body.lifeos-home-reference-v1 #los-home-menu-panel-v2 a{
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  min-height:42px!important;
-  padding:9px 8px!important;
-  border:1px solid rgba(255,255,255,.08)!important;
-  border-radius:12px!important;
-  text-align:center!important;
-  white-space:normal!important;
-}
-
-/* Mobile and narrow tablet content. */
-body.lifeos-home-reference-v1 .lifeos-action-grid-overhaul-v1,
-body.lifeos-home-reference-v1 .lifeos-home-content-v1{
-  grid-template-columns:1fr!important;
-}
-
-body.lifeos-home-reference-v1 .lifeos-home-steps-v1,
-body.lifeos-home-reference-v1 .lifeos-capability-grid-v1,
-body.lifeos-home-reference-v1 .lifeos-active-grid-v1{
-  grid-template-columns:1fr!important;
-}
-
-/* Footer is the final child of .page and ends the document visually. */
-body.lifeos-home-reference-v1 .page > .footer{
-  width:100%!important;
-  max-width:none!important;
-  flex:0 0 auto!important;
-  margin:24px 0 0!important;
-  padding:30px 18px 26px!important;
-  border-top:1px solid rgba(244,199,93,.34)!important;
-  border-radius:0 0 22px 22px!important;
-  background:linear-gradient(180deg,rgba(14,11,5,.99),#000)!important;
-  box-shadow:0 -14px 42px rgba(0,0,0,.28)!important;
-}
-
-body.lifeos-home-reference-v1 .page > .footer > *{
-  width:min(1320px,100%)!important;
-  max-width:1320px!important;
-  margin-left:auto!important;
-  margin-right:auto!important;
-}
-
-@media(max-width:639px){
-  body.lifeos-home-reference-v1{
-    padding:0!important;
-  }
-
-  body.lifeos-home-reference-v1 .page{
-    width:calc(100vw - 10px)!important;
-    margin:5px auto 0!important;
-    border-radius:18px!important;
-  }
-
-  body.lifeos-home-reference-v1 .inner{
-    padding:10px!important;
-  }
-
-  body.lifeos-home-reference-v1 .topbar{
-    display:grid!important;
-    grid-template-columns:auto 1fr!important;
-    align-items:center!important;
-    gap:10px!important;
-  }
-
-  body.lifeos-home-reference-v1 .lifeos-reference-logo-link{
-    width:82px!important;
-    height:82px!important;
-    min-width:82px!important;
-  }
-
-  body.lifeos-home-reference-v1 .los-home-menu-v2{
-    grid-column:1/-1!important;
-  }
-
-  body.lifeos-home-reference-v1 .hero,
-  body.lifeos-home-reference-v1 .panel{
-    width:100%!important;
-    max-width:none!important;
-  }
-
-  body.lifeos-home-reference-v1 .lifeos-home-section-v1,
-  body.lifeos-home-reference-v1 .lifeos-limitations-v1,
-  body.lifeos-home-reference-v1 .lifeos-owner-v1{
-    padding:18px 15px!important;
-    border-radius:18px!important;
-  }
-}
-
-@media(min-width:640px) and (max-width:899px){
-  body.lifeos-home-reference-v1{
-    padding:10px!important;
-  }
-
-  body.lifeos-home-reference-v1 .page{
-    width:calc(100vw - 20px)!important;
-    margin:0 auto!important;
-  }
-
-  body.lifeos-home-reference-v1 .topbar{
-    display:grid!important;
-    grid-template-columns:auto minmax(0,1fr)!important;
-    align-items:center!important;
-    gap:14px!important;
-  }
-
-  body.lifeos-home-reference-v1 .los-home-menu-v2{
-    grid-column:1/-1!important;
-  }
-
-  body.lifeos-home-reference-v1 .lifeos-home-steps-v1,
-  body.lifeos-home-reference-v1 .lifeos-capability-grid-v1,
-  body.lifeos-home-reference-v1 .lifeos-active-grid-v1{
-    grid-template-columns:repeat(2,minmax(0,1fr))!important;
-  }
-}
-
-/* True desktop composition. */
-@media(min-width:900px){
-  body.lifeos-home-reference-v1{
-    padding:14px!important;
-  }
-
-  body.lifeos-home-reference-v1 .page{
-    width:calc(100vw - 28px)!important;
-    margin:0 auto!important;
-  }
-
-  body.lifeos-home-reference-v1 .topbar{
-    display:grid!important;
-    grid-template-columns:auto minmax(220px,.58fr) minmax(520px,1.42fr)!important;
-    align-items:center!important;
-    gap:20px!important;
-  }
-
-  body.lifeos-home-reference-v1 .lifeos-reference-logo-link{
-    width:108px!important;
-    height:108px!important;
-    min-width:108px!important;
-  }
-
-  body.lifeos-home-reference-v1 .lifeos-desktop-nav-overhaul-v1{
-    display:flex!important;
-    grid-column:3!important;
-    width:100%!important;
-    flex-wrap:wrap!important;
-    align-items:center!important;
-    justify-content:flex-end!important;
-    gap:7px!important;
-    padding:0!important;
-    border:0!important;
-    background:transparent!important;
-    position:relative!important;
-    z-index:60!important;
-    pointer-events:auto!important;
-  }
-
-  body.lifeos-home-reference-v1 .lifeos-desktop-nav-overhaul-v1 a{
-    display:inline-flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-    min-height:40px!important;
-    padding:9px 11px!important;
-    border-radius:999px!important;
-    color:#fff!important;
-    font-weight:850!important;
-    text-decoration:none!important;
-    white-space:nowrap!important;
-    pointer-events:auto!important;
-  }
-
-  body.lifeos-home-reference-v1 .lifeos-desktop-nav-overhaul-v1 a:hover,
-  body.lifeos-home-reference-v1 .lifeos-desktop-nav-overhaul-v1 a:focus-visible{
-    color:#ffe39a!important;
-    background:rgba(244,199,93,.14)!important;
-    outline:none!important;
-  }
-
-  body.lifeos-home-reference-v1 .los-home-menu-v2{
-    display:none!important;
-  }
-
-  body.lifeos-home-reference-v1 .hero{
-    width:min(100%,1060px)!important;
-    max-width:1060px!important;
-  }
-
-  body.lifeos-home-reference-v1 .panel{
-    width:min(920px,70%)!important;
-    max-width:920px!important;
-  }
-
-  body.lifeos-home-reference-v1 .lifeos-action-grid-overhaul-v1{
-    grid-template-columns:1.25fr .95fr!important;
-  }
-
-  body.lifeos-home-reference-v1 .lifeos-home-content-v1{
-    grid-template-columns:repeat(2,minmax(0,1fr))!important;
-  }
-
-  body.lifeos-home-reference-v1 .lifeos-home-section-v1:nth-child(3),
-  body.lifeos-home-reference-v1 .lifeos-home-section-v1:nth-child(4),
-  body.lifeos-home-reference-v1 .lifeos-limitations-v1,
-  body.lifeos-home-reference-v1 .lifeos-owner-v1{
-    grid-column:1/-1!important;
-  }
-
-  body.lifeos-home-reference-v1 .lifeos-home-steps-v1{
-    grid-template-columns:repeat(2,minmax(0,1fr))!important;
-  }
-
-  body.lifeos-home-reference-v1 .lifeos-capability-grid-v1,
-  body.lifeos-home-reference-v1 .lifeos-active-grid-v1{
-    grid-template-columns:repeat(3,minmax(0,1fr))!important;
-  }
-}
-
-@media(min-width:1200px){
-  body.lifeos-home-reference-v1 .lifeos-reference-logo-link{
-    width:124px!important;
-    height:124px!important;
-    min-width:124px!important;
-  }
-
-  body.lifeos-home-reference-v1 .lifeos-home-steps-v1{
-    grid-template-columns:repeat(4,minmax(0,1fr))!important;
-  }
-
-  body.lifeos-home-reference-v1 .page > .footer{
-    padding:34px 44px 30px!important;
-  }
-}
-</style>
-
 </head>
+<body>
+<!-- LIFEOS_HOMEPAGE_RECONSTRUCTION_APPROVED_V1 -->
 
-<body class="lifeos-home-reference-v1">
-<!-- LIFEOS_ADSENSE_PUBLIC_V1 -->
+  <header class="site-header">
+    <div class="container header-row">
+      <a class="brand" href="/" aria-label="LifeOS homepage">
+        <img class="brand-logo" src="/assets/lifeos-logo-2026.png" alt="LifeOS logo">
+        <span class="brand-copy">
+          <strong class="brand-name">LifeOS AI</strong>
+          <span class="brand-subtitle">Synthetic Artificial Intelligence</span>
+          <span class="brand-sai" aria-label="SAI">S A I</span>
+        </span>
+      </a>
 
-  <main class="page">
-    <div class="inner">
-      <header class="topbar lifeos-reference-header" aria-label="LifeOs Ai identity and status">
-        <div class="lifeos-reference-logo-cluster">
-          <a class="lifeos-reference-logo-link" href="/" aria-label="Return to LifeOs Ai homepage">
-            <img class="lifeos-reference-logo" src="/assets/lifeos-logo-2026.png" alt="LifeOs Ai logo" />
-          </a>
-          <div class="lifeos-reference-online" role="status" aria-label="Website online">
-            <span class="lifeos-reference-online-dot" aria-hidden="true"></span>
-            <span>Online</span>
-          </div>
-        </div>
+      <nav id="primary-nav" class="primary-nav" aria-label="Primary navigation" data-open="false">
+        <a href="/" aria-current="page">Home</a>
+        <a href="/about">About</a>
+        <a href="/what-lifeos-does">What LifeOS Does</a>
+        <a href="/how-it-works">How It Works</a>
+        <a href="/decision-intelligence">Decision Intelligence</a>
+        <a href="/guides">Guides</a>
+        <a href="/community">Community</a>
+        <a href="/contact">Contact</a>
+      </nav>
 
-        <div class="lifeos-reference-identity">
-          <strong class="lifeos-reference-name">LifeOs Ai</strong>
-          <span class="lifeos-reference-subtitle">Synthetic Artificial Intelligence</span>
-          <div class="lifeos-reference-sai" aria-label="SAI">
-            <span>S</span><span>A</span><span>I</span>
-          </div>
-        </div>
-
-        <nav class="lifeos-desktop-nav-overhaul-v1" aria-label="LifeOS desktop navigation"><a href="/" aria-current="page">Home</a><a href="/about">About</a><a href="/what-lifeos-does">What LifeOS Does</a><a href="/how-it-works">How It Works</a><a href="/decision-intelligence">Decision Intelligence</a><a href="/guides">Guides</a><a href="/community">Community</a><a href="/contact">Contact Us</a></nav>
-        <!-- LIFEOS_HOME_NAV_REPAIR_V2_START -->
-<nav class="los-home-menu-v2" aria-label="LifeOs Ai information navigation">
-  <button class="los-home-menu-button-v2" type="button" aria-expanded="false" aria-controls="los-home-menu-panel-v2" aria-label="Open LifeOs Ai information menu">
-    <span class="los-home-menu-icon-v2" aria-hidden="true"><span></span><span></span><span></span></span>
-    <span class="los-home-menu-text-v2">Menu</span>
-  </button>
-  <div id="los-home-menu-panel-v2" class="los-home-menu-panel-v2" hidden>
-    <a href="/" aria-current="page">Home</a>
-    <a href="/about">About</a>
-    <a href="/what-lifeos-does">What LifeOS Does</a>
-    <a href="/how-it-works">How It Works</a>
-    <a href="/decision-intelligence">Decision Intelligence</a>
-    <a href="/guides">Guides</a>
-    <a href="/community">Community</a>
-    <a href="/contact">Contact Us</a>
-  </div>
-</nav>
-<script id="los-home-menu-script-v2">
-(function(){
-  "use strict";
-  var nav=document.querySelector(".los-home-menu-v2");
-  if(!nav){return;}
-  var button=nav.querySelector(".los-home-menu-button-v2");
-  var panel=nav.querySelector(".los-home-menu-panel-v2");
-  function closeMenu(){
-    panel.hidden=true;
-    button.setAttribute("aria-expanded","false");
-    button.setAttribute("aria-label","Open LifeOS AI information menu");
-  }
-  function openMenu(){
-    panel.hidden=false;
-    button.setAttribute("aria-expanded","true");
-    button.setAttribute("aria-label","Close LifeOS AI information menu");
-  }
-  button.addEventListener("click",function(event){
-    event.stopPropagation();
-    if(panel.hidden){openMenu();}else{closeMenu();}
-  });
-  panel.addEventListener("click",function(event){event.stopPropagation();});
-  panel.querySelectorAll("a").forEach(function(link){link.addEventListener("click",closeMenu);});
-  document.addEventListener("click",closeMenu);
-  document.addEventListener("keydown",function(event){
-    if(event.key==="Escape"){closeMenu();button.focus();}
-  });
-  closeMenu();
-}());
-</script>
-<!-- LIFEOS_HOME_NAV_REPAIR_V2_END -->
-      </header>
-
-      <section class="hero">
-        <h1>Examine the <span class="gold">possible direction</span> of your decision.</h1>
-        <p class="lead">
-          LifeOS helps you clarify a decision, examine risks, compare trade-offs and identify practical next actions before you act.
-        </p>
-      </section>
-
-      <section class="panel" aria-label="LifeOs Ai entry panel">
-        <div class="brief"><strong>Bring one real decision into a structured conversation.</strong> LifeOS helps you clarify the situation, examine responsibilities, compare risks and consequences, and define a practical next action without claiming certainty or removing your responsibility.</div><div class="lifeos-action-grid-overhaul-v1"><a class="lifeos-action-card-overhaul-v1 primary" href="/chat"><small>Decision conversation</small><strong>Start Decision Chat</strong><span>Examine one real choice through continued, structured dialogue.</span></a><a class="lifeos-action-card-overhaul-v1" href="/projects"><small>LifeOS ecosystem</small><strong>Explore Future Projects</strong><span>Review initiatives clearly identified as Coming Soon.</span></a></div>
-      </section>
-
-
-      <!-- LIFEOS_STAGE1_PREMIUM_UNIVERSAL_V1 --><!-- LIFEOS_CREDIBILITY_NAVIGATION_OVERHAUL_V1 --><section class="lifeos-home-content-v1"><a class="lifeos-home-section-v1 linked" href="/what-lifeos-does"><p class="lifeos-home-kicker-v1">Human development and decision intelligence</p><h2>What LifeOS Does</h2><p>LifeOS exists to strengthen human judgment, responsible conduct, and constructive social awareness. Through the LifeOS Daily Reset Planner, educational publishing, reflective dialogue, ethical development, responsible public conduct, and decision intelligence, it helps individuals examine their choices more carefully, understand their responsibilities, and pursue actions that contribute positively to personal life and society.</p><b>Read the complete LifeOS mission →</b></a><article class="lifeos-home-section-v1"><p class="lifeos-home-kicker-v1">A disciplined four-stage process</p><h2><a href="/how-it-works">How LifeOS Works</a></h2><ol class="lifeos-home-steps-v1"><li><a href="/understand-the-situation"><strong>Understand the real situation.</strong><span>Clarify facts, pressures, people, assumptions and uncertainty.</span></a></li><li><a href="/examine-consequences"><strong>Examine values, risks and consequences.</strong><span>Consider responsibilities, exposure and effects on people and society.</span></a></li><li><a href="/guided-reflection"><strong>Continue guided reflection.</strong><span>Challenge incomplete reasoning through disciplined questions.</span></a></li><li><a href="/responsible-action"><strong>Form a responsible next action.</strong><span>Translate insight into a practical and reviewable step.</span></a></li></ol></article><article class="lifeos-home-section-v1"><p class="lifeos-home-kicker-v1">Core capabilities</p><h2>Built for Responsible Judgment</h2><p>LifeOS examines the practical, personal, ethical and social dimensions of a decision.</p><div class="lifeos-capability-grid-v1"><a href="/decision-clarification"><strong>Decision Clarification</strong><span>Separate the real choice from surrounding noise.</span></a><a href="/risk-identification"><strong>Risk Identification</strong><span>Surface uncertainty and avoidable exposure.</span></a><a href="/trade-off-comparison"><strong>Trade-off Comparison</strong><span>Compare what each option protects or requires.</span></a><a href="/consequence-mapping"><strong>Consequence Mapping</strong><span>Trace plausible effects without claiming certainty.</span></a><a href="/guided-reflection"><strong>Guided Reflection</strong><span>Test assumptions and overlooked considerations.</span></a><a href="/action-planning"><strong>Responsible Action Planning</strong><span>Turn judgment into a safeguarded plan.</span></a></div></article><article class="lifeos-home-section-v1"><p class="lifeos-home-kicker-v1">Active LifeOS ecosystem</p><h2>Platforms Serving the LifeOS Mission</h2><div class="lifeos-active-grid-v1"><a href="/decision-intelligence"><strong>LifeOS Decision Intelligence</strong><span>Frameworks for responsible evaluation.</span></a><a href="/chat"><strong>LifeOS Synthetic Artificial Intelligence</strong><span>Structured decision conversation.</span></a><a href="https://lifeosdaily.blogspot.com/" target="_blank" rel="noopener noreferrer"><strong>LifeOS Daily</strong><span>Educational publishing and the LifeOS Daily Reset Planner.</span></a><a href="/community"><strong>Tecino’s Channel</strong><span>Biography, social reflection and human-centred public learning.</span></a><a href="/guides"><strong>Guides and Educational Resources</strong><span>Materials for discipline, moral awareness and constructive conduct.</span></a></div></article><aside class="lifeos-limitations-v1"><h2>Responsible-Use Statement</h2><p>LifeOS supports reflection, education and decision analysis. It does not predict outcomes with certainty, make the final decision for the user, or replace qualified professional advice.</p></aside><section class="lifeos-owner-v1"><h2>Publisher and Ownership</h2><p>LifeOS is sponsored by Hansafrique Ltd and powered by LifeOS Daily and Tecino’s Channel.</p><p>Founded and owned by Patrick Okeya, founder of Tecino’s Channel, LifeOS Daily, Crown Mindset, and LifeOS Synthetic Artificial Intelligence (L.O.S.A.I.).</p></section></section>
-
+      <a class="header-cta" href="/chat">Start Decision</a>
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="Open navigation"><span></span><span></span><span></span></button>
     </div>
-      <!-- LIFEOS_FOOTER_OUTSIDE_INNER_V1 -->
-    <footer class="footer">
-  <p class="lifeos-footer-identity-v1">LifeOS Synthetic Intelligence helps people examine decisions, risks and practical next actions before they act.</p>
-  <!-- LIFEOS_ARCHITECTURE_FINALIZER_V1_SOCIAL -->
-<section class="lifeos-social-footer-v1" aria-label="Official LifeOS social and contact links">
-  <h2 class="lifeos-social-heading-v1">Connect with LifeOS</h2>
-  <div class="lifeos-social-icons-v1">
-    <a class="lifeos-social-link-v1" href="https://lifeosdaily.blogspot.com/" aria-label="Blogger" title="Blogger" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#FF5722" d="M6 3h7a5 5 0 0 1 5 5v1h2a1 1 0 0 1 1 1v4a7 7 0 0 1-7 7H9a6 6 0 0 1-6-6V6a3 3 0 0 1 3-3Zm2 5h6V6H8v2Zm0 8h8v-2H8v2Z"/></svg></a>
-    <a class="lifeos-social-link-v1" href="https://www.facebook.com/share/1Hpd7Ca3aj/" aria-label="Facebook" title="Facebook" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#1877F2"/><path fill="#fff" d="M14 8V6.5c0-.8.5-1 1.2-1H18V2.2c-.7-.1-1.8-.2-3-.2-3 0-5 1.8-5 5v1H7v4h3v10h4V12h3.3l.7-4H14Z"/></svg></a>
-    <a class="lifeos-social-link-v1" href="https://vm.tiktok.com/ZS96sdHTd4fmW-o4lB3/" aria-label="TikTok" title="TikTok" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#25F4EE" d="M14 2h3c.3 2.4 1.7 4 4 4.8V10a8 8 0 0 1-4-1.2V15a6 6 0 1 1-6-6v3.2a2.8 2.8 0 1 0 3 2.8V2Z"/><path fill="#FE2C55" d="M13 2h3c.3 2.4 1.7 4 4 4.8v2.1c-2.2-.5-3.8-1.7-5-3.5V15a6 6 0 0 1-8.8 5.3A6 6 0 0 0 16 15V8.8A8 8 0 0 0 20 10V7c-2.3-.8-3.7-2.4-4-5h-3Z"/></svg></a>
-    <a class="lifeos-social-link-v1" href="mailto:lifeos.crwnmdtc@gmail.com" aria-label="Email LifeOS" title="Email LifeOS"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#EA4335" d="M3 6 12 13 21 6v13a2 2 0 0 1-2 2h-2V10l-5 4-5-4v11H5a2 2 0 0 1-2-2V6Z"/><path fill="#4285F4" d="M3 7v12a2 2 0 0 0 2 2h2V10L3 7Z"/><path fill="#34A853" d="M17 10v11h2a2 2 0 0 0 2-2V7l-4 3Z"/><path fill="#FBBC04" d="m3 6 4 3 5 4 5-4 4-3c0-2-2-3-4-2l-5 4-5-4C5 3 3 4 3 6Z"/></svg></a>
-    <a class="lifeos-social-link-v1" href="https://www.pinterest.com/lifeosdaily/" aria-label="Pinterest" title="Pinterest" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#E60023"/><path fill="#fff" d="M12 5c-4 0-6 3-6 5.5 0 2 .8 3.5 2.2 4.1.2.1.4 0 .5-.3l.2-.9c.1-.3 0-.4-.2-.7-.4-.5-.7-1.2-.7-2 0-2.7 2-5 5.1-5 2.8 0 4.4 1.7 4.4 4 0 3-1.3 5.5-3.3 5.5-1.1 0-1.9-.9-1.7-2l.7-2.5c.3-1.2-.3-2.2-1.3-2.2-1.1 0-2 1.2-2 2.8 0 1 .3 1.7.3 1.7l-1.2 5.2c-.3 1.5-.1 3.2 0 3.6 0 .1.2.2.3.1.2-.2 1.4-1.8 1.8-3.3l.6-2.2c.4.7 1.3 1.3 2.3 1.3 3 0 5-2.7 5-6.5C19 7.5 16.6 5 12 5Z"/></svg></a>
-  </div>
-</section>
-  <nav class="lifeos-footer-legal-v1" aria-label="LifeOS legal and support links">
-  <a href="/privacy">Privacy</a><span aria-hidden="true">·</span>
-  <a href="/terms">Terms</a><span aria-hidden="true">·</span>
-  <a href="/disclaimer">Disclaimer</a><span aria-hidden="true">·</span>
-  <a href="/contact">Contact Us</a><span aria-hidden="true">·</span>
-  <a href="/contact#frequently-asked-questions">Support</a>
-</nav>
-  <p class="lifeos-footer-credit-v1">Sponsored by Hansafrique Ltd · Powered by <a href="https://lifeosdaily.blogspot.com/" target="_blank" rel="noopener noreferrer">LifeOS Daily</a> and Tecino’s Channel · Founded and owned by Patrick Okeya · © 2026</p>
-</footer>
-</main>
+  </header>
+
+  <main>
+    <section class="hero-wrap">
+      <div class="container">
+        <article class="hero">
+          <div class="hero-content">
+            <p class="eyebrow">LifeOS decision intelligence</p>
+            <h1>Examine the <span class="gold">possible direction</span> of your decision.</h1>
+            <p class="hero-lead">LifeOS helps you clarify a decision, examine responsibilities, compare risks and consequences, and identify practical next actions before you act.</p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="/chat">Start Decision Chat</a>
+              <a class="button button-secondary" href="/projects">Explore Future Projects</a>
+            </div>
+          </div>
+        </article>
+
+        <div class="credibility-strip" aria-label="LifeOS publisher identity">
+          <div class="credibility-item"><small>Sponsored by</small><strong>Hansafrique Ltd</strong></div>
+          <div class="credibility-item"><small>Powered by</small><strong>LifeOS Daily and Tecino’s Channel</strong></div>
+          <div class="credibility-item"><small>Founded and owned by</small><strong>Patrick Okeya</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="what-lifeos-does">
+      <div class="container">
+        <div class="section-head">
+          <p class="section-kicker">Human development and decision intelligence</p>
+          <h2>What LifeOS Does</h2>
+        </div>
+        <div class="mission-grid">
+          <article class="mission-card">
+            <p>LifeOS exists to strengthen human judgment, responsible conduct, and constructive social awareness. Through the LifeOS Daily Reset Planner, educational publishing, reflective dialogue, ethical development, responsible public conduct, and decision intelligence, it helps individuals examine their choices more carefully, understand their responsibilities, and pursue actions that contribute positively to personal life and society.</p>
+            <a class="text-link" href="/what-lifeos-does">Read the complete LifeOS mission →</a>
+          </article>
+          <aside class="mission-values" aria-label="LifeOS mission priorities">
+            <div class="value-item"><strong>Human judgment</strong><span>Clarify reality before acting.</span></div>
+            <div class="value-item"><strong>Responsible conduct</strong><span>Consider duties, risks and consequences.</span></div>
+            <div class="value-item"><strong>Constructive society</strong><span>Pursue choices that contribute positively.</span></div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="how-it-works">
+      <div class="container">
+        <div class="section-head">
+          <p class="section-kicker">A disciplined four-stage process</p>
+          <h2>How LifeOS Works</h2>
+          <p class="section-intro">Each stage gives the user a clear path from uncertainty to a practical and responsible next action.</p>
+        </div>
+        <div class="process-grid">
+          <a class="card" href="/understand-the-situation"><span class="card-number">1</span><h3>Understand the real situation</h3><p>Clarify facts, pressures, people, assumptions and uncertainty.</p></a>
+          <a class="card" href="/examine-consequences"><span class="card-number">2</span><h3>Examine values, risks and consequences</h3><p>Consider responsibilities, exposure and effects on people and society.</p></a>
+          <a class="card" href="/guided-reflection"><span class="card-number">3</span><h3>Continue guided reflection</h3><p>Challenge incomplete reasoning through disciplined follow-up questions.</p></a>
+          <a class="card" href="/responsible-action"><span class="card-number">4</span><h3>Form a responsible next action</h3><p>Translate insight into a practical, proportionate and reviewable step.</p></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="capabilities">
+      <div class="container">
+        <div class="section-head">
+          <p class="section-kicker">Core capabilities</p>
+          <h2>Built for Responsible Judgment</h2>
+          <p class="section-intro">LifeOS examines the practical, personal, ethical and social dimensions of a decision.</p>
+        </div>
+        <div class="capability-grid">
+          <a class="card" href="/decision-clarification"><h3>Decision Clarification</h3><p>Separate the real choice from surrounding noise and pressure.</p></a>
+          <a class="card" href="/risk-identification"><h3>Risk Identification</h3><p>Surface uncertainty, vulnerability and avoidable exposure.</p></a>
+          <a class="card" href="/trade-off-comparison"><h3>Trade-off Comparison</h3><p>Compare what each option may protect, sacrifice or require.</p></a>
+          <a class="card" href="/consequence-mapping"><h3>Consequence Mapping</h3><p>Trace plausible immediate, secondary and long-term effects without claiming certainty.</p></a>
+          <a class="card" href="/guided-reflection"><h3>Guided Reflection</h3><p>Test assumptions and reveal overlooked considerations.</p></a>
+          <a class="card" href="/action-planning"><h3>Responsible Action Planning</h3><p>Turn judgment into a clear, safeguarded and reviewable plan.</p></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="ecosystem">
+      <div class="container">
+        <div class="section-head">
+          <p class="section-kicker">Active LifeOS ecosystem</p>
+          <h2>Platforms Serving the LifeOS Mission</h2>
+          <p class="section-intro">Active publishing, education and decision-support platforms are presented separately from future initiatives.</p>
+        </div>
+        <div class="ecosystem-grid">
+          <a class="card" href="/decision-intelligence"><h3>LifeOS Decision Intelligence</h3><p>Frameworks for clarification, responsibility, risk, consequences and next-action evaluation.</p></a>
+          <a class="card" href="/chat"><h3>LifeOS Synthetic Artificial Intelligence</h3><p>Structured decision conversation through the current Chat experience.</p></a>
+          <a class="card" href="https://lifeosdaily.blogspot.com/" target="_blank" rel="noopener noreferrer"><h3>LifeOS Daily</h3><p>Educational publishing, reflective guidance and the LifeOS Daily Reset Planner.</p></a>
+          <a class="card" href="/community"><h3>Tecino’s Channel</h3><p>Biography, social reflection and human-centred public learning within the LifeOS ecosystem.</p></a>
+          <a class="card" href="/guides"><h3>Guides and Educational Resources</h3><p>Practical materials for discipline, reflection, moral awareness and constructive conduct.</p></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="responsible-use">
+      <div class="container responsibility-grid">
+        <article class="responsible-use">
+          <p class="section-kicker">Responsible use</p>
+          <h2>Decision support—not guaranteed prediction</h2>
+          <p>LifeOS supports reflection, education and decision analysis. It does not predict outcomes with certainty, make the final decision for the user, or replace qualified medical, legal, financial or other professional advice.</p>
+        </article>
+        <article class="ownership-card">
+          <p class="section-kicker">Publisher and ownership</p>
+          <h2>Transparent responsibility</h2>
+          <p>LifeOS is sponsored by Hansafrique Ltd and powered by LifeOS Daily and Tecino’s Channel.</p>
+          <p>Founded and owned by Patrick Okeya, founder of Tecino’s Channel, LifeOS Daily, Crown Mindset, and LifeOS Synthetic Artificial Intelligence (L.O.S.A.I.).</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <section class="footer-brand">
+          <img class="footer-logo" src="/assets/lifeos-logo-2026.png" alt="LifeOS logo">
+          <div><h2>LifeOS</h2><p>Human development, responsible conduct and decision intelligence for personal life and society.</p></div>
+        </section>
+        <section class="footer-col"><h2>Explore</h2><div class="footer-links"><a href="/about">About</a><a href="/what-lifeos-does">What LifeOS Does</a><a href="/how-it-works">How It Works</a><a href="/decision-intelligence">Decision Intelligence</a><a href="/guides">Guides</a></div></section>
+        <section class="footer-col"><h2>Legal and support</h2><div class="footer-links"><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/disclaimer">Disclaimer</a><a href="/contact">Contact Us</a><a href="/contact#frequently-asked-questions">Support</a></div></section>
+        <section class="footer-col"><h2>Connect with LifeOS</h2><p>Official publishing, social and contact channels.</p><div class="social-links"><a class="social-link" href="https://lifeosdaily.blogspot.com/" target="_blank" rel="noopener noreferrer" aria-label="Blogger">B</a><a class="social-link" href="https://www.facebook.com/share/1Hpd7Ca3aj/" target="_blank" rel="noopener noreferrer" aria-label="Facebook">F</a><a class="social-link" href="https://vm.tiktok.com/ZS96sdHTd4fmW-o4lB3/" target="_blank" rel="noopener noreferrer" aria-label="TikTok">T</a><a class="social-link" href="mailto:lifeos.crwnmdtc@gmail.com" aria-label="Email LifeOS">@</a><a class="social-link" href="https://www.pinterest.com/lifeosdaily/" target="_blank" rel="noopener noreferrer" aria-label="Pinterest">P</a></div></section>
+      </div>
+      <div class="footer-bottom"><span>Sponsored by <strong>Hansafrique Ltd</strong> · Powered by <strong>LifeOS Daily and Tecino’s Channel</strong></span><span>Founded and owned by Patrick Okeya · © 2026</span></div>
+    </div>
+  </footer>
 
   <script>
-    window.addEventListener("beforeinstallprompt", (event) => {
-      event.preventDefault();
-    });
-  </script>
+    (() => {
+      "use strict";
+      const button = document.querySelector(".menu-toggle");
+      const nav = document.querySelector("#primary-nav");
+      if (!button || !nav) return;
 
-<!-- LIFEOS_HEADER_LOGO_HOME_LINK_V3_START -->
-<style id="lifeos-header-logo-home-link-v3-style">
-header img:first-of-type {
-  cursor: pointer !important;
-  touch-action: manipulation;
-}
-</style>
+      const close = () => {
+        button.setAttribute("aria-expanded", "false");
+        button.setAttribute("aria-label", "Open navigation");
+        nav.dataset.open = "false";
+      };
 
-<script id="lifeos-header-logo-home-link-v3">
-(() => {
-  "use strict";
-
-  const installHeaderLogoLink = () => {
-    const logo = document.querySelector(
-      "header img:first-of-type"
-    );
-
-    if (!logo || logo.dataset.homeLink === "1") {
-      return;
-    }
-
-    logo.dataset.homeLink = "1";
-    logo.setAttribute("role", "link");
-    logo.setAttribute("tabindex", "0");
-    logo.setAttribute(
-      "aria-label",
-      "Open the LifeOS homepage"
-    );
-
-    const openHomepage = () => {
-      window.location.assign("/");
-    };
-
-    logo.addEventListener(
-      "click",
-      openHomepage
-    );
-
-    logo.addEventListener(
-      "keydown",
-      (event) => {
-        if (
-          event.key === "Enter" ||
-          event.key === " "
-        ) {
-          event.preventDefault();
-          openHomepage();
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const open = button.getAttribute("aria-expanded") === "true";
+        if (open) close();
+        else {
+          button.setAttribute("aria-expanded", "true");
+          button.setAttribute("aria-label", "Close navigation");
+          nav.dataset.open = "true";
         }
-      }
-    );
-  };
+      });
 
-  if (document.readyState === "loading") {
-    document.addEventListener(
-      "DOMContentLoaded",
-      installHeaderLogoLink,
-      { once: true }
-    );
-  } else {
-    installHeaderLogoLink();
-  }
-})();
-</script>
-<!-- LIFEOS_HEADER_LOGO_HOME_LINK_V3_END -->
-
-<!-- LIFEOS_LOGO_HOME_AND_VOICE_ROUTE_REPAIR_V1 -->
-<!-- LIFEOS_REFERENCE_HOMEPAGE_V1 -->
-<!-- LIFEOS_FINAL_RENDER_VISUAL_FIX_V3_CACHE --><script id="lifeos-final-cache-reset-v3">(()=>{"use strict";const r="lifeos-final-v3-20260701",k="lifeos-release-cache-reset";const f=async()=>{if("serviceWorker" in navigator){const x=await navigator.serviceWorker.register("/service-worker.js?v="+encodeURIComponent(r),{updateViaCache:"none"});await x.update()}if("caches" in window){const n=await caches.keys();await Promise.all(n.map(x=>caches.delete(x)))}};if(localStorage.getItem(k)!==r)f().finally(()=>localStorage.setItem(k,r));})();</script>
+      nav.addEventListener("click", (event) => event.stopPropagation());
+      nav.querySelectorAll("a").forEach((link) => link.addEventListener("click", close));
+      document.addEventListener("click", close);
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          close();
+          button.focus();
+        }
+      });
+      window.addEventListener("resize", () => {
+        if (window.innerWidth > 980) close();
+      });
+    })();
+  </script>
 </body>
 </html>
