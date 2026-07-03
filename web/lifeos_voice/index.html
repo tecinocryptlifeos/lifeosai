@@ -105,26 +105,32 @@
       white-space: nowrap;
     }
 
-    .brand-subtitle {
-      display: block;
+    .brand-expansion {
+      display: inline-grid;
+      grid-template-columns: max-content max-content max-content;
+      grid-template-rows: auto auto;
+      column-gap: 10px;
+      row-gap: 3px;
       margin-top: 5px;
-      color: rgba(255,255,255,.68);
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: .14em;
-      text-transform: uppercase;
+      justify-items: center;
+      align-items: center;
       white-space: nowrap;
     }
 
-    .brand-sai {
-      display: inline-flex;
-      gap: 8px;
-      margin-top: 7px;
+    .brand-word {
+      color: rgba(255,255,255,.68);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .10em;
+      text-transform: uppercase;
+    }
+
+    .brand-letter {
       color: var(--gold);
       font-family: Georgia, "Times New Roman", serif;
       font-size: 18px;
       font-weight: 800;
-      letter-spacing: .22em;
+      line-height: 1;
     }
 
     .primary-nav {
@@ -510,10 +516,83 @@
 
     .ownership-card p:last-child { margin-bottom: 0; }
 
+    .page-canvas {
+      --lower-bg-start: 0px;
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+    }
+
+    .page-canvas::before {
+      content: "";
+      position: absolute;
+      z-index: -2;
+      pointer-events: none;
+      left: 0;
+      right: 0;
+      top: var(--lower-bg-start);
+      bottom: 0;
+      background:
+        linear-gradient(180deg, rgba(3,3,2,.64) 0%, rgba(3,3,2,.69) 38%, rgba(0,0,0,.82) 100%),
+        url("/assets/lifeos-lower-section-bg-v1.jpg?v=20260703-two-adjustments-v1");
+      background-repeat: no-repeat;
+      background-size: 118% 100%;
+      background-position: 52% center;
+    }
+
+    .page-canvas > main,
+    .page-canvas > .site-footer {
+      position: relative;
+      z-index: 1;
+    }
+
+    .lower-content {
+      position: relative;
+    }
+
+    .lower-content .section {
+      position: relative;
+      background: transparent;
+    }
+
+    .lower-content .card,
+    .lower-content .responsible-use,
+    .lower-content .ownership-card {
+      border-color: rgba(244,199,93,.22);
+      background: rgba(7,7,5,.58);
+      -webkit-backdrop-filter: blur(12px) saturate(108%);
+      backdrop-filter: blur(12px) saturate(108%);
+      box-shadow: 0 22px 60px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.035);
+    }
+
+    .lower-content .card:hover,
+    .lower-content .card:focus-visible {
+      border-color: rgba(244,199,93,.48);
+      background: rgba(19,15,7,.68);
+    }
+
+    .lower-content .section h2,
+    .lower-content .card h3,
+    .lower-content .responsible-use h2,
+    .lower-content .ownership-card h2 {
+      color: #fff;
+      text-shadow: 0 2px 12px rgba(0,0,0,.92);
+    }
+
+    .lower-content .section-intro,
+    .lower-content .card p,
+    .lower-content .responsible-use p,
+    .lower-content .ownership-card p {
+      color: rgba(255,255,255,.86);
+      text-shadow: 0 1px 8px rgba(0,0,0,.90);
+    }
+
     .site-footer {
       margin-top: 0;
       border-top: 1px solid rgba(244,199,93,.28);
-      background: linear-gradient(180deg, #0b0905, #000);
+      background: rgba(3,3,2,.76);
+      -webkit-backdrop-filter: blur(14px) saturate(105%);
+      backdrop-filter: blur(14px) saturate(105%);
     }
 
     .footer-grid {
@@ -613,12 +692,16 @@
     }
 
     @media (max-width: 980px) {
+      .page-canvas::before {
+        background-size: 155% 100%;
+        background-position: 49% center;
+      }
       .container { width: min(var(--container), calc(100% - 28px)); }
       .header-row { min-height: 82px; grid-template-columns: auto 1fr auto; }
       .brand-logo { width: 62px; height: 62px; flex-basis: 62px; }
       .brand-name { font-size: 21px; }
-      .brand-subtitle { font-size: 9px; }
-      .brand-sai { font-size: 15px; }
+      .brand-word { font-size: 9px; }
+      .brand-letter { font-size: 15px; }
       .menu-toggle { display: block; }
       .primary-nav {
         display: none;
@@ -648,13 +731,24 @@
     }
 
     @media (max-width: 640px) {
+      .page-canvas::before {
+        background-size: 205% 100%;
+        background-position: 43% center;
+      }
       .container { width: calc(100% - 20px); }
       .header-row { min-height: 72px; gap: 10px; }
       .brand { gap: 9px; }
       .brand-logo { width: 52px; height: 52px; flex-basis: 52px; }
       .brand-name { font-size: 18px; }
-      .brand-subtitle { display: none; }
-      .brand-sai { margin-top: 4px; font-size: 13px; }
+      .brand-expansion {
+        width: 112px;
+        grid-template-columns: repeat(3,1fr);
+        grid-template-rows: auto;
+        column-gap: 4px;
+        margin-top: 4px;
+      }
+      .brand-word { display: none; }
+      .brand-letter { grid-row: 1; font-size: 13px; }
       .menu-toggle { width: 44px; height: 44px; }
       .primary-nav { left: 10px; right: 10px; grid-template-columns: 1fr; }
       .hero-wrap { padding-top: 12px; }
@@ -683,6 +777,7 @@
 </head>
 <body>
 <!-- LIFEOS_HOMEPAGE_RECONSTRUCTION_APPROVED_V1 -->
+<!-- LIFEOS_TWO_APPROVED_ADJUSTMENTS_V1 -->
 
   <header class="site-header">
     <div class="container header-row">
@@ -690,8 +785,14 @@
         <img class="brand-logo" src="/assets/lifeos-logo-2026.png" alt="LifeOS logo">
         <span class="brand-copy">
           <strong class="brand-name">LifeOS AI</strong>
-          <span class="brand-subtitle">Synthetic Artificial Intelligence</span>
-          <span class="brand-sai" aria-label="SAI">S A I</span>
+          <span class="brand-expansion" aria-label="Synthetic Artificial Intelligence — S A I">
+            <span class="brand-word">Synthetic</span>
+            <span class="brand-word">Artificial</span>
+            <span class="brand-word">Intelligence</span>
+            <span class="brand-letter" aria-hidden="true">S</span>
+            <span class="brand-letter" aria-hidden="true">A</span>
+            <span class="brand-letter" aria-hidden="true">I</span>
+          </span>
         </span>
       </a>
 
@@ -711,6 +812,7 @@
     </div>
   </header>
 
+  <div class="page-canvas">
   <main>
     <section class="hero-wrap">
       <div class="container">
@@ -754,6 +856,7 @@
       </div>
     </section>
 
+    <div class="lower-content">
     <section class="section" id="how-it-works">
       <div class="container">
         <div class="section-head">
@@ -820,6 +923,7 @@
         </article>
       </div>
     </section>
+    </div>
   </main>
 
   <footer class="site-footer">
@@ -836,6 +940,30 @@
       <div class="footer-bottom"><span>Sponsored by <strong>Hansafrique Ltd</strong> · Powered by <strong>LifeOS Daily and Tecino’s Channel</strong></span><span>Founded and owned by Patrick Okeya · © 2026</span></div>
     </div>
   </footer>
+  </div>
+
+  <script id="lifeos-lower-background-position-v1">
+    (() => {
+      "use strict";
+      const canvas = document.querySelector(".page-canvas");
+      const start = document.querySelector("#how-it-works");
+      if (!canvas || !start) return;
+
+      const positionBackground = () => {
+        const canvasRect = canvas.getBoundingClientRect();
+        const startRect = start.getBoundingClientRect();
+        const offset = Math.max(0, Math.round(startRect.top - canvasRect.top));
+        canvas.style.setProperty("--lower-bg-start", `${offset}px`);
+      };
+
+      positionBackground();
+      window.addEventListener("load", positionBackground, { once: true });
+      window.addEventListener("resize", positionBackground, { passive: true });
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(positionBackground).catch(() => {});
+      }
+    })();
+  </script>
 
   <script>
     (() => {
