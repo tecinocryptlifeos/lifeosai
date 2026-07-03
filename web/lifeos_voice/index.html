@@ -515,65 +515,341 @@ body.lifeos-home-reference-v1 .footer{margin-top:0!important;padding:22px 0 4px!
 @media(max-width:640px){body.lifeos-home-reference-v1{padding:6px!important}body.lifeos-home-reference-v1 .page{border-radius:20px!important;background-size:auto 760px!important;background-position:center top!important}body.lifeos-home-reference-v1 .inner{padding:12px!important}body.lifeos-home-reference-v1 .lifeos-home-steps-v1,body.lifeos-home-reference-v1 .lifeos-capability-grid-v1,body.lifeos-home-reference-v1 .lifeos-active-grid-v1{grid-template-columns:1fr}body.lifeos-home-reference-v1 .lifeos-home-section-v1,body.lifeos-home-reference-v1 .lifeos-limitations-v1,body.lifeos-home-reference-v1 .lifeos-owner-v1{padding:18px 15px;border-radius:20px}}
 </style>
 
+<style id="lifeos-responsive-architecture-cleanup-v2">
+/*
+  Authoritative homepage responsive layer.
+  Replaces the three conflicting post-Stage-1 patch styles.
+*/
 
-<style id="lifeos-homepage-desktop-layout-fix-v2">
-@media (min-width:768px){
-  body.lifeos-home-reference-v1{width:100%!important;max-width:none!important;padding:12px!important}
-  body.lifeos-home-reference-v1 .page{width:calc(100vw - 24px)!important;max-width:1600px!important;margin-inline:auto!important}
-  body.lifeos-home-reference-v1 .inner{width:100%!important;max-width:none!important}
-  body.lifeos-home-reference-v1 .topbar{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:space-between!important;column-gap:20px!important;row-gap:14px!important}
-  body.lifeos-home-reference-v1 .los-home-menu-v2{order:3!important;flex:1 0 100%!important;width:100%!important;margin:0!important}
-  body.lifeos-home-reference-v1 .los-home-menu-button-v2{display:none!important}
-  body.lifeos-home-reference-v1 #los-home-menu-panel-v2,body.lifeos-home-reference-v1 #los-home-menu-panel-v2[hidden]{display:flex!important;position:static!important;width:100%!important;max-width:none!important;flex-wrap:wrap!important;align-items:center!important;justify-content:center!important;gap:8px!important;padding:10px!important;border:1px solid rgba(255,255,255,.10)!important;border-radius:18px!important;background:rgba(0,0,0,.46)!important;box-shadow:none!important}
-  body.lifeos-home-reference-v1 #los-home-menu-panel-v2 a{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-height:42px!important;padding:9px 13px!important;border-radius:999px!important;white-space:nowrap!important}
-  body.lifeos-home-reference-v1 .hero,body.lifeos-home-reference-v1 .panel{width:min(100%,980px)!important;max-width:980px!important}
+html{
+  width:100%!important;
+  min-height:100%!important;
+  height:auto!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
 }
-@media (min-width:900px){
-  body.lifeos-home-reference-v1 .lifeos-home-content-v1{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  body.lifeos-home-reference-v1 .lifeos-home-section-v1:nth-child(3),body.lifeos-home-reference-v1 .lifeos-home-section-v1:nth-child(4),body.lifeos-home-reference-v1 .lifeos-limitations-v1,body.lifeos-home-reference-v1 .lifeos-owner-v1{grid-column:1/-1!important}
-}
-@media (min-width:1200px){
-  body.lifeos-home-reference-v1{padding:16px!important}
-  body.lifeos-home-reference-v1 .page{width:calc(100vw - 32px)!important}
-  body.lifeos-home-reference-v1 .topbar{display:grid!important;grid-template-columns:auto minmax(220px,.55fr) minmax(520px,1.45fr)!important;flex-wrap:nowrap!important}
-  body.lifeos-home-reference-v1 .los-home-menu-v2{order:initial!important;flex:none!important;width:auto!important;min-width:0!important;margin-left:auto!important}
-  body.lifeos-home-reference-v1 #los-home-menu-panel-v2,body.lifeos-home-reference-v1 #los-home-menu-panel-v2[hidden]{justify-content:flex-end!important;padding:0!important;border:0!important;background:transparent!important}
-  body.lifeos-home-reference-v1 #los-home-menu-panel-v2 a{padding:9px 11px!important}
-  body.lifeos-home-reference-v1 .hero{width:min(100%,1040px)!important;max-width:1040px!important}
-  body.lifeos-home-reference-v1 .panel{width:min(900px,68%)!important;max-width:900px!important}
-}
-</style>
 
-<style id="lifeos-credibility-navigation-overhaul-v1">.lifeos-desktop-nav-overhaul-v1{display:none}@media(min-width:768px){body.lifeos-home-reference-v1 .lifeos-reference-logo{width:clamp(105px,9vw,145px)!important;height:clamp(105px,9vw,145px)!important;opacity:1!important}body.lifeos-home-reference-v1 .lifeos-desktop-nav-overhaul-v1{display:flex!important;grid-column:1/-1!important;width:100%!important;flex-wrap:wrap!important;justify-content:center!important;gap:7px!important;padding:10px!important;border:1px solid rgba(255,255,255,.11)!important;border-radius:18px!important;background:rgba(0,0,0,.54)!important;position:relative!important;z-index:50!important;pointer-events:auto!important}body.lifeos-home-reference-v1 .lifeos-desktop-nav-overhaul-v1 a{padding:9px 12px!important;border-radius:999px!important;color:#fff!important;text-decoration:none!important;font-weight:850!important;pointer-events:auto!important}body.lifeos-home-reference-v1 .lifeos-desktop-nav-overhaul-v1 a:hover{background:rgba(244,199,93,.14)!important;color:#ffe39a!important}body.lifeos-home-reference-v1 .los-home-menu-v2{display:none!important}}@media(min-width:1200px){body.lifeos-home-reference-v1 .lifeos-reference-logo{width:150px!important;height:150px!important}body.lifeos-home-reference-v1 .lifeos-desktop-nav-overhaul-v1{grid-column:3!important;justify-content:flex-end!important;padding:0!important;border:0!important;background:transparent!important}}.lifeos-action-grid-overhaul-v1{display:grid;grid-template-columns:1.25fr .95fr;gap:12px;margin-top:14px}.lifeos-action-card-overhaul-v1{display:grid;gap:7px;min-height:125px;padding:20px;border:1px solid rgba(255,255,255,.12);border-radius:22px;color:#fff;text-decoration:none;background:rgba(255,255,255,.045)}.lifeos-action-card-overhaul-v1.primary{border-color:rgba(244,199,93,.45);background:linear-gradient(145deg,rgba(244,199,93,.22),rgba(55,38,8,.45))}.lifeos-action-card-overhaul-v1 small{color:#f4c75d;font-weight:950;text-transform:uppercase;letter-spacing:.1em}.lifeos-action-card-overhaul-v1 strong{font-size:clamp(20px,2vw,30px)}.lifeos-action-card-overhaul-v1 span{color:rgba(255,255,255,.73)}.lifeos-home-section-v1.linked{display:block;color:inherit;text-decoration:none}.lifeos-home-section-v1 h2 a{color:inherit;text-decoration:none}.lifeos-home-steps-v1 li{padding:0!important}.lifeos-home-steps-v1 li>a{display:grid;gap:7px;height:100%;padding:18px;color:inherit;text-decoration:none}.lifeos-capability-grid-v1>a{display:grid;gap:7px;padding:18px;border:1px solid rgba(255,255,255,.1);border-radius:20px;background:rgba(255,255,255,.035);color:#fff;text-decoration:none}body.lifeos-home-reference-v1 .footer{width:100%!important;max-width:none!important;margin:12px 0 0!important;padding:30px clamp(18px,3vw,42px)!important;border-top:1px solid rgba(244,199,93,.3)!important;border-radius:22px 22px 0 0!important;background:linear-gradient(180deg,rgba(12,10,5,.97),#000)!important}@media(max-width:720px){.lifeos-action-grid-overhaul-v1{grid-template-columns:1fr}}</style>
+body.lifeos-home-reference-v1{
+  width:100%!important;
+  max-width:none!important;
+  min-height:100%!important;
+  height:auto!important;
+  margin:0!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+}
 
-<style id="lifeos-footer-structure-fix-v1">
 body.lifeos-home-reference-v1 .page{
-  overflow:visible!important;
+  display:flex!important;
+  flex-direction:column!important;
+  width:min(1600px,calc(100vw - 20px))!important;
+  max-width:1600px!important;
+  min-height:0!important;
+  height:auto!important;
+  margin:10px auto 0!important;
+  overflow:hidden!important;
 }
+
 body.lifeos-home-reference-v1 .inner{
+  width:100%!important;
+  max-width:none!important;
+  min-height:0!important;
+  height:auto!important;
+  flex:0 0 auto!important;
   padding-bottom:0!important;
 }
+
+/* Logo crop: enlarge the visible emblem, not merely the transparent canvas. */
+body.lifeos-home-reference-v1 .lifeos-reference-logo-link{
+  display:grid!important;
+  place-items:center!important;
+  width:88px!important;
+  height:88px!important;
+  min-width:88px!important;
+  overflow:hidden!important;
+  border-radius:18px!important;
+}
+
+body.lifeos-home-reference-v1 .lifeos-reference-logo{
+  width:100%!important;
+  height:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  object-fit:contain!important;
+  transform:scale(2.15)!important;
+  transform-origin:center!important;
+  opacity:1!important;
+  filter:drop-shadow(0 0 16px rgba(244,199,93,.25))!important;
+}
+
+/* Default: mobile navigation only. */
+body.lifeos-home-reference-v1 .lifeos-desktop-nav-overhaul-v1{
+  display:none!important;
+}
+
+body.lifeos-home-reference-v1 .los-home-menu-v2{
+  display:block!important;
+  width:100%!important;
+  position:relative!important;
+  z-index:60!important;
+}
+
+body.lifeos-home-reference-v1 .los-home-menu-button-v2{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+
+body.lifeos-home-reference-v1 #los-home-menu-panel-v2[hidden]{
+  display:none!important;
+}
+
+body.lifeos-home-reference-v1 #los-home-menu-panel-v2:not([hidden]){
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  position:static!important;
+  width:100%!important;
+  max-width:none!important;
+  margin-top:8px!important;
+  gap:7px!important;
+  padding:10px!important;
+  border:1px solid rgba(255,255,255,.11)!important;
+  border-radius:16px!important;
+  background:rgba(0,0,0,.86)!important;
+  box-shadow:none!important;
+}
+
+body.lifeos-home-reference-v1 #los-home-menu-panel-v2 a{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-height:42px!important;
+  padding:9px 8px!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  border-radius:12px!important;
+  text-align:center!important;
+  white-space:normal!important;
+}
+
+/* Mobile and narrow tablet content. */
+body.lifeos-home-reference-v1 .lifeos-action-grid-overhaul-v1,
+body.lifeos-home-reference-v1 .lifeos-home-content-v1{
+  grid-template-columns:1fr!important;
+}
+
+body.lifeos-home-reference-v1 .lifeos-home-steps-v1,
+body.lifeos-home-reference-v1 .lifeos-capability-grid-v1,
+body.lifeos-home-reference-v1 .lifeos-active-grid-v1{
+  grid-template-columns:1fr!important;
+}
+
+/* Footer is the final child of .page and ends the document visually. */
 body.lifeos-home-reference-v1 .page > .footer{
   width:100%!important;
   max-width:none!important;
-  margin:28px 0 0!important;
-  padding:34px clamp(20px,4vw,56px) 30px!important;
+  flex:0 0 auto!important;
+  margin:24px 0 0!important;
+  padding:30px 18px 26px!important;
   border-top:1px solid rgba(244,199,93,.34)!important;
-  border-radius:0 0 26px 26px!important;
-  background:linear-gradient(180deg,rgba(15,12,6,.98),rgba(0,0,0,1))!important;
-  box-shadow:0 -18px 50px rgba(0,0,0,.32)!important;
+  border-radius:0 0 22px 22px!important;
+  background:linear-gradient(180deg,rgba(14,11,5,.99),#000)!important;
+  box-shadow:0 -14px 42px rgba(0,0,0,.28)!important;
 }
+
 body.lifeos-home-reference-v1 .page > .footer > *{
   width:min(1320px,100%)!important;
   max-width:1320px!important;
   margin-left:auto!important;
   margin-right:auto!important;
 }
-@media(max-width:640px){
+
+@media(max-width:639px){
+  body.lifeos-home-reference-v1{
+    padding:0!important;
+  }
+
+  body.lifeos-home-reference-v1 .page{
+    width:calc(100vw - 10px)!important;
+    margin:5px auto 0!important;
+    border-radius:18px!important;
+  }
+
+  body.lifeos-home-reference-v1 .inner{
+    padding:10px!important;
+  }
+
+  body.lifeos-home-reference-v1 .topbar{
+    display:grid!important;
+    grid-template-columns:auto 1fr!important;
+    align-items:center!important;
+    gap:10px!important;
+  }
+
+  body.lifeos-home-reference-v1 .lifeos-reference-logo-link{
+    width:82px!important;
+    height:82px!important;
+    min-width:82px!important;
+  }
+
+  body.lifeos-home-reference-v1 .los-home-menu-v2{
+    grid-column:1/-1!important;
+  }
+
+  body.lifeos-home-reference-v1 .hero,
+  body.lifeos-home-reference-v1 .panel{
+    width:100%!important;
+    max-width:none!important;
+  }
+
+  body.lifeos-home-reference-v1 .lifeos-home-section-v1,
+  body.lifeos-home-reference-v1 .lifeos-limitations-v1,
+  body.lifeos-home-reference-v1 .lifeos-owner-v1{
+    padding:18px 15px!important;
+    border-radius:18px!important;
+  }
+}
+
+@media(min-width:640px) and (max-width:899px){
+  body.lifeos-home-reference-v1{
+    padding:10px!important;
+  }
+
+  body.lifeos-home-reference-v1 .page{
+    width:calc(100vw - 20px)!important;
+    margin:0 auto!important;
+  }
+
+  body.lifeos-home-reference-v1 .topbar{
+    display:grid!important;
+    grid-template-columns:auto minmax(0,1fr)!important;
+    align-items:center!important;
+    gap:14px!important;
+  }
+
+  body.lifeos-home-reference-v1 .los-home-menu-v2{
+    grid-column:1/-1!important;
+  }
+
+  body.lifeos-home-reference-v1 .lifeos-home-steps-v1,
+  body.lifeos-home-reference-v1 .lifeos-capability-grid-v1,
+  body.lifeos-home-reference-v1 .lifeos-active-grid-v1{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
+
+/* True desktop composition. */
+@media(min-width:900px){
+  body.lifeos-home-reference-v1{
+    padding:14px!important;
+  }
+
+  body.lifeos-home-reference-v1 .page{
+    width:calc(100vw - 28px)!important;
+    margin:0 auto!important;
+  }
+
+  body.lifeos-home-reference-v1 .topbar{
+    display:grid!important;
+    grid-template-columns:auto minmax(220px,.58fr) minmax(520px,1.42fr)!important;
+    align-items:center!important;
+    gap:20px!important;
+  }
+
+  body.lifeos-home-reference-v1 .lifeos-reference-logo-link{
+    width:108px!important;
+    height:108px!important;
+    min-width:108px!important;
+  }
+
+  body.lifeos-home-reference-v1 .lifeos-desktop-nav-overhaul-v1{
+    display:flex!important;
+    grid-column:3!important;
+    width:100%!important;
+    flex-wrap:wrap!important;
+    align-items:center!important;
+    justify-content:flex-end!important;
+    gap:7px!important;
+    padding:0!important;
+    border:0!important;
+    background:transparent!important;
+    position:relative!important;
+    z-index:60!important;
+    pointer-events:auto!important;
+  }
+
+  body.lifeos-home-reference-v1 .lifeos-desktop-nav-overhaul-v1 a{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    min-height:40px!important;
+    padding:9px 11px!important;
+    border-radius:999px!important;
+    color:#fff!important;
+    font-weight:850!important;
+    text-decoration:none!important;
+    white-space:nowrap!important;
+    pointer-events:auto!important;
+  }
+
+  body.lifeos-home-reference-v1 .lifeos-desktop-nav-overhaul-v1 a:hover,
+  body.lifeos-home-reference-v1 .lifeos-desktop-nav-overhaul-v1 a:focus-visible{
+    color:#ffe39a!important;
+    background:rgba(244,199,93,.14)!important;
+    outline:none!important;
+  }
+
+  body.lifeos-home-reference-v1 .los-home-menu-v2{
+    display:none!important;
+  }
+
+  body.lifeos-home-reference-v1 .hero{
+    width:min(100%,1060px)!important;
+    max-width:1060px!important;
+  }
+
+  body.lifeos-home-reference-v1 .panel{
+    width:min(920px,70%)!important;
+    max-width:920px!important;
+  }
+
+  body.lifeos-home-reference-v1 .lifeos-action-grid-overhaul-v1{
+    grid-template-columns:1.25fr .95fr!important;
+  }
+
+  body.lifeos-home-reference-v1 .lifeos-home-content-v1{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+
+  body.lifeos-home-reference-v1 .lifeos-home-section-v1:nth-child(3),
+  body.lifeos-home-reference-v1 .lifeos-home-section-v1:nth-child(4),
+  body.lifeos-home-reference-v1 .lifeos-limitations-v1,
+  body.lifeos-home-reference-v1 .lifeos-owner-v1{
+    grid-column:1/-1!important;
+  }
+
+  body.lifeos-home-reference-v1 .lifeos-home-steps-v1{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+
+  body.lifeos-home-reference-v1 .lifeos-capability-grid-v1,
+  body.lifeos-home-reference-v1 .lifeos-active-grid-v1{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+}
+
+@media(min-width:1200px){
+  body.lifeos-home-reference-v1 .lifeos-reference-logo-link{
+    width:124px!important;
+    height:124px!important;
+    min-width:124px!important;
+  }
+
+  body.lifeos-home-reference-v1 .lifeos-home-steps-v1{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  }
+
   body.lifeos-home-reference-v1 .page > .footer{
-    margin-top:18px!important;
-    padding:26px 16px 24px!important;
-    border-radius:0 0 20px 20px!important;
+    padding:34px 44px 30px!important;
   }
 }
 </style>
