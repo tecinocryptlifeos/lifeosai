@@ -830,6 +830,21 @@
 }
 </style>
 
+
+<style id="lifeos-background-visibility-balance-v1">
+/*
+  Darkens only the existing LifeOS background artwork.
+  Text, cards, layout, images and section boundaries remain unchanged.
+*/
+.page-canvas::before {
+  filter: brightness(.38) !important;
+}
+
+.page-canvas::after {
+  filter: brightness(.30) !important;
+}
+</style>
+
 </head>
 <body>
 <!-- LIFEOS_HOMEPAGE_RECONSTRUCTION_APPROVED_V1 -->
