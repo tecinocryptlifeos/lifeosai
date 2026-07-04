@@ -518,6 +518,7 @@
 
     .page-canvas {
       --lower-bg-start: 0px;
+      --lower-bg-end: 0px;
       position: relative;
       isolation: isolate;
       overflow: hidden;
@@ -531,12 +532,16 @@
       left: 0;
       right: 0;
       top: var(--lower-bg-start);
-      bottom: 0;
+      bottom: auto;
+      height: max(
+        0px,
+        calc(var(--lower-bg-end) - var(--lower-bg-start))
+      );
       background:
-        linear-gradient(180deg, rgba(3,3,2,.76) 0%, rgba(3,3,2,.82) 40%, rgba(0,0,0,.90) 100%),
+        linear-gradient(180deg, rgba(3,3,2,.65) 0%, rgba(3,3,2,.70) 40%, rgba(0,0,0,.80) 100%),
         url("/assets/lifeos-lower-section-bg-v1.jpg?v=20260703-two-adjustments-v1");
       background-repeat: no-repeat;
-      background-size: 100% auto;
+      background-size: 112% auto;
       background-position: center top;
     }
 
@@ -956,14 +961,34 @@
     (() => {
       "use strict";
       const canvas = document.querySelector(".page-canvas");
-      const start = document.querySelector("#how-it-works");
-      if (!canvas || !start) return;
+      const start = document.querySelector("#what-lifeos-does");
+      const end = document.querySelector("#ecosystem");
+      if (!canvas || !start || !end) return;
 
       const positionBackground = () => {
         const canvasRect = canvas.getBoundingClientRect();
         const startRect = start.getBoundingClientRect();
-        const offset = Math.max(0, Math.round(startRect.top - canvasRect.top));
-        canvas.style.setProperty("--lower-bg-start", `${offset}px`);
+        const endRect = end.getBoundingClientRect();
+
+        const startOffset = Math.max(
+          0,
+          Math.round(startRect.top - canvasRect.top)
+        );
+
+        const endOffset = Math.max(
+          startOffset,
+          Math.round(endRect.top - canvasRect.top)
+        );
+
+        canvas.style.setProperty(
+          "--lower-bg-start",
+          `${startOffset}px`
+        );
+
+        canvas.style.setProperty(
+          "--lower-bg-end",
+          `${endOffset}px`
+        );
       };
 
       positionBackground();
