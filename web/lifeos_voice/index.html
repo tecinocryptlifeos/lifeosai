@@ -785,7 +785,22 @@
 .page-canvas>main,.page-canvas>.site-footer{position:relative;z-index:1}
 #ecosystem .card,#responsible-use .responsible-use,#responsible-use .ownership-card{background:rgba(5,5,4,.78);border-color:rgba(244,199,93,.24);-webkit-backdrop-filter:blur(12px) saturate(92%);backdrop-filter:blur(12px) saturate(92%)}
 .site-footer{background:rgba(3,3,2,.76);-webkit-backdrop-filter:blur(12px) saturate(90%);backdrop-filter:blur(12px) saturate(90%)}
-</style></head>
+</style>
+<style id="lifeos-zone1-background-final-v3">
+.page-canvas::before{
+  top:var(--lifeos-zone1-start,0px)!important;
+  bottom:auto!important;
+  height:max(0px,calc(var(--lifeos-zone1-end,0px) - var(--lifeos-zone1-start,0px)))!important;
+  background:
+    linear-gradient(180deg,rgba(3,3,2,.65) 0%,rgba(3,3,2,.70) 40%,rgba(0,0,0,.80) 100%),
+    url("/assets/lifeos-lower-section-bg-v1.jpg?v=20260704-zone1-v3")!important;
+  background-repeat:no-repeat,no-repeat!important;
+  background-size:100% 100%,112% auto!important;
+  background-position:center,center top!important;
+}
+</style>
+
+</head>
 <body>
 <!-- LIFEOS_HOMEPAGE_RECONSTRUCTION_APPROVED_V1 -->
 <!-- LIFEOS_TWO_APPROVED_ADJUSTMENTS_V1 -->
@@ -1038,5 +1053,33 @@
       });
     })();
   </script>
+
+<script id="lifeos-zone1-background-position-final-v3">
+(() => {
+  "use strict";
+  const canvas = document.querySelector(".page-canvas");
+  const start = document.querySelector("#what-lifeos-does");
+  const end = document.querySelector("#ecosystem");
+  if (!canvas || !start || !end) return;
+
+  const positionZone = () => {
+    const canvasRect = canvas.getBoundingClientRect();
+    const startRect = start.getBoundingClientRect();
+    const endRect = end.getBoundingClientRect();
+    const startOffset = Math.max(0, Math.round(startRect.top - canvasRect.top));
+    const endOffset = Math.max(startOffset, Math.round(endRect.top - canvasRect.top));
+    canvas.style.setProperty("--lifeos-zone1-start", `${startOffset}px`);
+    canvas.style.setProperty("--lifeos-zone1-end", `${endOffset}px`);
+  };
+
+  positionZone();
+  window.addEventListener("load", positionZone, { once: true });
+  window.addEventListener("resize", positionZone, { passive: true });
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(positionZone).catch(() => {});
+  }
+})();
+</script>
+
 </body>
 </html>
