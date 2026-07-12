@@ -22,6 +22,7 @@ const audioElement=document.getElementById("sophiaAudio");
 let socket=null,micStream=null,inputContext=null,inputSource=null,processor=null,muteGain=null;
 let outputContext=null,outputDestination=null,outputGain=null,outputCompressor=null,nextOutputTime=0;
 let outputSources=new Set();
+let outputRoute="uninitialised",receivedAudioChunks=0,lastAudioChunkAt=0;
 let starting=false,active=false,setupReady=false,closingNormally=false;
 let micMuted=false,speakerEnabled=true,selectedSinkId="default",selectedSinkLabel="phone default";
 
@@ -79,39 +80,65 @@ function resampleToPcm16(input,sourceRate){
 /* LIFEOS_ANDROID_DEFAULT_AUDIO_FALLBACK_V1 */
 /* LIFEOS_SOPHIA_DESPINA_LONDON_V1 */
 /* LIFEOS_MULTILINGUAL_VOICE_INTELLIGENCE_V2 */
-async function applySelectedOutput(){
-  /*
-   * The browser automatically uses the operating system's normal audio
-   * destination when no explicit sink is selected. Some Android browsers
-   * expose setSinkId() but reject the literal device ID "default".
-   */
-  if(selectedSinkId==="default"){
-    selectedSinkLabel="phone default";
-    refreshControls();
-    return true;
-  }
+/* LIFEOS_STAGE2_AUDIO_OUTPUT_REPAIR_V1 */
+function disconnectOutputRoute(){
+  if(!outputCompressor)return;
+  try{outputCompressor.disconnect();}catch(error){}
+}
 
-  try{
-    if(audioElement&&typeof audioElement.setSinkId==="function"){
-      await audioElement.setSinkId(selectedSinkId);
-    }else if(outputContext&&typeof outputContext.setSinkId==="function"){
-      await outputContext.setSinkId(selectedSinkId);
-    }else{
-      throw new Error("This browser does not permit audio-output selection.");
-    }
-  }catch(error){
-    console.warn(
-      "LifeOS audio-output selection unavailable; using system default.",
-      error
-    );
-    selectedSinkId="default";
-    selectedSinkLabel="phone default";
-    refreshControls();
-    return false;
+function routeToSystemDefault(){
+  if(!outputContext||!outputCompressor)return false;
+  disconnectOutputRoute();
+  outputCompressor.connect(outputContext.destination);
+  outputRoute="audio-context-default";
+  if(audioElement){
+    try{audioElement.pause();}catch(error){}
+    audioElement.srcObject=null;
+    audioElement.muted=false;
+    audioElement.volume=1;
   }
-
+  selectedSinkId="default";
+  selectedSinkLabel="phone default";
   refreshControls();
   return true;
+}
+
+async function routeToSelectedDevice(){
+  if(!outputContext||!outputCompressor||!audioElement)return false;
+  if(typeof audioElement.setSinkId!=="function"){
+    throw new Error("This browser does not permit audio-output selection.");
+  }
+  if(!outputDestination)outputDestination=outputContext.createMediaStreamDestination();
+  await audioElement.setSinkId(selectedSinkId);
+  disconnectOutputRoute();
+  outputCompressor.connect(outputDestination);
+  audioElement.srcObject=outputDestination.stream;
+  audioElement.muted=false;
+  audioElement.volume=1;
+  await audioElement.play();
+  outputRoute="media-element-selected-device";
+  refreshControls();
+  return true;
+}
+
+async function applySelectedOutput(){
+  /*
+   * Default Android playback is routed directly to AudioContext.destination.
+   * This avoids the fragile hidden MediaStream -> HTMLAudioElement path.
+   * The HTML audio element is used only when the visitor explicitly chooses
+   * a non-default output device that supports setSinkId().
+   */
+  if(selectedSinkId==="default")return routeToSystemDefault();
+
+  try{
+    return await routeToSelectedDevice();
+  }catch(error){
+    console.warn(
+      "LifeOS selected output failed; restoring direct phone output.",
+      error
+    );
+    return routeToSystemDefault();
+  }
 }
 
 async function preferPhoneSpeaker(){
@@ -177,7 +204,7 @@ async function ensureOutputContext(){
   if(!AudioContextClass)throw new Error("Web Audio is not supported.");
   if(!outputContext||outputContext.state==="closed"){
     outputContext=new AudioContextClass({sampleRate:OUTPUT_RATE});
-    outputDestination=outputContext.createMediaStreamDestination();
+    outputDestination=null;
     outputGain=outputContext.createGain();
     outputCompressor=outputContext.createDynamicsCompressor();
     outputGain.gain.value=speakerEnabled?3.2:0;
@@ -188,18 +215,48 @@ async function ensureOutputContext(){
     outputCompressor.release.value=0.22;
     outputGain.connect(outputCompressor);
     window.LifeOSGoldenVisualizer?.attachSophiaNode(outputGain,outputContext);
-    outputCompressor.connect(outputDestination);
-    audioElement.srcObject=outputDestination.stream;
-    audioElement.muted=false;
-    audioElement.volume=1;
     nextOutputTime=outputContext.currentTime;
   }
   if(outputContext.state==="suspended")await outputContext.resume();
-  try{await audioElement.play();}catch(error){}
+  const routed=await applySelectedOutput();
+  if(!routed)throw new Error("Sophia audio output could not be activated.");
+}
+
+function scheduleCueTone(frequency,start,duration,level,type){
+  if(!outputContext||!outputGain||!speakerEnabled)return;
+  const oscillator=outputContext.createOscillator();
+  const envelope=outputContext.createGain();
+  oscillator.type=type||"sine";
+  oscillator.frequency.setValueAtTime(frequency,start);
+  envelope.gain.setValueAtTime(.0001,start);
+  envelope.gain.exponentialRampToValueAtTime(level,start+.018);
+  envelope.gain.exponentialRampToValueAtTime(.0001,start+duration);
+  oscillator.connect(envelope);
+  envelope.connect(outputGain);
+  oscillator.start(start);
+  oscillator.stop(start+duration+.035);
+}
+
+async function playConnectionCue(){
+  if(!speakerEnabled)return;
+  await ensureOutputContext();
+  const now=outputContext.currentTime+.035;
+  scheduleCueTone(523.25,now,.16,.021,"sine");
+  scheduleCueTone(659.25,now+.11,.19,.019,"sine");
+  scheduleCueTone(783.99,now+.24,.25,.016,"triangle");
+}
+
+async function playDisconnectionCue(){
+  if(!speakerEnabled||!outputContext||outputContext.state==="closed")return;
+  if(outputContext.state==="suspended")await outputContext.resume();
   await applySelectedOutput();
+  const now=outputContext.currentTime+.025;
+  scheduleCueTone(659.25,now,.18,.018,"sine");
+  scheduleCueTone(493.88,now+.13,.25,.016,"triangle");
 }
 
 async function playAudio(base64Audio){
+  if(!speakerEnabled)return;
   await ensureOutputContext();
   const bytes=base64ToBytes(base64Audio);
   const sampleCount=Math.floor(bytes.length/2);
@@ -217,6 +274,8 @@ async function playAudio(base64Audio){
   source.start(startTime);
   nextOutputTime=startTime+buffer.duration;
   outputSources.add(source);
+  receivedAudioChunks+=1;
+  lastAudioChunkAt=Date.now();
 }
 
 function clearOutput(){
@@ -277,7 +336,8 @@ async function handleMessage(event){
     await startMicrophone();
     starting=false;
     active=true;
-    setStatus("Live conversation active — speak naturally.","active");
+    try{await playConnectionCue();}catch(error){console.warn("LifeOS connection cue unavailable.",error);}
+    setStatus("Connected — live conversation active.","active");
     refreshControls();
     return;
   }
@@ -287,7 +347,13 @@ async function handleMessage(event){
   const parts=content.modelTurn&&Array.isArray(content.modelTurn.parts)?content.modelTurn.parts:[];
   for(const part of parts){
     const inline=part.inlineData||part.inline_data;
-    if(inline&&inline.data&&speakerEnabled)await playAudio(inline.data);
+    const mimeType=inline&&(inline.mimeType||inline.mime_type||"");
+    if(inline&&inline.data&&(!mimeType||/^audio\//i.test(mimeType))&&speakerEnabled){
+      try{await playAudio(inline.data);}catch(error){
+        console.error("LifeOS Sophia audio playback failed.",error);
+        setStatus("Sophia audio playback failed — tap Audio Output.","error");
+      }
+    }
   }
   if(content.inputTranscription&&content.inputTranscription.text)setStatus("Sophia is analysing…","active");
   if(content.outputTranscription&&content.outputTranscription.text)setStatus("Sophia is speaking…","active");
@@ -334,11 +400,13 @@ async function startConversation(){
 }
 
 function stopAndClean(message,state,socketAlreadyClosed){
+  const wasConnected=active||setupReady;
   starting=false;
   active=false;
   setupReady=false;
   micMuted=false;
   clearOutput();
+  if(wasConnected){void playDisconnectionCue().catch(error=>console.warn("LifeOS disconnection cue unavailable.",error));}
   if(processor){processor.onaudioprocess=null;try{processor.disconnect();}catch(error){}}
   window.LifeOSGoldenVisualizer?.detachMicrophone();
   if(inputSource){try{inputSource.disconnect();}catch(error){}}
@@ -367,7 +435,7 @@ window.addEventListener("pagehide",()=>{if(active||starting)endConversation();})
 refreshControls();
 
 window.LifeOSGeminiLiveV1={
-  version:"2.2.0",
+  version:"2.3.0",
   start:startConversation,
   stop:endConversation,
   muteMicrophone:setMicMuted,
