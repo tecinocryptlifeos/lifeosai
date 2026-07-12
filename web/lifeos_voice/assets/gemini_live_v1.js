@@ -76,15 +76,40 @@ function resampleToPcm16(input,sourceRate){
   return output;
 }
 
+/* LIFEOS_ANDROID_DEFAULT_AUDIO_FALLBACK_V1 */
 async function applySelectedOutput(){
-  if(audioElement&&typeof audioElement.setSinkId==="function"){
-    await audioElement.setSinkId(selectedSinkId);
-  }else if(outputContext&&typeof outputContext.setSinkId==="function"){
-    await outputContext.setSinkId(selectedSinkId);
-  }else if(selectedSinkId!=="default"){
-    throw new Error("This browser does not permit audio-output selection.");
+  /*
+   * The browser automatically uses the operating system's normal audio
+   * destination when no explicit sink is selected. Some Android browsers
+   * expose setSinkId() but reject the literal device ID "default".
+   */
+  if(selectedSinkId==="default"){
+    selectedSinkLabel="phone default";
+    refreshControls();
+    return true;
   }
+
+  try{
+    if(audioElement&&typeof audioElement.setSinkId==="function"){
+      await audioElement.setSinkId(selectedSinkId);
+    }else if(outputContext&&typeof outputContext.setSinkId==="function"){
+      await outputContext.setSinkId(selectedSinkId);
+    }else{
+      throw new Error("This browser does not permit audio-output selection.");
+    }
+  }catch(error){
+    console.warn(
+      "LifeOS audio-output selection unavailable; using system default.",
+      error
+    );
+    selectedSinkId="default";
+    selectedSinkLabel="phone default";
+    refreshControls();
+    return false;
+  }
+
   refreshControls();
+  return true;
 }
 
 async function preferPhoneSpeaker(){
