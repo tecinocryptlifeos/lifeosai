@@ -703,6 +703,49 @@ html,body{max-width:100%!important;min-height:100%!important;overflow-x:hidden!i
 <!-- LIFEOS_BROWSER_FAVICON_V1 -->
 <link rel="icon" href="/icons/lifeos-icon.svg" type="image/svg+xml">
 <link rel="shortcut icon" href="/icons/lifeos-icon.svg" type="image/svg+xml">
+
+<!-- LIFEOS_MOBILE_VOICE_POWER_V1_STYLE_START -->
+<style id="lifeos-mobile-voice-power-v1">
+@media (max-width:700px), (hover:none) and (pointer:coarse) {
+  body,
+  body.embedded {
+    background-attachment:scroll !important;
+    -webkit-backdrop-filter:none !important;
+    backdrop-filter:none !important;
+  }
+
+  main {
+    background:rgba(3,3,3,.88) !important;
+    -webkit-backdrop-filter:none !important;
+    backdrop-filter:none !important;
+    box-shadow:0 14px 38px rgba(0,0,0,.42) !important;
+  }
+
+  .orb.active::before,
+  .orb.active::after {
+    animation-duration:2.2s !important;
+  }
+
+  .lifeos-gold-wave-v2 {
+    animation-duration:18s !important;
+    filter:blur(.6px) drop-shadow(0 0 5px rgba(245,186,49,.38)) !important;
+  }
+
+  .lifeos-hand-glow-v2 {
+    animation-duration:12s !important;
+    filter:blur(10px) !important;
+  }
+}
+
+html.lifeos-voice-page-hidden .lifeos-gold-wave-v2,
+html.lifeos-voice-page-hidden .lifeos-hand-glow-v2,
+html.lifeos-voice-page-hidden .orb::before,
+html.lifeos-voice-page-hidden .orb::after {
+  animation-play-state:paused !important;
+}
+</style>
+<!-- LIFEOS_MOBILE_VOICE_POWER_V1_STYLE_END -->
+
 </head>
 <body>
 <main>
@@ -747,8 +790,8 @@ html,body{max-width:100%!important;min-height:100%!important;overflow-x:hidden!i
 }());
 </script>
 <!-- LIFEOS_GOLDEN_VOICE_VISUALIZER_V5_LOADER -->
-<script src="/assets/lifeos_golden_voice_visualizer_v5.js"></script>
-<script src="/assets/gemini_live_v1.js?v=2.0.0"></script>
+<script src="/assets/lifeos_golden_voice_visualizer_v5.js?v=5.1.0"></script>
+<script src="/assets/gemini_live_v1.js?v=2.1.0"></script>
 <!-- LIFEOS_GEMINI_LIVE_PAGE_V1 -->
 <!-- LIFEOS_GEMINI_LIVE_INTERFACE_AUDIO_V2 -->
 <!-- LIFEOS_SYNTHETIC_INTELLIGENCE_IDENTITY_LOCK_V1 -->

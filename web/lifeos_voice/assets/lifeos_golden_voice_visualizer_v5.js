@@ -1,10 +1,14 @@
 /* LIFEOS_GOLDEN_VOICE_VISUALIZER_V5 */
+/* LIFEOS_MOBILE_VOICE_POWER_V1 */
 (function () {
   "use strict";
 
-  const VERSION = "1.0.3";
+  const VERSION = "1.1.0-low-power";
   const GOLD = [244, 190, 72];
   const SOFT_GOLD = [255, 224, 143];
+  const ACTIVE_FRAME_INTERVAL_MS = 50;
+  const IDLE_FRAME_INTERVAL_MS = 250;
+  const MOBILE_MEDIA = window.matchMedia("(max-width:700px), (hover:none) and (pointer:coarse)");
 
   let orb = null;
   let orbCanvas = null;
@@ -27,7 +31,7 @@
   let smoke = [];
   let topWavePhase = 0;
   let animationFrame = 0;
-  let originalGetUserMedia = null;
+  let frameTimer = 0;
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -47,7 +51,8 @@
   function ensureCanvasSize(canvas, ctx) {
     if (!canvas || !ctx) return;
     const rect = canvas.getBoundingClientRect();
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dprCap = MOBILE_MEDIA.matches ? 1.25 : 2;
+    const dpr = Math.min(window.devicePixelRatio || 1, dprCap);
     const width = Math.max(1, Math.round(rect.width * dpr));
     const height = Math.max(1, Math.round(rect.height * dpr));
     if (canvas.width !== width || canvas.height !== height) {
@@ -109,7 +114,7 @@
 
   function createParticles() {
     particles = [];
-    const count = window.innerWidth < 500 ? 54 : 82;
+    const count = MOBILE_MEDIA.matches ? 30 : 72;
     for (let i = 0; i < count; i += 1) {
       particles.push({
         x: Math.random(),
@@ -125,7 +130,8 @@
 
   function createSmoke() {
     smoke = [];
-    for (let i = 0; i < 28; i += 1) {
+    const count = MOBILE_MEDIA.matches ? 16 : 28;
+    for (let i = 0; i < count; i += 1) {
       smoke.push({
         angle: Math.random() * Math.PI * 2,
         radius: 0.05 + Math.random() * 0.38,
@@ -142,6 +148,8 @@
       active = true;
       if (ambientCanvas) ambientCanvas.style.opacity = "1";
       document.documentElement.classList.add("lifeos-golden-live-v1");
+      clearFrameSchedule();
+      scheduleFrame(0);
     }
   }
 
@@ -157,28 +165,41 @@
     }
   }
 
-  function attachMicrophone(stream) {
+  function attachMicrophoneNode(node, context) {
     try {
-      if (!stream || micAnalyser) return;
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      if (!AudioContextClass) return;
-      const context = new AudioContextClass();
-      micSource = context.createMediaStreamSource(stream);
+      detachMicrophone();
+      if (!node || !context) return;
+      micSource = node;
       micAnalyser = context.createAnalyser();
-      micAnalyser.fftSize = 512;
+      micAnalyser.fftSize = 256;
       micAnalyser.smoothingTimeConstant = 0.45;
       micData = new Uint8Array(micAnalyser.fftSize);
       micSource.connect(micAnalyser);
     } catch (error) {
+      detachMicrophone();
       console.warn("LifeOS visualizer microphone analyser unavailable:", error);
     }
+  }
+
+  function detachMicrophone() {
+    if (micSource && micAnalyser) {
+      try { micSource.disconnect(micAnalyser); } catch (error) {}
+    }
+    if (micAnalyser) {
+      try { micAnalyser.disconnect(); } catch (error) {}
+    }
+    micSource = null;
+    micAnalyser = null;
+    micData = null;
+    micLevel = 0;
+    smoothMic = 0;
   }
 
   function attachSophiaNode(node, context) {
     try {
       if (!node || !context || aiAnalyser) return;
       aiAnalyser = context.createAnalyser();
-      aiAnalyser.fftSize = 512;
+      aiAnalyser.fftSize = 256;
       aiAnalyser.smoothingTimeConstant = 0.52;
       aiData = new Uint8Array(aiAnalyser.fftSize);
 
@@ -190,30 +211,6 @@
     } catch (error) {
       console.warn("LifeOS visualizer Sophia analyser unavailable:", error);
     }
-  }
-
-  function installMicrophoneObserver() {
-    if (
-      !navigator.mediaDevices ||
-      typeof navigator.mediaDevices.getUserMedia !== "function" ||
-      originalGetUserMedia
-    ) {
-      return;
-    }
-
-    originalGetUserMedia = navigator.mediaDevices.getUserMedia.bind(
-      navigator.mediaDevices
-    );
-
-    navigator.mediaDevices.getUserMedia = async function (constraints) {
-      const stream = await originalGetUserMedia(constraints);
-      const requestsAudio = Boolean(
-        constraints &&
-        (constraints.audio === true || typeof constraints.audio === "object")
-      );
-      if (requestsAudio) attachMicrophone(stream);
-      return stream;
-    };
   }
 
   function bindStartButton() {
@@ -414,26 +411,63 @@
     orbCtx.shadowBlur = 0;
   }
 
+  function clearFrameSchedule() {
+    if (frameTimer) clearTimeout(frameTimer);
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    frameTimer = 0;
+    animationFrame = 0;
+  }
+
+  function scheduleFrame(delay) {
+    if (document.hidden || frameTimer || animationFrame) return;
+    const wait = Number.isFinite(delay)
+      ? Math.max(0, delay)
+      : active
+        ? ACTIVE_FRAME_INTERVAL_MS
+        : IDLE_FRAME_INTERVAL_MS;
+
+    frameTimer = window.setTimeout(function () {
+      frameTimer = 0;
+      if (!document.hidden) animationFrame = requestAnimationFrame(frame);
+    }, wait);
+  }
+
   function frame(now) {
-    const dt = Math.min(40, Math.max(0, now - lastTime));
+    animationFrame = 0;
+    if (document.hidden) return;
+    const dt = Math.min(100, Math.max(0, now - lastTime));
     lastTime = now;
     drawAmbient(now, dt);
     drawOrb(now, dt);
-    animationFrame = requestAnimationFrame(frame);
+    scheduleFrame();
+  }
+
+  function syncVisibility() {
+    document.documentElement.classList.toggle(
+      "lifeos-voice-page-hidden",
+      document.hidden
+    );
+
+    clearFrameSchedule();
+    if (!document.hidden) {
+      lastTime = performance.now();
+      scheduleFrame(0);
+    }
   }
 
   function init() {
     buildVisualLayer();
-    installMicrophoneObserver();
     bindStartButton();
-    if (!animationFrame) animationFrame = requestAnimationFrame(frame);
+    document.addEventListener("visibilitychange", syncVisibility, { passive: true });
+    syncVisibility();
   }
 
   window.LifeOSGoldenVisualizer = {
     version: VERSION,
     activate,
     deactivate,
-    attachMicrophone,
+    attachMicrophoneNode,
+    detachMicrophone,
     attachSophiaNode
   };
 
