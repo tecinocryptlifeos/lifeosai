@@ -190,17 +190,20 @@ def lifeos_handle_realtime_session(handler):
         .rstrip("/")
     )
 
+    # LIFEOS_MULTILINGUAL_VOICE_INTELLIGENCE_V2_ORIGIN_PARITY
+    configured_origins = os.environ.get(
+        "LIFEOS_ALLOWED_ORIGINS",
+        "",
+    )
     allowed_origins = {
-        item.strip().rstrip("/")
-        for item in os.environ.get(
-            "LIFEOS_ALLOWED_ORIGINS",
-            (
-                "https://"
-                "lifeos-ai-voice-app.onrender.com"
-            ),
-        ).split(",")
-        if item.strip()
+        "https://lifeos-ai-voice-app.onrender.com",
+        "https://losai.onrender.com",
     }
+    allowed_origins.update(
+        item.strip().rstrip("/")
+        for item in configured_origins.split(",")
+        if item.strip()
+    )
 
     if (
         origin
