@@ -7,6 +7,11 @@ from pathlib import Path
 from urllib.parse import unquote
 import uuid
 
+try:
+    from lifeos_auth_analytics import public_config, verify_user, record_event, admin_dashboard
+except ImportError:
+    from app.lifeos_auth_analytics import public_config, verify_user, record_event, admin_dashboard
+
 
 # LIFEOS_GEMINI_LIVE_V1_IMPORT_START
 try:
@@ -637,6 +642,21 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
         if path == "/voice":
             self._serve_file(WEB_DIR / "gemini_live.html", private_headers)
             return
+        if path == "/admin":
+            self._serve_file(WEB_DIR / "admin.html", private_headers)
+            return
+        if path == "/api/auth-config":
+            self._send_json(200, public_config())
+            return
+        if path == "/api/admin-dashboard":
+            try:
+                user, _ = verify_user(self.headers)
+                self._send_json(200, admin_dashboard(user))
+            except PermissionError as error:
+                self._send_json(403, {"ok": False, "error": str(error)})
+            except Exception as error:
+                self._send_json(503, {"ok": False, "error": str(error)[:500]})
+            return
         if path == "/health":
             self._send_bytes(200, b"OK", "text/plain; charset=utf-8", private_headers)
             return
@@ -1099,9 +1119,32 @@ Mandatory decision-clarity rules:
         path = self._path()
 
 
+        if path == "/api/analytics-event":
+            try:
+                user, _ = verify_user(self.headers)
+                length = int(self.headers.get("Content-Length", "0"))
+                if length < 1 or length > 12000:
+                    raise ValueError("Invalid request body")
+                payload = json.loads(self.rfile.read(length).decode("utf-8"))
+                client_ip = (self.headers.get("X-Forwarded-For", "").split(",", 1)[0].strip() or (self.client_address[0] if self.client_address else ""))
+                self._send_json(200, record_event(user, payload, client_ip))
+            except PermissionError as error:
+                self._send_json(401, {"ok": False, "error": str(error)})
+            except Exception as error:
+                self._send_json(400, {"ok": False, "error": str(error)[:500]})
+            return
+
         # LIFEOS_GEMINI_LIVE_V1_POST_ROUTE_START
         if path == "/api/gemini-live-token":
-            self._handle_gemini_live_token_v1()
+            try:
+                config = public_config()
+                if config.get("auth_required"):
+                    verify_user(self.headers)
+                self._handle_gemini_live_token_v1()
+            except PermissionError as error:
+                self._send_json(401, {"ok": False, "error": str(error)})
+            except RuntimeError as error:
+                self._send_json(503, {"ok": False, "error": str(error)})
             return
         # LIFEOS_GEMINI_LIVE_V1_POST_ROUTE_END
         # LIFEOS_REALTIME_SESSION_ROUTE_V3
