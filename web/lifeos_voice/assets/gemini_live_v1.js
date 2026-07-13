@@ -5,7 +5,7 @@
 /* LIFEOS_IDENTITY_ATTRIBUTION_UPGRADE_V2 */
 /* LIFEOS_SYNTHETIC_INTELLIGENCE_IDENTITY_LOCK_V1 */
 /* LIFEOS_GEMINI_LIVE_V1 */
-/* LIFEOS_GEMINI_LIVE_INTERFACE_AUDIO_V2 */
+/* LIFEOS_GEMINI_LIVE_INTERFACE_AUDIO_V3 */
 (function(){
 "use strict";
 const INPUT_RATE=16000;
@@ -142,24 +142,17 @@ async function applySelectedOutput(){
 }
 
 async function preferPhoneSpeaker(){
-  if(!navigator.mediaDevices||!navigator.mediaDevices.enumerateDevices)return;
-  try{
-    const devices=await navigator.mediaDevices.enumerateDevices();
-    const outputs=devices.filter(device=>device.kind==="audiooutput");
-    const speaker=outputs.find(device=>/speaker|loudspeaker|media/i.test(device.label||""));
-    if(speaker){
-      selectedSinkId=speaker.deviceId;
-      selectedSinkLabel=speaker.label||"phone speaker";
-    }else{
-      selectedSinkId="default";
-      selectedSinkLabel="phone default";
-    }
-    await applySelectedOutput();
-  }catch(error){
-    selectedSinkId="default";
-    selectedSinkLabel="phone default";
-    refreshControls();
-  }
+  /*
+   * Mobile browsers already route AudioContext.destination to the active
+   * phone output. Automatically selecting a labelled "speaker" device can
+   * silently move playback into the MediaStream -> HTMLAudioElement route,
+   * which is unreliable on Android after microphone permission prompts.
+   * Keep the direct system-default route unless the user explicitly taps
+   * Audio Output and chooses another device.
+   */
+  selectedSinkId="default";
+  selectedSinkLabel="phone default";
+  await applySelectedOutput();
 }
 
 async function chooseAudioOutput(){
@@ -207,7 +200,7 @@ async function ensureOutputContext(){
     outputDestination=null;
     outputGain=outputContext.createGain();
     outputCompressor=outputContext.createDynamicsCompressor();
-    outputGain.gain.value=speakerEnabled?3.2:0;
+    outputGain.gain.value=speakerEnabled?1.35:0;
     outputCompressor.threshold.value=-20;
     outputCompressor.knee.value=18;
     outputCompressor.ratio.value=5;
@@ -270,7 +263,10 @@ async function playAudio(base64Audio){
   source.buffer=buffer;
   source.connect(outputGain);
   source.addEventListener("ended",()=>outputSources.delete(source));
-  const startTime=Math.max(outputContext.currentTime+.025,nextOutputTime);
+  if(nextOutputTime<outputContext.currentTime-.25){
+    nextOutputTime=outputContext.currentTime;
+  }
+  const startTime=Math.max(outputContext.currentTime+.04,nextOutputTime);
   source.start(startTime);
   nextOutputTime=startTime+buffer.duration;
   outputSources.add(source);
@@ -294,7 +290,7 @@ function setMicMuted(nextMuted){
 function setSpeakerEnabled(nextEnabled){
   speakerEnabled=Boolean(nextEnabled);
   if(outputGain&&outputContext){
-    outputGain.gain.setValueAtTime(speakerEnabled?3.2:0,outputContext.currentTime);
+    outputGain.gain.setValueAtTime(speakerEnabled?1.35:0,outputContext.currentTime);
   }
   if(!speakerEnabled)clearOutput();
   refreshControls();
@@ -389,10 +385,14 @@ async function startConversation(){
       }));
     });
     socket.addEventListener("message",event=>{handleMessage(event).catch(error=>stopAndClean(error.message||"Gemini Live message failed.","error"));});
-    socket.addEventListener("error",()=>setStatus("Gemini Live connection error.","error"));
+    socket.addEventListener("error",event=>{
+      console.error("LifeOS Gemini Live WebSocket error.",event);
+      setStatus("Gemini Live connection error.","error");
+    });
     socket.addEventListener("close",function(event){
       const normal=closingNormally||event.code===1000;
-      stopAndClean(normal?"Live conversation ended.":"Gemini Live disconnected. Code: "+event.code,normal?"":"error",true);
+      const reason=event.reason?" — "+event.reason:"";
+      stopAndClean(normal?"Live conversation ended.":"Gemini Live disconnected. Code: "+event.code+reason,normal?"":"error",true);
     });
   }catch(error){
     stopAndClean(error.message||"Gemini Live could not start.","error");
@@ -435,7 +435,7 @@ window.addEventListener("pagehide",()=>{if(active||starting)endConversation();})
 refreshControls();
 
 window.LifeOSGeminiLiveV1={
-  version:"2.3.0",
+  version:"2.4.0",
   start:startConversation,
   stop:endConversation,
   muteMicrophone:setMicMuted,
