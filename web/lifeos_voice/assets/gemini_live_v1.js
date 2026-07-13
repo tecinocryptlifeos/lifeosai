@@ -20,7 +20,9 @@ const orb=document.getElementById("orb");
 const audioElement=document.getElementById("sophiaAudio");
 
 let socket=null,micStream=null,inputContext=null,inputSource=null,processor=null,muteGain=null;
-let outputContext=null,outputDestination=null,outputGain=null,outputCompressor=null,nextOutputTime=0;
+let outputContext=null,outputDestination=null,outputGain=null;
+let outputHighPass=null,outputLowShelf=null,outputPresence=null,outputClarity=null;
+let outputCompressor=null,outputMakeup=null,outputLimiter=null,nextOutputTime=0;
 let outputSources=new Set();
 let outputRoute="uninitialised",receivedAudioChunks=0,lastAudioChunkAt=0;
 let starting=false,active=false,setupReady=false,closingNormally=false;
@@ -82,14 +84,14 @@ function resampleToPcm16(input,sourceRate){
 /* LIFEOS_MULTILINGUAL_VOICE_INTELLIGENCE_V2 */
 /* LIFEOS_STAGE2_AUDIO_OUTPUT_REPAIR_V1 */
 function disconnectOutputRoute(){
-  if(!outputCompressor)return;
-  try{outputCompressor.disconnect();}catch(error){}
+  if(!outputLimiter)return;
+  try{outputLimiter.disconnect();}catch(error){}
 }
 
 function routeToSystemDefault(){
-  if(!outputContext||!outputCompressor)return false;
+  if(!outputContext||!outputLimiter)return false;
   disconnectOutputRoute();
-  outputCompressor.connect(outputContext.destination);
+  outputLimiter.connect(outputContext.destination);
   outputRoute="audio-context-default";
   if(audioElement){
     try{audioElement.pause();}catch(error){}
@@ -104,14 +106,14 @@ function routeToSystemDefault(){
 }
 
 async function routeToSelectedDevice(){
-  if(!outputContext||!outputCompressor||!audioElement)return false;
+  if(!outputContext||!outputLimiter||!audioElement)return false;
   if(typeof audioElement.setSinkId!=="function"){
     throw new Error("This browser does not permit audio-output selection.");
   }
   if(!outputDestination)outputDestination=outputContext.createMediaStreamDestination();
   await audioElement.setSinkId(selectedSinkId);
   disconnectOutputRoute();
-  outputCompressor.connect(outputDestination);
+  outputLimiter.connect(outputDestination);
   audioElement.srcObject=outputDestination.stream;
   audioElement.muted=false;
   audioElement.volume=1;
@@ -199,15 +201,55 @@ async function ensureOutputContext(){
     outputContext=new AudioContextClass({sampleRate:OUTPUT_RATE});
     outputDestination=null;
     outputGain=outputContext.createGain();
+    outputHighPass=outputContext.createBiquadFilter();
+    outputLowShelf=outputContext.createBiquadFilter();
+    outputPresence=outputContext.createBiquadFilter();
+    outputClarity=outputContext.createBiquadFilter();
     outputCompressor=outputContext.createDynamicsCompressor();
-    outputGain.gain.value=speakerEnabled?1.35:0;
-    outputCompressor.threshold.value=-20;
+    outputMakeup=outputContext.createGain();
+    outputLimiter=outputContext.createDynamicsCompressor();
+
+    /* Premium speech chain tuned for small Android phone speakers. */
+    outputGain.gain.value=speakerEnabled?1:0;
+
+    outputHighPass.type="highpass";
+    outputHighPass.frequency.value=72;
+    outputHighPass.Q.value=.7;
+
+    outputLowShelf.type="lowshelf";
+    outputLowShelf.frequency.value=180;
+    outputLowShelf.gain.value=-1.5;
+
+    outputPresence.type="peaking";
+    outputPresence.frequency.value=2800;
+    outputPresence.Q.value=.9;
+    outputPresence.gain.value=3.2;
+
+    outputClarity.type="highshelf";
+    outputClarity.frequency.value=6200;
+    outputClarity.gain.value=1.8;
+
+    outputCompressor.threshold.value=-24;
     outputCompressor.knee.value=18;
-    outputCompressor.ratio.value=5;
-    outputCompressor.attack.value=0.003;
-    outputCompressor.release.value=0.22;
-    outputGain.connect(outputCompressor);
-    window.LifeOSGoldenVisualizer?.attachSophiaNode(outputGain,outputContext);
+    outputCompressor.ratio.value=3.5;
+    outputCompressor.attack.value=.008;
+    outputCompressor.release.value=.18;
+    outputMakeup.gain.value=1.32;
+
+    outputLimiter.threshold.value=-3;
+    outputLimiter.knee.value=0;
+    outputLimiter.ratio.value=20;
+    outputLimiter.attack.value=.002;
+    outputLimiter.release.value=.09;
+
+    outputGain.connect(outputHighPass);
+    outputHighPass.connect(outputLowShelf);
+    outputLowShelf.connect(outputPresence);
+    outputPresence.connect(outputClarity);
+    outputClarity.connect(outputCompressor);
+    outputCompressor.connect(outputMakeup);
+    outputMakeup.connect(outputLimiter);
+    window.LifeOSGoldenVisualizer?.attachSophiaNode(outputMakeup,outputContext);
     nextOutputTime=outputContext.currentTime;
   }
   if(outputContext.state==="suspended")await outputContext.resume();
@@ -257,12 +299,31 @@ async function playAudio(base64Audio){
   const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
   const samples=new Float32Array(sampleCount);
   for(let index=0;index<sampleCount;index+=1)samples[index]=view.getInt16(index*2,true)/32768;
+  let sumSquares=0,peak=0;
+  for(let index=0;index<sampleCount;index+=1){
+    const absolute=Math.abs(samples[index]);
+    peak=Math.max(peak,absolute);
+    sumSquares+=samples[index]*samples[index];
+  }
+  const rms=Math.sqrt(sumSquares/sampleCount);
+  const targetRms=.16;
+  const rmsGain=rms>.0001?targetRms/rms:1;
+  const peakGain=peak>.0001?.92/peak:1;
+  const adaptiveGain=Math.max(.9,Math.min(2.35,rmsGain,peakGain));
+
   const buffer=outputContext.createBuffer(1,sampleCount,OUTPUT_RATE);
   buffer.copyToChannel(samples,0);
   const source=outputContext.createBufferSource();
+  const chunkGain=outputContext.createGain();
+  chunkGain.gain.value=adaptiveGain;
   source.buffer=buffer;
-  source.connect(outputGain);
-  source.addEventListener("ended",()=>outputSources.delete(source));
+  source.connect(chunkGain);
+  chunkGain.connect(outputGain);
+  source.addEventListener("ended",()=>{
+    outputSources.delete(source);
+    try{source.disconnect();}catch(error){}
+    try{chunkGain.disconnect();}catch(error){}
+  });
   if(nextOutputTime<outputContext.currentTime-.25){
     nextOutputTime=outputContext.currentTime;
   }
@@ -290,7 +351,7 @@ function setMicMuted(nextMuted){
 function setSpeakerEnabled(nextEnabled){
   speakerEnabled=Boolean(nextEnabled);
   if(outputGain&&outputContext){
-    outputGain.gain.setValueAtTime(speakerEnabled?1.35:0,outputContext.currentTime);
+    outputGain.gain.setTargetAtTime(speakerEnabled?1:0,outputContext.currentTime,.015);
   }
   if(!speakerEnabled)clearOutput();
   refreshControls();
@@ -435,7 +496,7 @@ window.addEventListener("pagehide",()=>{if(active||starting)endConversation();})
 refreshControls();
 
 window.LifeOSGeminiLiveV1={
-  version:"2.4.0",
+  version:"2.5.0",
   start:startConversation,
   stop:endConversation,
   muteMicrophone:setMicMuted,
