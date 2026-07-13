@@ -567,6 +567,44 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = self._path()
 
+        # LIFEOS_ADMIN_ROUTE_HARD_FIX_V1
+        if path in {"/admin", "/admin/", "/admin.html"}:
+            admin_file = WEB_DIR / "admin.html"
+            if admin_file.exists() and admin_file.is_file():
+                self._serve_file(
+                    admin_file,
+                    {
+                        "X-Robots-Tag": "noindex, nofollow, noarchive",
+                        "X-LifeOS-Admin-Route": "hard-fix-v1",
+                    },
+                )
+            else:
+                self._send_json(
+                    500,
+                    {
+                        "ok": False,
+                        "error": "admin_file_missing",
+                        "expected_path": str(admin_file),
+                        "release": "lifeos-admin-route-hard-fix-v1",
+                    },
+                )
+            return
+
+        if path == "/api/release":
+            admin_file = WEB_DIR / "admin.html"
+            self._send_json(
+                200,
+                {
+                    "ok": True,
+                    "release": "lifeos-admin-route-hard-fix-v1",
+                    "server_file": str(Path(__file__).resolve()),
+                    "web_directory": str(WEB_DIR.resolve()),
+                    "admin_file": str(admin_file.resolve()),
+                    "admin_exists": admin_file.exists(),
+                },
+            )
+            return
+
         # LIFEOS_ARCHITECTURE_FINALIZER_V1_ROUTES
         public_pages = {
             "/": "index.html",
