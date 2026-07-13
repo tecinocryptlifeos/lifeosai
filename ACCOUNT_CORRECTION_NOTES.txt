@@ -1,0 +1,10 @@
+LifeOS Account Correction v1.1.0
+
+- Makes the account panel visibly render on /voice.
+- Shows an explicit OWNER SETUP REQUIRED state when Supabase is absent.
+- Keeps Live Voice available during owner setup instead of hiding the working product.
+- Disables nonfunctional sign-in buttons until credentials are present.
+- Adds robust initialization and error handling.
+- Makes /admin show a setup diagnostic instead of a blank/inoperative dashboard.
+- Corrects and strengthens admin styling.
+- Preserves the existing premium audio and backend analytics code.

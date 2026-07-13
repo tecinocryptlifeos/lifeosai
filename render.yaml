@@ -24,6 +24,6 @@ services:
       - key: LIFEOS_ADMIN_EMAILS
         sync: false
       - key: LIFEOS_AUTH_REQUIRED
-        value: true
+        value: false
       - key: LIFEOS_GOOGLE_AUTH_ENABLED
         value: true
