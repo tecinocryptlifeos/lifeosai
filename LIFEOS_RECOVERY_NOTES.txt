@@ -1,0 +1,7 @@
+LifeOS Recovery v1.2.0
+- Restores the exact premium Live Voice JavaScript v2.5.0.
+- Keeps Sophia's working voice/intelligence path independent from authentication.
+- Adds non-destructive account UI.
+- Fixes /admin and /admin/ routing.
+- Corrects invalid admin CSS dimensions.
+- Keeps analytics backend files and configuration endpoint.

@@ -418,10 +418,6 @@ async function handleMessage(event){
 }
 
 async function startConversation(){
-  if(!window.LifeOSAuth?.session){setStatus("Sign in before starting Live Voice.","error");return;}
-  const analyticsSession=(crypto.randomUUID?crypto.randomUUID():String(Date.now()));
-  window.lifeosAnalyticsSession=analyticsSession;
-  window.LifeOSAuth.event("voice_start",{session_id:analyticsSession});
   if(!window.isSecureContext){setStatus("Gemini Live requires a secure HTTPS connection.","error");return;}
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){setStatus("This browser does not support microphone streaming.","error");return;}
   starting=true;
@@ -429,7 +425,7 @@ async function startConversation(){
   setStatus("Connecting to LifeOS Synthetic Intelligence…","");
   try{
     await ensureOutputContext();
-    const response=await window.LifeOSAuth.authFetch("/api/gemini-live-token",{method:"POST",headers:{"Accept":"application/json"},cache:"no-store"});
+    const response=await fetch("/api/gemini-live-token",{method:"POST",headers:{"Accept":"application/json"},cache:"no-store"});
     const payload=await response.json().catch(()=>({}));
     if(!response.ok||!payload.ok||!payload.token)throw new Error(payload.error||"The Gemini Live token request failed.");
     socket=new WebSocket(payload.websocket_url+"?access_token="+encodeURIComponent(payload.token));
@@ -460,7 +456,6 @@ async function startConversation(){
       stopAndClean(normal?"Live conversation ended.":"Gemini Live disconnected. Code: "+event.code+reason,normal?"":"error",true);
     });
   }catch(error){
-    window.LifeOSAuth?.event("voice_error",{session_id:window.lifeosAnalyticsSession,error_message:error.message||"Gemini Live could not start"});
     stopAndClean(error.message||"Gemini Live could not start.","error");
   }
 }
@@ -486,7 +481,6 @@ function stopAndClean(message,state,socketAlreadyClosed){
 }
 
 function endConversation(){
-  window.LifeOSAuth?.event("voice_end",{session_id:window.lifeosAnalyticsSession});
   closingNormally=true;
   if(socket&&socket.readyState===WebSocket.OPEN){
     try{socket.send(JSON.stringify({realtimeInput:{audioStreamEnd:true}}));}catch(error){}

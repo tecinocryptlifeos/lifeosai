@@ -639,10 +639,10 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
         if path == "/chat":
             self._serve_file(WEB_DIR / "chat.html", private_headers)
             return
-        if path == "/voice":
+        if path in {"/voice", "/voice/"}:
             self._serve_file(WEB_DIR / "gemini_live.html", private_headers)
             return
-        if path == "/admin":
+        if path in {"/admin", "/admin/"}:
             self._serve_file(WEB_DIR / "admin.html", private_headers)
             return
         if path == "/api/auth-config":
