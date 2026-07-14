@@ -2,6 +2,8 @@
   "use strict";
 
   const state = { client: null, session: null, config: null, ready: false };
+  const signInAuditPending = new Set();
+  const SIGN_IN_AUDIT_KEY = "lifeos-sign-in-audit-v1";
   let resolveReady;
   const readyPromise = new Promise(resolve => { resolveReady = resolve; });
   const $ = id => document.getElementById(id);
@@ -36,8 +38,8 @@
   async function event(eventType, extra = {}) {
     try {
       const token = accessToken();
-      if (!token) return;
-      await fetch("/api/analytics-event", {
+      if (!token) return false;
+      const response = await fetch("/api/analytics-event", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -51,8 +53,42 @@
         }),
         keepalive: true,
       });
+      return response.ok;
     } catch (error) {
       console.warn("LifeOS audit event failed", error);
+      return false;
+    }
+  }
+
+  function signInFingerprint() {
+    const user = state.session?.user;
+    if (!user?.id) return "";
+    return [
+      user.id,
+      user.last_sign_in_at || state.session?.expires_at || "session",
+    ].join(":");
+  }
+
+  async function auditSignInOnce() {
+    const fingerprint = signInFingerprint();
+    if (!fingerprint || signInAuditPending.has(fingerprint)) return;
+    try {
+      if (localStorage.getItem(SIGN_IN_AUDIT_KEY) === fingerprint) return;
+    } catch (error) {
+      console.warn("LifeOS sign-in audit storage is unavailable", error);
+    }
+    signInAuditPending.add(fingerprint);
+    try {
+      const recorded = await event("sign_in", { metadata: { route: location.pathname } });
+      if (recorded) {
+        try {
+          localStorage.setItem(SIGN_IN_AUDIT_KEY, fingerprint);
+        } catch (error) {
+          console.warn("LifeOS sign-in audit marker could not be saved", error);
+        }
+      }
+    } finally {
+      signInAuditPending.delete(fingerprint);
     }
   }
 
@@ -145,7 +181,7 @@
           render();
           notifyAuthChange();
           if (kind === "SIGNED_IN") {
-            void event("sign_in", { metadata: { route: location.pathname } });
+            void auditSignInOnce();
             history.replaceState(null, "", location.pathname);
           }
         });
@@ -154,6 +190,7 @@
       render();
       notifyAuthChange();
       if (state.session) {
+        void auditSignInOnce();
         void event("page_view", { metadata: { route: location.pathname } });
       }
     } catch (error) {

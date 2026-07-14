@@ -1,5 +1,6 @@
 import json
 import os
+import subprocess
 import threading
 import unittest
 import urllib.error
@@ -9,6 +10,7 @@ from pathlib import Path
 from unittest import mock
 
 from app import lifeos_auth_analytics as auth
+from app.gemini_client import GeminiClient
 from app import lifeos_voice_server as server
 
 
@@ -149,10 +151,101 @@ class ProtectedRouteTests(unittest.TestCase):
                     self.assertEqual(self.request_status(method, path, body, headers), 401)
 
 
+class GeminiGroundingTests(unittest.TestCase):
+    def test_grounded_chat_enables_search_thinking_and_safe_sources(self):
+        captured = {}
+        response_payload = {
+            "candidates": [{
+                "content": {"parts": [{"text": "Nke a bụ azịza doro anya."}]},
+                "groundingMetadata": {
+                    "groundingChunks": [
+                        {"web": {"title": "Trusted source", "uri": "https://example.com/fact#part"}},
+                        {"web": {"title": "Unsafe", "uri": "javascript:alert(1)"}},
+                    ]
+                },
+            }]
+        }
+
+        class FakeResponse:
+            status = 200
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def read(self):
+                return json.dumps(response_payload).encode("utf-8")
+
+        def fake_urlopen(request, timeout=0):
+            captured["body"] = json.loads(request.data.decode("utf-8"))
+            captured["url"] = request.full_url
+            captured["timeout"] = timeout
+            return FakeResponse()
+
+        with mock.patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            result = GeminiClient(api_key="test-key").generate_grounded_text("Kọwaa nke a")
+
+        self.assertEqual(captured["body"]["tools"], [{"google_search": {}}])
+        self.assertEqual(captured["body"]["generationConfig"]["thinkingConfig"]["thinkingBudget"], 1024)
+        self.assertIn("gemini-2.5-flash", captured["url"])
+        self.assertEqual(result["text"], "Nke a bụ azịza doro anya.")
+        self.assertTrue(result["grounded"])
+        self.assertEqual(result["sources"], [{"title": "Trusted source", "url": "https://example.com/fact"}])
+
+
 class InterfaceContractTests(unittest.TestCase):
-    def test_release_diagnostic_identifies_v2_0_1(self):
+    def test_release_diagnostic_identifies_v2_0_4(self):
         application = (ROOT / "app/lifeos_voice_server.py").read_text(encoding="utf-8")
-        self.assertIn("lifeos-multilingual-auth-admin-v2.0.1-20260714", application)
+        self.assertIn("lifeos-premium-public-mobile-v2.0.4-20260714", application)
+        self.assertIn('"premium_igbo_priority": True', application)
+        self.assertIn('"premium_voice_output": True', application)
+        self.assertIn('"live_google_search": True', application)
+        self.assertIn('"reasoning_level": "medium"', application)
+        self.assertIn('"live_session_resumption": True', application)
+        self.assertIn('"connected_audio_cue": True', application)
+        self.assertIn('"grounded_chat_search": True', application)
+        self.assertIn('"premium_multilingual_chat": True', application)
+        self.assertIn('"public_mobile_pwa": True', application)
+        self.assertIn('"branded_black_gold_icon": True', application)
+
+    def test_chat_has_premium_igbo_search_and_source_display(self):
+        application = (ROOT / "app/lifeos_voice_server.py").read_text(encoding="utf-8")
+        page = (ROOT / "web/lifeos_voice/chat.html").read_text(encoding="utf-8")
+        self.assertIn("fluent contemporary Standard Igbo", application)
+        self.assertIn("use Google Search", application)
+        self.assertIn("generate_grounded_text", application)
+        self.assertIn("Web sources", page)
+        self.assertIn('rel = "noopener noreferrer"', page)
+        self.assertNotIn("● Online", page)
+
+    def test_public_mobile_manifest_uses_black_branded_png_icons(self):
+        manifest = json.loads((ROOT / "web/lifeos_voice/manifest.webmanifest").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["id"], "/")
+        self.assertEqual(manifest["background_color"], "#000000")
+        self.assertEqual(manifest["theme_color"], "#000000")
+        self.assertFalse(manifest["prefer_related_applications"])
+        self.assertEqual({item["sizes"] for item in manifest["icons"]}, {"192x192", "512x512"})
+        self.assertTrue(any(item["purpose"] == "maskable" for item in manifest["icons"]))
+        self.assertEqual({item["short_name"] for item in manifest["shortcuts"]}, {"Chat", "Voice"})
+
+        for name, size in (
+            ("lifeos-icon-192.png", 192),
+            ("lifeos-icon-512.png", 512),
+            ("lifeos-icon-maskable-512.png", 512),
+        ):
+            data = (ROOT / "web/lifeos_voice/icons" / name).read_bytes()
+            self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n")
+            self.assertEqual(int.from_bytes(data[16:20], "big"), size)
+            self.assertEqual(int.from_bytes(data[20:24], "big"), size)
+
+    def test_public_mobile_chat_and_voice_still_fail_closed(self):
+        for relative in ("web/lifeos_voice/chat.html", "web/lifeos_voice/gemini_live.html"):
+            page = (ROOT / relative).read_text(encoding="utf-8")
+            self.assertIn("data-lifeos-auth-gate", page)
+            self.assertIn("data-lifeos-protected", page)
+            self.assertIn("Continue with Google", page)
 
     def test_email_sign_in_is_hidden_unless_explicitly_enabled(self):
         controller = (ROOT / "web/lifeos_voice/assets/lifeos_auth_v1.js").read_text(encoding="utf-8")
@@ -167,6 +260,78 @@ class InterfaceContractTests(unittest.TestCase):
         self.assertIn('voiceName:"Despina"', controller)
         self.assertIn('model:"models/"+payload.model', controller)
 
+    def test_live_controller_renews_goaway_connections_and_preserves_context(self):
+        controller = (ROOT / "web/lifeos_voice/assets/gemini_live_v1.js").read_text(encoding="utf-8")
+        self.assertIn("message.sessionResumptionUpdate", controller)
+        self.assertIn("message.goAway", controller)
+        self.assertIn('sourceSocket.close(1000,"Gemini GoAway acknowledged")', controller)
+        self.assertIn("sessionResumption:sessionResumeHandle?{handle:sessionResumeHandle}:{}", controller)
+        self.assertIn("contextWindowCompression:{slidingWindow:{}}", controller)
+        self.assertIn("handleMessage(event,nextSocket,resuming)", controller)
+        self.assertIn('version:"2.8.0"', controller)
+
+    def test_premium_igbo_policy_is_explicit_and_does_not_guess(self):
+        controller = (ROOT / "web/lifeos_voice/assets/gemini_live_v1.js").read_text(encoding="utf-8")
+        self.assertIn("PREMIUM IGBO PRIORITY", controller)
+        self.assertIn("Igbo Izugbe", controller)
+        self.assertIn("formulate the answer directly in Igbo", controller)
+        self.assertIn("Never fabricate an Igbo proverb", controller)
+        self.assertIn("ask one short clarification in Igbo instead of guessing", controller)
+
+    def test_live_google_search_and_balanced_reasoning_are_enabled(self):
+        controller = (ROOT / "web/lifeos_voice/assets/gemini_live_v1.js").read_text(encoding="utf-8")
+        voice_page = (ROOT / "web/lifeos_voice/gemini_live.html").read_text(encoding="utf-8")
+        self.assertIn("tools:[{googleSearch:{}}]", controller)
+        self.assertIn('thinkingConfig:{thinkingLevel:"medium"}', controller)
+        self.assertIn("ACCURACY AND LIVE INTERNET POLICY", controller)
+        self.assertIn("REASONING AND FORESIGHT POLICY", controller)
+        self.assertIn("Never claim access to private accounts", controller)
+        self.assertIn("never claim human consciousness", controller)
+        self.assertIn("appendSearchAttribution(content.groundingMetadata", controller)
+        self.assertIn("Web sources", controller)
+        self.assertIn('id="searchAttribution"', voice_page)
+
+    def test_premium_voice_output_is_louder_and_limiter_protected(self):
+        controller = (ROOT / "web/lifeos_voice/assets/gemini_live_v1.js").read_text(encoding="utf-8")
+        self.assertIn("const PREMIUM_OUTPUT_LEVEL=1.2", controller)
+        self.assertIn("outputMakeup.gain.value=2.05", controller)
+        self.assertIn("outputLimiter.threshold.value=-1", controller)
+        self.assertIn("outputLimiter.ratio.value=20", controller)
+        self.assertIn("const targetRms=.23", controller)
+        self.assertIn("Math.min(3.2,rmsGain,peakGain)", controller)
+
+    def test_live_search_has_a_public_privacy_disclosure(self):
+        privacy = (ROOT / "web/lifeos_voice/privacy.html").read_text(encoding="utf-8")
+        self.assertIn("Live web search", privacy)
+        self.assertIn("Google Search grounding", privacy)
+        self.assertIn("does not give Sophia access to private accounts", privacy)
+        self.assertIn("Last updated: 14 July 2026", privacy)
+
+    def test_live_goaway_runtime_renewal(self):
+        result = subprocess.run(
+            ["node", str(ROOT / "tests/test_gemini_live_session_renewal.js")],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("GoAway renewal simulation passed", result.stdout)
+
+    def test_voice_connection_cue_is_audible_and_status_is_explicit(self):
+        controller = (ROOT / "web/lifeos_voice/assets/gemini_live_v1.js").read_text(encoding="utf-8")
+        self.assertIn("Sophia is connecting to LifeOS Synthetic Intelligence", controller)
+        self.assertIn("scheduleCueTone(523.25,now,.16,.072", controller)
+        self.assertIn("await playConnectionCue()", controller)
+
+    def test_initial_oauth_session_is_audited_once(self):
+        controller = (ROOT / "web/lifeos_voice/assets/lifeos_auth_v1.js").read_text(encoding="utf-8")
+        self.assertIn("async function auditSignInOnce()", controller)
+        self.assertIn("user.last_sign_in_at", controller)
+        self.assertGreaterEqual(controller.count("void auditSignInOnce()"), 2)
+        self.assertIn("localStorage.setItem(SIGN_IN_AUDIT_KEY, fingerprint)", controller)
+
     def test_voice_chat_and_admin_interfaces_fail_closed(self):
         for relative in (
             "web/lifeos_voice/gemini_live.html",
@@ -177,7 +342,7 @@ class InterfaceContractTests(unittest.TestCase):
             with self.subTest(relative=relative):
                 self.assertIn("data-lifeos-auth-gate", page)
                 self.assertIn("data-lifeos-protected", page)
-                self.assertIn("lifeos_auth_v1.js?v=2.0.1", page)
+                self.assertIn("lifeos_auth_v1.js?v=2.0.2", page)
 
 
 if __name__ == "__main__":

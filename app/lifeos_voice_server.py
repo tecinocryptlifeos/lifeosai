@@ -514,7 +514,7 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
         self.send_header("Expires", "0")
         self.send_header("CDN-Cache-Control", "no-store")
         self.send_header("Surrogate-Control", "no-store")
-        self.send_header("X-LifeOS-Release", "lifeos-multilingual-auth-admin-v2.0.1-20260714")
+        self.send_header("X-LifeOS-Release", "lifeos-premium-public-mobile-v2.0.4-20260714")
         for name, value in (extra_headers or {}).items():
             self.send_header(name, value)
         self.send_header("Content-Length", str(len(body)))
@@ -597,7 +597,7 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
                         "ok": False,
                         "error": "admin_file_missing",
                         "expected_file": admin_file.name,
-                        "release": "lifeos-multilingual-auth-admin-v2.0.1-20260714",
+                        "release": "lifeos-premium-public-mobile-v2.0.4-20260714",
                     },
                 )
             return
@@ -608,9 +608,19 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
                 200,
                 {
                     "ok": True,
-                    "release": "lifeos-multilingual-auth-admin-v2.0.1-20260714",
+                    "release": "lifeos-premium-public-mobile-v2.0.4-20260714",
                     "multilingual_voice": True,
+                    "premium_igbo_priority": True,
+                    "premium_voice_output": True,
+                    "live_google_search": True,
+                    "grounded_chat_search": True,
+                    "premium_multilingual_chat": True,
+                    "reasoning_level": "medium",
+                    "live_session_resumption": True,
+                    "connected_audio_cue": True,
                     "mandatory_sign_in": True,
+                    "public_mobile_pwa": True,
+                    "branded_black_gold_icon": True,
                     "admin_audit": True,
                     "server_file": Path(__file__).name,
                     "admin_file": admin_file.name,
@@ -990,9 +1000,9 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
             )
 
             prompt = f"""
-You are Sophia, the LifeOS AI decision-intelligence assistant.
-
-The user is continuing one decision conversation.
+You are Sophia, the LifeOS AI decision-intelligence assistant. Work carefully,
+reason before answering, and continue the existing conversation instead of
+restarting it.
 
 Latest user message:
 {latest_user}
@@ -1000,25 +1010,38 @@ Latest user message:
 Compact conversation context:
 {conversation}
 
-Your job:
-Complete the user's decision analysis and answer the exact condition being asked.
-
-Mandatory decision-clarity rules:
-- Begin with "Future outcome:" and state the most likely practical outcome of the exact action or inaction the user described.
-- Distinguish likely outcome, possible outcome, and unknown outcome. Never claim an uncertain event is guaranteed.
-- Explain what is likely to happen if the person continues the present path and what is likely to change if the person takes the safer or better path.
-- Include the short-term consequence, longer-term consequence, main risk, hidden cost or opportunity cost, better move, and one immediate next action.
-- For substance misuse or dangerous behaviour, explain increased risk without declaring that a specific accident, illness, or death must happen.
-- For investments such as Bitcoin, explain possible missed upside, possible avoided loss, volatility, timing risk, liquidity, and a risk-controlled alternative. Never promise profit or a guaranteed price.
-- Continue the existing thread instead of restarting it.
-- Use natural spoken English without markdown symbols.
-- Deliver the full answer in 90 to 145 words.
-- End with a complete final sentence. Never stop mid-sentence or leave the future outcome unfinished.
+Core response rules:
+- Answer the exact request in the language the user is currently using. Do not
+  force English headings into a non-English answer.
+- Give Igbo first-class priority. When the user speaks or requests Igbo, use
+  fluent contemporary Standard Igbo with accurate grammar, vocabulary, tone
+  marks where they improve clarity, and natural culturally appropriate phrasing.
+  Do not mix in English unless a technical name has no clear Igbo equivalent.
+- When the request depends on current or changing facts, use Google Search.
+  Separate verified facts from inference, uncertainty, and opinion. Never invent
+  a source or claim that a search occurred when it did not.
+- For a decision, explain the likely short-term and longer-term outcomes, the
+  main risk, hidden or opportunity cost, safer alternative, and one practical
+  next action. Distinguish likely, possible, and unknown outcomes; never promise
+  a guaranteed future, profit, price, medical result, or legal result.
+- For a normal question, answer it directly without forcing a decision template.
+- Be warm and natural, but never claim human consciousness, human feelings,
+  private-system access, or abilities the service does not possess.
+- Protect privacy and safety. Do not expose secrets or conversation content in
+  operational audit data.
+- Use plain readable text, normally 90 to 220 words, and finish the final sentence.
 """
 
             try:
                 client = GeminiClient()
-                reply = client.generate_text(prompt, timeout=12, retries=1, max_output_tokens=520).strip()
+                result = client.generate_grounded_text(
+                    prompt,
+                    timeout=18,
+                    retries=1,
+                    max_output_tokens=900,
+                )
+                reply = result["text"].strip()
+                sources = result.get("sources") or []
             except Exception as e:
                 err = f"{type(e).__name__}: {e}"
                 reply = (
@@ -1032,6 +1055,8 @@ Mandatory decision-clarity rules:
                     {
                         "ok": True,
                         "reply": reply,
+                        "sources": [],
+                        "grounded": False,
                         "audio_url": None,
                         "tts_error": err,
                     },
@@ -1043,6 +1068,8 @@ Mandatory decision-clarity rules:
                 {
                     "ok": True,
                     "reply": reply,
+                    "sources": sources,
+                    "grounded": bool(sources),
                     "audio_url": None,
                     "tts_error": None,
                 },

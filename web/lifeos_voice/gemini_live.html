@@ -701,8 +701,10 @@ html,body{max-width:100%!important;min-height:100%!important;overflow-x:hidden!i
 
 <style id="lifeos-voice-background-blend-v1">body,body.embedded{background:linear-gradient(180deg,rgba(0,0,0,.62),rgba(0,0,0,.70) 54%,rgba(0,0,0,.80)),url("/assets/lifeos-bg.jpg") center center/cover no-repeat fixed!important}body::before{background:rgba(0,0,0,.14)!important}main{background:rgba(3,3,3,.72)!important;border-color:rgba(244,199,93,.34)!important;-webkit-backdrop-filter:blur(11px) saturate(88%)!important;backdrop-filter:blur(11px) saturate(88%)!important}@media(min-width:1000px){main{width:min(100%,980px)!important;padding-inline:clamp(28px,5vw,72px)!important}}</style>
 <!-- LIFEOS_BROWSER_FAVICON_V1 -->
-<link rel="icon" href="/icons/lifeos-icon.svg" type="image/svg+xml">
-<link rel="shortcut icon" href="/icons/lifeos-icon.svg" type="image/svg+xml">
+<link rel="icon" href="/icons/lifeos-icon-192.png" type="image/png">
+<link rel="shortcut icon" href="/icons/lifeos-icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="/icons/lifeos-icon-192.png">
+<link rel="manifest" href="/manifest.webmanifest">
 
 <!-- LIFEOS_MOBILE_VOICE_POWER_V1_STYLE_START -->
 <style id="lifeos-mobile-voice-power-v1">
@@ -755,6 +757,8 @@ html.lifeos-voice-page-hidden .orb::after {
 .auth-userbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;font-size:11px}.auth-link,.admin-link{color:#ebc25c}.auth-link{border:0;background:transparent;font-weight:800}
 .auth-status{display:inline-flex;padding:5px 8px;border:1px solid rgba(234,190,83,.42);border-radius:999px;font-size:10px;font-weight:900}
 #voiceApp{width:100%}.auth-userbar.protected{margin:0 0 8px;padding:8px 10px;border:1px solid rgba(234,190,83,.28);border-radius:11px;background:rgba(4,6,10,.48)}
+.search-attribution{margin:12px 0 0;padding:12px;border:1px solid rgba(234,190,83,.28);border-radius:12px;background:rgba(4,6,10,.62);color:#fff0c4;text-align:left;font-size:12px;line-height:1.45;overflow-wrap:anywhere}
+.search-attribution[hidden]{display:none}.search-source-list{display:flex;flex-wrap:wrap;gap:7px;margin-top:7px}.search-source-list a{display:inline-flex;padding:5px 8px;border:1px solid rgba(234,190,83,.34);border-radius:999px;color:#ebc25c;text-decoration:none}.google-search-suggestions{margin-bottom:8px;max-width:100%;overflow:auto}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -797,6 +801,7 @@ html.lifeos-voice-page-hidden .orb::after {
     <button id="outputButton" class="control" type="button">Audio Output</button>
   </div>
   <div id="status" role="status" aria-live="polite">Ready</div>
+  <div id="searchAttribution" class="search-attribution" aria-label="Web sources used by Sophia" hidden></div>
   <div id="outputLabel">Output: phone default</div>
   <audio id="sophiaAudio" autoplay playsinline aria-hidden="true"></audio>
 </section>
@@ -819,8 +824,8 @@ html.lifeos-voice-page-hidden .orb::after {
 <!-- LIFEOS_MULTILINGUAL_VOICE_INTELLIGENCE_V2 -->
 <!-- LIFEOS_STAGE2_AUDIO_OUTPUT_REPAIR_V1 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.3/dist/umd/supabase.js" integrity="sha384-sihuiVHG7vyEIuePVbLI4QpHu1dbhCZe4Zqp0FuqnFeEnyIhF3koyXoBZyfbFsYs" crossorigin="anonymous"></script>
-<script src="/assets/lifeos_auth_v1.js?v=2.0.1"></script>
-<script src="/assets/gemini_live_v1.js?v=2.6.0"></script>
+<script src="/assets/lifeos_auth_v1.js?v=2.0.2"></script>
+<script src="/assets/gemini_live_v1.js?v=2.8.0"></script>
 <!-- LIFEOS_GEMINI_LIVE_PAGE_V1 -->
 <!-- LIFEOS_GEMINI_LIVE_INTERFACE_AUDIO_V3 -->
 <!-- LIFEOS_SYNTHETIC_INTELLIGENCE_IDENTITY_LOCK_V1 -->
@@ -835,6 +840,6 @@ html.lifeos-voice-page-hidden .orb::after {
 <!-- LIFEOS_VOICE_HEADING_COLOR_MIX_V3 -->
 <!-- LIFEOS_VOICE_AGENT_REFERENCE_V5 -->
 
-<!-- LIFEOS_FINAL_RENDER_VISUAL_FIX_V3_CACHE --><script id="lifeos-final-cache-reset-v3">(()=>{"use strict";const r="lifeos-final-v3-20260701",k="lifeos-release-cache-reset";const f=async()=>{if("serviceWorker" in navigator){const x=await navigator.serviceWorker.register("/service-worker.js?v="+encodeURIComponent(r),{updateViaCache:"none"});await x.update()}if("caches" in window){const n=await caches.keys();await Promise.all(n.map(x=>caches.delete(x)))}};if(localStorage.getItem(k)!==r)f().finally(()=>localStorage.setItem(k,r));})();</script>
+<script src="/assets/lifeos_pwa_v1.js?v=2.0.4" defer></script>
 </body>
 </html>

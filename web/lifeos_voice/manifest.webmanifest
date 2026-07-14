@@ -2,18 +2,48 @@
   "name": "LifeOS AI — Synthetic Decision Intelligence",
   "short_name": "LifeOS AI",
   "description": "Premium synthetic decision intelligence with text, voice input, and spoken output.",
-  "start_url": "/",
+  "id": "/",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
-  "background_color": "#05060a",
-  "theme_color": "#05060a",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "categories": ["productivity", "utilities"],
+  "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/icons/lifeos-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "/icons/lifeos-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/lifeos-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/lifeos-icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Sophia Decision Chat",
+      "short_name": "Chat",
+      "url": "/chat?source=pwa-shortcut",
+      "icons": [{"src": "/icons/lifeos-icon-192.png", "sizes": "192x192"}]
+    },
+    {
+      "name": "Sophia Live Voice",
+      "short_name": "Voice",
+      "url": "/voice?source=pwa-shortcut",
+      "icons": [{"src": "/icons/lifeos-icon-192.png", "sizes": "192x192"}]
     }
   ]
 }
