@@ -8,6 +8,13 @@ Required Render environment variables:
   LIFEOS_HOST = 0.0.0.0
   LIFEOS_TTS_VOICE = Despina
   LIFEOS_TTS_MODEL = gemini-3.1-flash-tts-preview
+  SUPABASE_URL = paste the project URL in Render dashboard
+  SUPABASE_PUBLISHABLE_KEY = paste the public publishable key in Render dashboard
+  SUPABASE_SECRET_KEY = paste the server-only secret key in Render dashboard
+  LIFEOS_ADMIN_EMAILS = comma-separated owner email allowlist
+  LIFEOS_AUTH_REQUIRED = true
+  LIFEOS_GOOGLE_AUTH_ENABLED = true
+  LIFEOS_EMAIL_AUTH_ENABLED = false
 
 Render settings:
   Service type: Web Service
@@ -18,6 +25,7 @@ Render settings:
 
 Important:
   Do not upload .truthlayer_env or any API key file to GitHub.
-  The backend must keep GEMINI_API_KEY private.
+  The backend must keep GEMINI_API_KEY and SUPABASE_SECRET_KEY private.
+  Google Client Secret belongs only in Supabase, never Render or GitHub.
   Public users will use the Render URL, not 127.0.0.1.
   Free Render services may sleep after inactivity.

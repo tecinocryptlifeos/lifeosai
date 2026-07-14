@@ -17,13 +17,15 @@ services:
         value: gemini-3.1-flash-tts-preview
       - key: SUPABASE_URL
         sync: false
-      - key: SUPABASE_ANON_KEY
+      - key: SUPABASE_PUBLISHABLE_KEY
         sync: false
-      - key: SUPABASE_SERVICE_ROLE_KEY
+      - key: SUPABASE_SECRET_KEY
         sync: false
       - key: LIFEOS_ADMIN_EMAILS
         sync: false
       - key: LIFEOS_AUTH_REQUIRED
+        value: true
+      - key: LIFEOS_EMAIL_AUTH_ENABLED
         value: false
       - key: LIFEOS_GOOGLE_AUTH_ENABLED
-        value: true
+        value: false

@@ -881,9 +881,26 @@ textarea{
 <!-- LIFEOS_BROWSER_FAVICON_V1 -->
 <link rel="icon" href="/icons/lifeos-icon.svg" type="image/svg+xml">
 <link rel="shortcut icon" href="/icons/lifeos-icon.svg" type="image/svg+xml">
+<style id="lifeos-chat-auth-v2">
+.chat-auth-gate{width:min(100%,520px);margin:auto;padding:22px;border:1px solid rgba(243,201,105,.46);border-radius:24px;background:rgba(8,9,15,.94);box-shadow:0 24px 80px rgba(0,0,0,.46)}
+.chat-auth-gate h1{margin:0 0 8px}.chat-auth-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}.chat-auth-copy{color:var(--muted);font-size:13px;line-height:1.5}.chat-auth-input{width:100%;min-height:48px;margin:10px 0;padding:0 12px;border:1px solid rgba(243,201,105,.42);border-radius:12px;background:#0b0d12;color:var(--text)}
+.chat-auth-actions{display:grid;gap:9px}.chat-auth-actions button{min-height:48px;border:1px solid rgba(243,201,105,.5);border-radius:12px;background:linear-gradient(180deg,#efc75e,#b87d1d);color:#171005;font-weight:900}.chat-auth-actions .secondary{background:#12151c;color:#fff0c4}.chat-auth-status{padding:5px 8px;border:1px solid rgba(243,201,105,.42);border-radius:999px;color:var(--gold);font-size:10px;font-weight:900}
+.chat-account{display:flex;align-items:flex-end;flex-direction:column;gap:4px;color:var(--muted);font-size:11px}.chat-account a,.chat-account button{color:var(--gold)}.chat-account button{padding:0;border:0;background:transparent;font-weight:800}.chat-account-links{display:flex;gap:7px;align-items:center}
+[hidden]{display:none!important}
+</style>
 </head>
 <body>
-  <main class="app">
+  <section id="authGate" class="chat-auth-gate" data-lifeos-auth-gate aria-labelledby="authTitle">
+    <div class="chat-auth-heading"><h1 id="authTitle">Sign in to LifeOS</h1><span id="authStatusBadge" class="chat-auth-status">CHECKING</span></div>
+    <p class="chat-auth-copy">Every visitor must sign in before using Sophia. The operations audit records access and service events, not conversation content.</p>
+    <input id="authEmail" class="chat-auth-input" type="email" autocomplete="email" placeholder="Email address">
+    <div class="chat-auth-actions">
+      <button id="emailSignIn" type="button">Email me a secure sign-in link</button>
+      <button id="googleSignIn" class="secondary" type="button">Continue with Google</button>
+    </div>
+    <p id="authMessage" class="chat-auth-copy" role="status" aria-live="polite"></p>
+  </section>
+  <main id="chatApp" class="app" data-lifeos-protected hidden>
     <section class="inner">
       <header class="topbar">
         <div class="brand">
@@ -893,7 +910,7 @@ textarea{
             <div class="brand-sub">Decision Chat</div>
           </div>
         </div>
-        <div id="net" class="status">● Online</div>
+        <div class="chat-account"><span id="userIdentity"></span><span class="chat-account-links"><span id="net" class="status">● Online</span><a href="/admin">Admin</a><button id="signOut" type="button" hidden>Sign out</button></span></div>
       </header>
 
       <section class="hero">
@@ -1046,10 +1063,12 @@ async function sendMessage(voiceTriggered = false) {
         )
       }));
 
-    const response = await fetch("/api/chat-decision", {
+    lifeosChatController = typeof AbortController === "function" ? new AbortController() : null;
+    const response = await window.LifeOSAuth.authFetch("/api/chat-decision", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: outgoingMessages })
+      body: JSON.stringify({ messages: outgoingMessages }),
+      signal: lifeosChatController ? lifeosChatController.signal : undefined
     });
 
     const raw = await response.text();
@@ -1059,17 +1078,27 @@ async function sendMessage(voiceTriggered = false) {
       data = raw ? JSON.parse(raw) : {};
     } catch (error) {}
 
-    loading.content =
-      data.reply ||
+    loading.content = data.reply || data.error ||
       "LifeOS AI could not complete the continuation. Please try again.";
+    if (response.ok) {
+      void window.LifeOSAuth.event("chat_message", {
+        metadata: { route: location.pathname, transport: "gemini-text" }
+      });
+    }
 
   } catch (error) {
     loading.content =
       "LifeOS AI could not reach the intelligence server. Please try again.";
   }
+  lifeosChatController = null;
 
   save();
   render();
+
+  if (!window.LifeOSAuth?.session) {
+    lifeosSending = false;
+    return;
+  }
 
   try {
     if (voiceTriggered || lifeosVoiceMode) {
@@ -1088,6 +1117,7 @@ async function sendMessage(voiceTriggered = false) {
 
 let lifeosVoiceMode = false;
 let lifeosSending = false;
+let lifeosChatController = null;
 let lifeosRestartTimer = null;
 let lifeosVoiceResolve = null;
 let lifeosBrowserVoiceResolve = null;
@@ -1404,7 +1434,7 @@ async function speakLifeOS(text) {
     let response;
 
     try {
-      response = await fetch("/api/voice-read", {
+      response = await window.LifeOSAuth.authFetch("/api/voice-read", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: spokenText }),
@@ -1420,24 +1450,40 @@ async function speakLifeOS(text) {
       throw new Error(data.tts_error || "Voice audio unavailable");
     }
 
+    const audioResponse = await window.LifeOSAuth.authFetch(
+      data.audio_url + "?v=" + Date.now(),
+      { cache: "no-store" }
+    );
+    if (!audioResponse.ok) {
+      throw new Error("Protected voice audio is unavailable");
+    }
+    const protectedAudioUrl = URL.createObjectURL(await audioResponse.blob());
+
     await new Promise((resolve, reject) => {
-      const finish = () => {
+      const cleanup = () => {
         lifeosVoicePlayer.onended = null;
         lifeosVoicePlayer.onerror = null;
         lifeosVoiceResolve = null;
+        URL.revokeObjectURL(protectedAudioUrl);
+      };
+      const finish = () => {
+        cleanup();
         resolve();
+      };
+      const fail = error => {
+        cleanup();
+        reject(error instanceof Error ? error : new Error("Voice playback failed"));
       };
 
       lifeosVoiceResolve = finish;
       lifeosVoicePlayer.onended = finish;
-      lifeosVoicePlayer.onerror = reject;
-      lifeosVoicePlayer.src =
-        data.audio_url + "?v=" + Date.now();
+      lifeosVoicePlayer.onerror = fail;
+      lifeosVoicePlayer.src = protectedAudioUrl;
 
       const playing = lifeosVoicePlayer.play();
 
       if (playing && typeof playing.catch === "function") {
-        playing.catch(reject);
+        playing.catch(fail);
       }
     });
 
@@ -1655,6 +1701,20 @@ historyBtn.addEventListener("click", () => {
   });
   if (!threads.length) historyBox.textContent = "No saved chat history yet.";
   historyBox.classList.toggle("open");
+});
+
+window.addEventListener("lifeos-auth-change", event => {
+  if (event.detail?.signedIn) return;
+  if (lifeosChatController) lifeosChatController.abort();
+  lifeosChatController = null;
+  if (lifeosRestartTimer) clearTimeout(lifeosRestartTimer);
+  lifeosRestartTimer = null;
+  try { if (lifeosRecognition && lifeosListening) lifeosRecognition.stop(); } catch (error) {}
+  try { setLifeOSVoiceMode(false); } catch (error) {}
+  try { window.speechSynthesis.cancel(); } catch (error) {}
+  try { if (lifeosVoiceResolve) lifeosVoiceResolve(); } catch (error) {}
+  try { if (lifeosVoicePlayer) lifeosVoicePlayer.pause(); } catch (error) {}
+  lifeosSending = false;
 });
 
 render();
@@ -3293,5 +3353,7 @@ html body.lifeos-vc-on #lifeosVC .vcOrb.ai-speaking #lifeosVCLogo {
 <!-- LIFEOS_VOICE_CONVERSATION_REPAIR_V14_END -->
 
 <!-- LIFEOS_LOGO_HOME_AND_VOICE_ROUTE_REPAIR_V1 -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.3/dist/umd/supabase.js" integrity="sha384-sihuiVHG7vyEIuePVbLI4QpHu1dbhCZe4Zqp0FuqnFeEnyIhF3koyXoBZyfbFsYs" crossorigin="anonymous"></script>
+<script src="/assets/lifeos_auth_v1.js?v=2.0.1"></script>
 </body>
 </html>

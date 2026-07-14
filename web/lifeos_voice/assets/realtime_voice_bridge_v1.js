@@ -717,6 +717,12 @@ body.lifeos-realtime-active #lifeosVC .vcOrb.lifeos-rt-error #lifeosVCLogo {
       });
     }
 
+    global.addEventListener("lifeos-auth-change", function (event) {
+      if (!event.detail || !event.detail.signedIn) {
+        if (realtimeActive || connecting) stopRealtime();
+      }
+    });
+
     global.LifeOSRealtimeBridgeV1 = Object.freeze({
       version: "1.0.0-disabled-integration",
       controller: controller,

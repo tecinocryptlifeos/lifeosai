@@ -1,1 +1,69 @@
-document.addEventListener('DOMContentLoaded',async()=>{const wait=ms=>new Promise(r=>setTimeout(r,ms));const m=document.getElementById('message'),status=document.getElementById('systemStatus'),setup=document.getElementById('setupPanel');for(let i=0;i<50&&!window.LifeOSAuth?.ready;i++)await wait(100);if(!window.LifeOSAuth?.configured){status.textContent='SETUP REQUIRED';status.className='status warn';m.textContent='Authentication and analytics are installed but not connected to Supabase.';setup.hidden=false;return;}status.textContent='AUTH READY';status.className='status ok';for(let i=0;i<50&&!window.LifeOSAuth?.session;i++)await wait(100);if(!window.LifeOSAuth?.session){m.textContent='Sign in through the Voice page with the administrator email, then return here.';return;}try{const r=await window.LifeOSAuth.authFetch('/api/admin-dashboard',{cache:'no-store'});const d=await r.json();if(!r.ok)throw new Error(d.error||'Dashboard unavailable');m.textContent='';document.getElementById('dashboard').hidden=false;const labels={registered_users:'Registered users',sign_ins_today:'Sign-ins today',voice_sessions_today:'Voice sessions today',recent_active_users:'Recently active',recent_errors:'Recent errors'};document.getElementById('metrics').innerHTML=Object.entries(d.metrics).map(([k,v])=>`<div class="card"><div class="metric">${v}</div><div class="label">${labels[k]||k}</div></div>`).join('');const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));document.getElementById('users').innerHTML=d.users.map(u=>`<tr><td>${esc(u.email)}</td><td>${esc(u.display_name)}</td><td>${esc(u.created_at)}</td><td>${esc(u.last_sign_in_at)}</td><td>${esc(u.account_status)}</td></tr>`).join('');document.getElementById('events').innerHTML=d.events.map(e=>`<tr><td>${esc(e.created_at)}</td><td>${esc(e.user_email)}</td><td>${esc(e.event_type)}</td><td>${esc(e.device_type)}</td><td>${esc(e.error_message||e.error_code||'')}</td></tr>`).join('');}catch(e){status.textContent='ADMIN ERROR';status.className='status warn';m.textContent=e.message;}});
+document.addEventListener("DOMContentLoaded", async () => {
+  "use strict";
+
+  const message = document.getElementById("message");
+  const status = document.getElementById("systemStatus");
+  const setup = document.getElementById("setupPanel");
+  const dashboard = document.getElementById("dashboard");
+  const escapeHtml = value => String(value ?? "").replace(
+    /[&<>"']/g,
+    character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character],
+  );
+
+  async function loadDashboard() {
+    if (!window.LifeOSAuth?.configured) {
+      if (setup) setup.hidden = false;
+      return;
+    }
+    if (!window.LifeOSAuth?.session) return;
+
+    status.textContent = "VERIFYING ADMIN";
+    status.className = "status";
+    message.textContent = "Loading protected account and operations data…";
+    dashboard.hidden = true;
+
+    try {
+      const response = await window.LifeOSAuth.authFetch("/api/admin-dashboard", { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Dashboard unavailable");
+
+      status.textContent = "ADMIN VERIFIED";
+      status.className = "status ok";
+      message.textContent = "";
+      dashboard.hidden = false;
+
+      const labels = {
+        registered_users: "Registered users",
+        sign_ins_today: "Sign-ins today",
+        voice_sessions_today: "Voice sessions today",
+        chat_messages_today: "Chat messages today",
+        active_users_24h: "Active users · 24h",
+        recent_errors: "Recent errors",
+      };
+      document.getElementById("metrics").innerHTML = Object.entries(data.metrics)
+        .map(([key, value]) => `<div class="card"><div class="metric">${escapeHtml(value)}</div><div class="label">${escapeHtml(labels[key] || key)}</div></div>`)
+        .join("");
+      document.getElementById("users").innerHTML = data.users
+        .map(user => `<tr><td>${escapeHtml(user.email)}</td><td>${escapeHtml(user.display_name)}</td><td>${escapeHtml(user.created_at)}</td><td>${escapeHtml(user.last_sign_in_at)}</td><td>${escapeHtml(user.account_status)}</td></tr>`)
+        .join("");
+      document.getElementById("events").innerHTML = data.events
+        .map(event => `<tr><td>${escapeHtml(event.created_at)}</td><td>${escapeHtml(event.user_email)}</td><td>${escapeHtml(event.event_type)}</td><td>${escapeHtml(event.device_type)}</td><td>${escapeHtml(event.error_message || event.error_code || "")}</td></tr>`)
+        .join("");
+    } catch (error) {
+      status.textContent = "ACCESS DENIED";
+      status.className = "status warn";
+      message.textContent = error.message;
+    }
+  }
+
+  await window.LifeOSAuth?.whenReady?.();
+  if (!window.LifeOSAuth?.configured) {
+    if (setup) setup.hidden = false;
+    return;
+  }
+  await loadDashboard();
+  document.getElementById("refreshAdmin")?.addEventListener("click", () => { void loadDashboard(); });
+  window.addEventListener("lifeos-auth-change", event => {
+    if (event.detail?.signedIn) void loadDashboard();
+  });
+});

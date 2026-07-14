@@ -514,7 +514,7 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
         self.send_header("Expires", "0")
         self.send_header("CDN-Cache-Control", "no-store")
         self.send_header("Surrogate-Control", "no-store")
-        self.send_header("X-LifeOS-Release", "lifeos-architecture-v1-20260701")
+        self.send_header("X-LifeOS-Release", "lifeos-multilingual-auth-admin-v2.0.1-20260714")
         for name, value in (extra_headers or {}).items():
             self.send_header(name, value)
         self.send_header("Content-Length", str(len(body)))
@@ -530,6 +530,18 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
             "application/json; charset=utf-8",
             {"X-Robots-Tag": "noindex, nofollow, noarchive"},
         )
+
+    def _require_user(self):
+        try:
+            user, _ = verify_user(self.headers)
+            return user
+        except PermissionError as error:
+            self._send_json(401, {"ok": False, "error": str(error)})
+        except RuntimeError as error:
+            self._send_json(503, {"ok": False, "error": str(error)})
+        except Exception:
+            self._send_json(503, {"ok": False, "error": "The authentication service is unavailable"})
+        return None
 
     def _safe_file(self, root, relative_path):
         root = root.resolve()
@@ -584,8 +596,8 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
                     {
                         "ok": False,
                         "error": "admin_file_missing",
-                        "expected_path": str(admin_file),
-                        "release": "lifeos-admin-route-hard-fix-v1",
+                        "expected_file": admin_file.name,
+                        "release": "lifeos-multilingual-auth-admin-v2.0.1-20260714",
                     },
                 )
             return
@@ -596,10 +608,12 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
                 200,
                 {
                     "ok": True,
-                    "release": "lifeos-admin-route-hard-fix-v1",
-                    "server_file": str(Path(__file__).resolve()),
-                    "web_directory": str(WEB_DIR.resolve()),
-                    "admin_file": str(admin_file.resolve()),
+                    "release": "lifeos-multilingual-auth-admin-v2.0.1-20260714",
+                    "multilingual_voice": True,
+                    "mandatory_sign_in": True,
+                    "admin_audit": True,
+                    "server_file": Path(__file__).name,
+                    "admin_file": admin_file.name,
                     "admin_exists": admin_file.exists(),
                 },
             )
@@ -687,8 +701,10 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
             self._send_json(200, public_config())
             return
         if path == "/api/admin-dashboard":
+            user = self._require_user()
+            if not user:
+                return
             try:
-                user, _ = verify_user(self.headers)
                 self._send_json(200, admin_dashboard(user))
             except PermissionError as error:
                 self._send_json(403, {"ok": False, "error": str(error)})
@@ -724,6 +740,8 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
             )
             return
         if path.startswith("/audio/"):
+            if not self._require_user():
+                return
             self._serve_file(
                 self._safe_file(AUDIO_DIR, path.replace("/audio/", "", 1)),
                 private_headers,
@@ -1150,55 +1168,59 @@ Mandatory decision-clarity rules:
     # LIFEOS_GEMINI_LIVE_V1_HANDLER_END
 
     def do_POST(self):
-        # LIFEOS_REALTIME_ROUTE_V1
-        if self.path.split("?", 1)[0] == "/api/realtime-session":
-            return lifeos_handle_realtime_session(self)
-
         path = self._path()
 
 
         if path == "/api/analytics-event":
+            user = self._require_user()
+            if not user:
+                return
             try:
-                user, _ = verify_user(self.headers)
                 length = int(self.headers.get("Content-Length", "0"))
                 if length < 1 or length > 12000:
                     raise ValueError("Invalid request body")
                 payload = json.loads(self.rfile.read(length).decode("utf-8"))
                 client_ip = (self.headers.get("X-Forwarded-For", "").split(",", 1)[0].strip() or (self.client_address[0] if self.client_address else ""))
                 self._send_json(200, record_event(user, payload, client_ip))
-            except PermissionError as error:
-                self._send_json(401, {"ok": False, "error": str(error)})
-            except Exception as error:
+            except (ValueError, json.JSONDecodeError) as error:
                 self._send_json(400, {"ok": False, "error": str(error)[:500]})
+            except Exception as error:
+                self._send_json(503, {"ok": False, "error": str(error)[:500]})
             return
 
         # LIFEOS_GEMINI_LIVE_V1_POST_ROUTE_START
         if path == "/api/gemini-live-token":
+            if not self._require_user():
+                return
             try:
-                config = public_config()
-                if config.get("auth_required"):
-                    verify_user(self.headers)
                 self._handle_gemini_live_token_v1()
-            except PermissionError as error:
-                self._send_json(401, {"ok": False, "error": str(error)})
             except RuntimeError as error:
                 self._send_json(503, {"ok": False, "error": str(error)})
             return
         # LIFEOS_GEMINI_LIVE_V1_POST_ROUTE_END
-        # LIFEOS_REALTIME_SESSION_ROUTE_V3
+
+        # LIFEOS_REALTIME_ROUTE_V1
         if path == "/api/realtime-session":
-            self._handle_realtime_session_v3()
-            return
+            if not self._require_user():
+                return
+            return lifeos_handle_realtime_session(self)
 
         if path == "/api/chat-decision":
+            if not self._require_user():
+                return
             self._handle_chat_decision()
             return
         if path == "/api/voice-read":
+            if not self._require_user():
+                return
             self._handle_voice_read()
             return
 
         if path != "/api/text-audit":
             self._send_json(404, {"ok": False, "error": "Not found"})
+            return
+
+        if not self._require_user():
             return
 
         try:

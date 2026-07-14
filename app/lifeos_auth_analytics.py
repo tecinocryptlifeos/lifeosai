@@ -3,15 +3,27 @@ import os
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 
 def _env(name):
     return os.environ.get(name, "").strip()
 
 
+def _enabled(name):
+    return _env(name).lower() in {"1", "true", "yes", "on"}
+
+
+def _public_key():
+    return _env("SUPABASE_PUBLISHABLE_KEY") or _env("SUPABASE_ANON_KEY")
+
+
+def _server_key():
+    return _env("SUPABASE_SECRET_KEY") or _env("SUPABASE_SERVICE_ROLE_KEY")
+
+
 def configured():
-    return bool(_env("SUPABASE_URL") and _env("SUPABASE_ANON_KEY") and _env("SUPABASE_SERVICE_ROLE_KEY"))
+    return bool(_env("SUPABASE_URL") and _public_key() and _server_key())
 
 
 def public_config():
@@ -19,9 +31,11 @@ def public_config():
         "ok": True,
         "configured": configured(),
         "supabase_url": _env("SUPABASE_URL"),
-        "supabase_anon_key": _env("SUPABASE_ANON_KEY"),
-        "auth_required": _env("LIFEOS_AUTH_REQUIRED").lower() not in {"0", "false", "no", "off"},
-        "google_enabled": _env("LIFEOS_GOOGLE_AUTH_ENABLED").lower() in {"1", "true", "yes", "on"},
+        "supabase_anon_key": _public_key(),
+        "auth_required": True,
+        "auth_mode": "mandatory",
+        "email_enabled": _enabled("LIFEOS_EMAIL_AUTH_ENABLED"),
+        "google_enabled": _enabled("LIFEOS_GOOGLE_AUTH_ENABLED"),
     }
 
 
@@ -60,7 +74,7 @@ def verify_user(headers):
         raise PermissionError("Sign-in is required")
     status, user = _request(
         _env("SUPABASE_URL").rstrip("/") + "/auth/v1/user",
-        headers={"apikey": _env("SUPABASE_ANON_KEY"), "Authorization": "Bearer " + token},
+        headers={"apikey": _public_key(), "Authorization": "Bearer " + token},
     )
     if status != 200 or not user.get("id"):
         raise PermissionError("The sign-in session is invalid or expired")
@@ -76,21 +90,28 @@ def _rest(table, method="GET", query="", payload=None, prefer="return=minimal"):
     url = _env("SUPABASE_URL").rstrip("/") + "/rest/v1/" + table
     if query:
         url += "?" + query
-    key = _env("SUPABASE_SERVICE_ROLE_KEY")
-    headers = {"apikey": key, "Authorization": "Bearer " + key, "Prefer": prefer}
+    key = _server_key()
+    headers = {"apikey": key, "Prefer": prefer}
+    if not key.startswith("sb_secret_"):
+        headers["Authorization"] = "Bearer " + key
     return _request(url, method=method, headers=headers, payload=payload)
 
 
 def record_event(user, payload, client_ip=""):
     allowed = {
         "sign_in", "sign_out", "voice_start", "voice_connected", "voice_end",
-        "voice_error", "microphone_error", "audio_error", "page_view"
+        "voice_error", "microphone_error", "audio_error", "chat_message", "page_view"
     }
     event_type = str(payload.get("event_type") or "").strip().lower()
     if event_type not in allowed:
         raise ValueError("Unsupported event type")
-    metadata = payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
-    metadata = dict(list(metadata.items())[:20])
+    supplied_metadata = payload.get("metadata") if isinstance(payload.get("metadata"), dict) else {}
+    permitted_metadata = {"route", "transport", "reason", "status", "language", "model"}
+    metadata = {
+        key: str(value)[:160]
+        for key, value in supplied_metadata.items()
+        if key in permitted_metadata and value is not None
+    }
     row = {
         "user_id": user["id"],
         "user_email": user.get("email"),
@@ -130,15 +151,23 @@ def admin_dashboard(user):
     today = now.date().isoformat()
     signed = [e for e in events if e.get("event_type") == "sign_in"]
     starts = [e for e in events if e.get("event_type") == "voice_start"]
+    chat_messages = [e for e in events if e.get("event_type") == "chat_message"]
     errors = [e for e in events if e.get("event_type", "").endswith("error")]
-    active_ids = {e.get("user_id") for e in events if e.get("created_at", "") >= now.isoformat()[:13] and e.get("event_type") in {"voice_start","voice_connected","page_view"}}
+    active_since = (now - timedelta(hours=24)).isoformat()
+    active_ids = {
+        e.get("user_id")
+        for e in events
+        if e.get("created_at", "") >= active_since
+        and e.get("event_type") in {"voice_start", "voice_connected", "chat_message", "page_view"}
+    }
     return {
         "ok": True,
         "metrics": {
             "registered_users": len(profiles),
             "sign_ins_today": sum(1 for e in signed if str(e.get("created_at", "")).startswith(today)),
             "voice_sessions_today": sum(1 for e in starts if str(e.get("created_at", "")).startswith(today)),
-            "recent_active_users": len(active_ids),
+            "chat_messages_today": sum(1 for e in chat_messages if str(e.get("created_at", "")).startswith(today)),
+            "active_users_24h": len(active_ids),
             "recent_errors": len(errors),
         },
         "users": profiles,

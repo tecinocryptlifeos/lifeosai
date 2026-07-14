@@ -2,7 +2,7 @@
 (function (global) {
   "use strict";
 
-  const VERSION = "1.2.0-live";
+  const VERSION = "1.3.0-authenticated";
   const STATES = Object.freeze({
     IDLE: "idle", CONNECTING: "connecting", USER_SPEAKING: "user_speaking",
     ANALYSING: "analysing", SOPHIA_SPEAKING: "sophia_speaking",
@@ -325,7 +325,10 @@
       const controller = typeof global.AbortController === "function" ? new global.AbortController() : null;
       const timer = global.setTimeout(() => { if (controller) controller.abort(); }, this.connectionTimeoutMs);
       try {
-        const response = await global.fetch(this.endpoint, {
+        if (!global.LifeOSAuth?.session || !global.LifeOSAuth?.authFetch) {
+          throw makeError("Sign in before starting Sophia.", "SIGN_IN_REQUIRED");
+        }
+        const response = await global.LifeOSAuth.authFetch(this.endpoint, {
           method: "POST", credentials: "same-origin", cache: "no-store",
           headers: { "Content-Type": "application/sdp", Accept: "application/sdp, text/plain, application/json" },
           body: offerSdp, signal: controller ? controller.signal : undefined

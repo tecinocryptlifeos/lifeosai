@@ -27,6 +27,18 @@ let outputSources=new Set();
 let outputRoute="uninitialised",receivedAudioChunks=0,lastAudioChunkAt=0;
 let starting=false,active=false,setupReady=false,closingNormally=false;
 let micMuted=false,speakerEnabled=true,selectedSinkId="default",selectedSinkLabel="phone default";
+let auditSessionId="",auditEnded=true;
+
+function newAuditSessionId(){
+  return typeof window.crypto?.randomUUID==="function"
+    ? window.crypto.randomUUID()
+    : "voice_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,10);
+}
+
+function audit(eventType,extra={}){
+  if(!window.LifeOSAuth?.event)return;
+  void window.LifeOSAuth.event(eventType,{session_id:auditSessionId,...extra});
+}
 
 function setStatus(text,state){
   statusBox.textContent=text;
@@ -390,9 +402,15 @@ async function handleMessage(event){
   const message=JSON.parse(text);
   if(message.setupComplete){
     setupReady=true;
-    await startMicrophone();
+    try{
+      await startMicrophone();
+    }catch(error){
+      audit("microphone_error",{error_message:error.message||"Microphone could not start"});
+      throw error;
+    }
     starting=false;
     active=true;
+    audit("voice_connected",{metadata:{route:location.pathname,transport:"gemini-live"}});
     try{await playConnectionCue();}catch(error){console.warn("LifeOS connection cue unavailable.",error);}
     setStatus("Connected — live conversation active.","active");
     refreshControls();
@@ -408,6 +426,7 @@ async function handleMessage(event){
     if(inline&&inline.data&&(!mimeType||/^audio\//i.test(mimeType))&&speakerEnabled){
       try{await playAudio(inline.data);}catch(error){
         console.error("LifeOS Sophia audio playback failed.",error);
+        audit("audio_error",{error_message:error.message||"Sophia audio playback failed"});
         setStatus("Sophia audio playback failed — tap Audio Output.","error");
       }
     }
@@ -418,14 +437,19 @@ async function handleMessage(event){
 }
 
 async function startConversation(){
+  if(window.LifeOSAuth?.whenReady)await window.LifeOSAuth.whenReady();
+  if(!window.LifeOSAuth?.session){setStatus("Sign in before starting Sophia.","error");return;}
   if(!window.isSecureContext){setStatus("Gemini Live requires a secure HTTPS connection.","error");return;}
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){setStatus("This browser does not support microphone streaming.","error");return;}
+  auditSessionId=newAuditSessionId();
+  auditEnded=false;
+  audit("voice_start",{metadata:{route:location.pathname,transport:"gemini-live"}});
   starting=true;
   closingNormally=false;
   setStatus("Connecting to LifeOS Synthetic Intelligence…","");
   try{
     await ensureOutputContext();
-    const response=await fetch("/api/gemini-live-token",{method:"POST",headers:{"Accept":"application/json"},cache:"no-store"});
+    const response=await window.LifeOSAuth.authFetch("/api/gemini-live-token",{method:"POST",headers:{"Accept":"application/json"},cache:"no-store"});
     const payload=await response.json().catch(()=>({}));
     if(!response.ok||!payload.ok||!payload.token)throw new Error(payload.error||"The Gemini Live token request failed.");
     socket=new WebSocket(payload.websocket_url+"?access_token="+encodeURIComponent(payload.token));
@@ -462,6 +486,13 @@ async function startConversation(){
 
 function stopAndClean(message,state,socketAlreadyClosed){
   const wasConnected=active||setupReady;
+  if(auditSessionId&&!auditEnded){
+    auditEnded=true;
+    audit(state==="error"?"voice_error":"voice_end",{
+      error_message:state==="error"?String(message||"Voice session failed").slice(0,800):undefined,
+      metadata:{route:location.pathname,transport:"gemini-live",status:state==="error"?"error":"ended"}
+    });
+  }
   starting=false;
   active=false;
   setupReady=false;
@@ -493,10 +524,13 @@ micButton.addEventListener("click",()=>{if(active)setMicMuted(!micMuted);});
 speakerButton.addEventListener("click",()=>{if(active)setSpeakerEnabled(!speakerEnabled);});
 outputButton.addEventListener("click",chooseAudioOutput);
 window.addEventListener("pagehide",()=>{if(active||starting)endConversation();});
+window.addEventListener("lifeos-auth-change",event=>{
+  if(!event.detail?.signedIn&&(active||starting))stopAndClean("Signed out — live conversation ended.","",false);
+});
 refreshControls();
 
 window.LifeOSGeminiLiveV1={
-  version:"2.5.0",
+  version:"2.6.0",
   start:startConversation,
   stop:endConversation,
   muteMicrophone:setMicMuted,

@@ -754,6 +754,7 @@ html.lifeos-voice-page-hidden .orb::after {
 .auth-actions{display:grid;gap:8px}.auth-secondary{min-height:44px;border:1px solid rgba(234,190,83,.42);border-radius:11px;background:#12151c;color:#fff0c4;font-weight:800}
 .auth-userbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;font-size:11px}.auth-link,.admin-link{color:#ebc25c}.auth-link{border:0;background:transparent;font-weight:800}
 .auth-status{display:inline-flex;padding:5px 8px;border:1px solid rgba(234,190,83,.42);border-radius:999px;font-size:10px;font-weight:900}
+#voiceApp{width:100%}.auth-userbar.protected{margin:0 0 8px;padding:8px 10px;border:1px solid rgba(234,190,83,.28);border-radius:11px;background:rgba(4,6,10,.48)}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -775,18 +776,19 @@ html.lifeos-voice-page-hidden .orb::after {
   <h1 class="lifeos-voice-title-v3">LifeOs Ai Voice Assistant</h1>
   <p class="subtitle lifeos-voice-subtitle-v3">Synthetic Intelligent Agent</p>
 
-<section id="authGate" aria-labelledby="authTitle">
+<section id="authGate" data-lifeos-auth-gate aria-labelledby="authTitle">
   <div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><h2 id="authTitle">LifeOS Account</h2><span id="authStatusBadge" class="auth-status">CHECKING</span></div>
-  <p class="auth-copy">Public sign-in and usage analytics are installed separately from Sophia's voice intelligence.</p>
+  <p class="auth-copy">Every visitor must sign in before Sophia can start. Operational events are recorded for safety; conversation content is not included in the audit.</p>
   <input id="authEmail" class="auth-input" type="email" autocomplete="email" placeholder="Email address">
   <div class="auth-actions">
     <button id="emailSignIn" class="primary" type="button">Email me a secure sign-in link</button>
     <button id="googleSignIn" class="auth-secondary" type="button">Continue with Google</button>
   </div>
   <p id="authMessage" class="auth-copy" role="status" aria-live="polite"></p>
-  <div class="auth-userbar"><span id="userIdentity"></span><span><a class="admin-link" href="/admin">Admin</a> · <button id="signOut" class="auth-link" type="button" hidden>Sign out</button></span></div>
 </section>
 
+<section id="voiceApp" data-lifeos-protected hidden>
+  <div class="auth-userbar protected"><span id="userIdentity"></span><span><a class="admin-link" href="/admin">Admin</a> · <button id="signOut" class="auth-link" type="button" hidden>Sign out</button></span></div>
 <div id="orb" class="orb" aria-hidden="true"></div>
   <button id="liveButton" class="primary" type="button">Start Live Conversation</button>
   <div class="controls" aria-label="Voice controls">
@@ -797,6 +799,7 @@ html.lifeos-voice-page-hidden .orb::after {
   <div id="status" role="status" aria-live="polite">Ready</div>
   <div id="outputLabel">Output: phone default</div>
   <audio id="sophiaAudio" autoplay playsinline aria-hidden="true"></audio>
+</section>
 <footer id="lifeosVoiceFooterV1" class="lifeos-voice-footer">Powered by Hansafrique Ltd, built by LifeOsdaily, Engineered &amp; Structured by Tecino's Channel, 2026 ©.</footer>
 
 </main>
@@ -815,9 +818,9 @@ html.lifeos-voice-page-hidden .orb::after {
 <script src="/assets/lifeos_golden_voice_visualizer_v5.js?v=5.1.0"></script>
 <!-- LIFEOS_MULTILINGUAL_VOICE_INTELLIGENCE_V2 -->
 <!-- LIFEOS_STAGE2_AUDIO_OUTPUT_REPAIR_V1 -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/assets/lifeos_auth_v1.js?v=1.2.0"></script>
-<script src="/assets/gemini_live_v1.js?v=2.5.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.3/dist/umd/supabase.js" integrity="sha384-sihuiVHG7vyEIuePVbLI4QpHu1dbhCZe4Zqp0FuqnFeEnyIhF3koyXoBZyfbFsYs" crossorigin="anonymous"></script>
+<script src="/assets/lifeos_auth_v1.js?v=2.0.1"></script>
+<script src="/assets/gemini_live_v1.js?v=2.6.0"></script>
 <!-- LIFEOS_GEMINI_LIVE_PAGE_V1 -->
 <!-- LIFEOS_GEMINI_LIVE_INTERFACE_AUDIO_V3 -->
 <!-- LIFEOS_SYNTHETIC_INTELLIGENCE_IDENTITY_LOCK_V1 -->
