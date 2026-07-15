@@ -2,9 +2,10 @@ import os
 import json
 import time
 import mimetypes
+import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote
+from urllib.parse import unquote, urlsplit
 import uuid
 
 try:
@@ -44,10 +45,74 @@ WEB_DIR = BASE_DIR / "web" / "lifeos_voice"
 WEB_FILE = WEB_DIR / "index.html"
 AUDIO_DIR = WEB_DIR / "audio"
 
+LIFEOS_RELEASE = "lifeos-cost-free-growth-readiness-v2.0.5-20260715"
+DEFAULT_PUBLIC_SITE_ORIGIN = "https://losai.onrender.com"
+LEGACY_PUBLIC_HOSTS = {"lifeos-ai-voice-app.onrender.com"}
+ADSENSE_SELLER_ID = "f08c47fec0942fa0"
+
 HOST = os.environ.get("LIFEOS_HOST", "127.0.0.1")
 PORT = int(os.environ.get("PORT") or os.environ.get("LIFEOS_PORT") or "8787")
 
 AUDIO_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def public_site_origin():
+    """Return a safe, origin-only public URL for canonical links and redirects."""
+    candidate = os.environ.get(
+        "LIFEOS_PUBLIC_SITE_ORIGIN",
+        DEFAULT_PUBLIC_SITE_ORIGIN,
+    ).strip().rstrip("/")
+    try:
+        parsed = urlsplit(candidate)
+        parsed_port = parsed.port
+    except ValueError:
+        return DEFAULT_PUBLIC_SITE_ORIGIN
+    if (
+        parsed.scheme != "https"
+        or not parsed.hostname
+        or parsed.username
+        or parsed.password
+        or parsed.path
+        or parsed.query
+        or parsed.fragment
+    ):
+        return DEFAULT_PUBLIC_SITE_ORIGIN
+    if parsed_port not in (None, 443):
+        return DEFAULT_PUBLIC_SITE_ORIGIN
+    return "https://" + parsed.hostname.lower()
+
+
+def adsense_publisher_id():
+    """Return the public AdSense publisher id only when its format is valid."""
+    candidate = os.environ.get(
+        "LIFEOS_ADSENSE_PUBLISHER_ID",
+        "",
+    ).strip().lower()
+    if candidate.startswith("ca-"):
+        candidate = candidate[3:]
+    if not re.fullmatch(r"pub-[0-9]{16}", candidate):
+        return ""
+    return candidate
+
+
+def adsense_client_id():
+    publisher_id = adsense_publisher_id()
+    return "ca-" + publisher_id if publisher_id else ""
+
+
+def public_monetization_markup():
+    """Build AdSense verification/loader markup for public content pages only."""
+    client_id = adsense_client_id()
+    if not client_id:
+        return ""
+    return (
+        '\n  <meta name="google-adsense-account" content="'
+        + client_id
+        + '">\n  <script async src="https://pagead2.googlesyndication.com/'
+        + "pagead/js/adsbygoogle.js?client="
+        + client_id
+        + '" crossorigin="anonymous"></script>\n'
+    )
 
 
 SYSTEM_STYLE = """
@@ -514,7 +579,7 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
         self.send_header("Expires", "0")
         self.send_header("CDN-Cache-Control", "no-store")
         self.send_header("Surrogate-Control", "no-store")
-        self.send_header("X-LifeOS-Release", "lifeos-premium-public-mobile-v2.0.4-20260714")
+        self.send_header("X-LifeOS-Release", LIFEOS_RELEASE)
         for name, value in (extra_headers or {}).items():
             self.send_header(name, value)
         self.send_header("Content-Length", str(len(body)))
@@ -562,6 +627,36 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
         content_type = mimetypes.guess_type(str(file_path))[0] or "application/octet-stream"
         self._send_bytes(200, file_path.read_bytes(), content_type, extra_headers)
 
+    def _serve_public_file(self, file_path):
+        if not file_path or not file_path.exists() or not file_path.is_file():
+            self._send_bytes(404, b"Not found")
+            return
+        content_type = mimetypes.guess_type(str(file_path))[0] or "application/octet-stream"
+        body = file_path.read_bytes()
+        headers = None
+        if file_path.suffix.lower() == ".html":
+            markup = public_monetization_markup()
+            if markup:
+                page = body.decode("utf-8")
+                if "</head>" in page:
+                    body = page.replace("</head>", markup + "</head>", 1).encode("utf-8")
+            headers = {
+                "X-LifeOS-Monetization": (
+                    "public-enabled" if markup else "not-configured"
+                ),
+            }
+        self._send_bytes(200, body, content_type, headers)
+
+    def _legacy_host_redirected(self):
+        request_host = self.headers.get("Host", "").split(":", 1)[0].strip().lower()
+        if request_host not in LEGACY_PUBLIC_HOSTS:
+            return False
+        request_target = self.path if self.path.startswith("/") else "/"
+        if "\r" in request_target or "\n" in request_target:
+            request_target = "/"
+        self._redirect(public_site_origin() + request_target, status=308)
+        return True
+
     def _redirect(self, location, status=301):
         self._send_bytes(
             status,
@@ -578,6 +673,9 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         path = self._path()
+
+        if self._legacy_host_redirected():
+            return
 
         # LIFEOS_ADMIN_ROUTE_HARD_FIX_V1
         if path in {"/admin", "/admin/", "/admin.html"}:
@@ -597,7 +695,7 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
                         "ok": False,
                         "error": "admin_file_missing",
                         "expected_file": admin_file.name,
-                        "release": "lifeos-premium-public-mobile-v2.0.4-20260714",
+                        "release": LIFEOS_RELEASE,
                     },
                 )
             return
@@ -608,7 +706,7 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
                 200,
                 {
                     "ok": True,
-                    "release": "lifeos-premium-public-mobile-v2.0.4-20260714",
+                    "release": LIFEOS_RELEASE,
                     "multilingual_voice": True,
                     "premium_igbo_priority": True,
                     "premium_voice_output": True,
@@ -622,6 +720,22 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
                     "public_mobile_pwa": True,
                     "branded_black_gold_icon": True,
                     "admin_audit": True,
+                    "final_public_origin": public_site_origin(),
+                    "cost_free_warmup_ready": True,
+                    "cost_free_warmup": "external-monitor-required",
+                    "external_health_probe": public_site_origin() + "/health",
+                    "render_plan": "free",
+                    "render_idle_limit_minutes": 15,
+                    "adsense_readiness": True,
+                    "adsense_configured": bool(adsense_publisher_id()),
+                    "ads_txt_ready": bool(adsense_publisher_id()),
+                    "public_content_monetization_only": True,
+                    "private_surfaces_ad_free": [
+                        "/chat",
+                        "/voice",
+                        "/admin",
+                        "/api/",
+                    ],
                     "server_file": Path(__file__).name,
                     "admin_file": admin_file.name,
                     "admin_exists": admin_file.exists(),
@@ -691,8 +805,27 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
         if path in redirects:
             self._redirect(redirects[path])
             return
+        if path == "/ads.txt":
+            publisher_id = adsense_publisher_id()
+            if not publisher_id:
+                self._send_bytes(
+                    404,
+                    b"AdSense publisher ID is not configured.\n",
+                    "text/plain; charset=utf-8",
+                    {"X-Robots-Tag": "noindex, nofollow, noarchive"},
+                )
+                return
+            body = (
+                "google.com, "
+                + publisher_id
+                + ", DIRECT, "
+                + ADSENSE_SELLER_ID
+                + "\n"
+            ).encode("utf-8")
+            self._send_bytes(200, body, "text/plain; charset=utf-8")
+            return
         if path in public_pages:
-            self._serve_file(WEB_DIR / public_pages[path])
+            self._serve_public_file(WEB_DIR / public_pages[path])
             return
 
         private_headers = {
@@ -722,7 +855,16 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
                 self._send_json(503, {"ok": False, "error": str(error)[:500]})
             return
         if path == "/health":
-            self._send_bytes(200, b"OK", "text/plain; charset=utf-8", private_headers)
+            self._send_bytes(
+                200,
+                b"OK",
+                "text/plain; charset=utf-8",
+                {
+                    **private_headers,
+                    "Cache-Control": "no-store",
+                    "X-LifeOS-Health": "external-monitor-ready",
+                },
+            )
             return
         if path == "/api/gemini-live-status":
             self._send_json(200, gemini_live_status())

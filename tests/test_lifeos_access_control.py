@@ -196,9 +196,9 @@ class GeminiGroundingTests(unittest.TestCase):
 
 
 class InterfaceContractTests(unittest.TestCase):
-    def test_release_diagnostic_identifies_v2_0_4(self):
+    def test_release_diagnostic_identifies_v2_0_5_and_preserves_v2_0_4_features(self):
         application = (ROOT / "app/lifeos_voice_server.py").read_text(encoding="utf-8")
-        self.assertIn("lifeos-premium-public-mobile-v2.0.4-20260714", application)
+        self.assertIn("lifeos-cost-free-growth-readiness-v2.0.5-20260715", application)
         self.assertIn('"premium_igbo_priority": True', application)
         self.assertIn('"premium_voice_output": True', application)
         self.assertIn('"live_google_search": True', application)
@@ -305,7 +305,7 @@ class InterfaceContractTests(unittest.TestCase):
         self.assertIn("Live web search", privacy)
         self.assertIn("Google Search grounding", privacy)
         self.assertIn("does not give Sophia access to private accounts", privacy)
-        self.assertIn("Last updated: 14 July 2026", privacy)
+        self.assertIn("Last updated: 15 July 2026", privacy)
 
     def test_live_goaway_runtime_renewal(self):
         result = subprocess.run(

@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const release = "lifeos-premium-public-mobile-v2.0.4-20260714";
+  const release = "lifeos-cost-free-growth-readiness-v2.0.5-20260715";
   if (!("serviceWorker" in navigator)) return;
 
   window.addEventListener("load", async () => {

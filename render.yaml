@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: lifeos-ai-voice-app
+    name: losai
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt
@@ -11,6 +11,8 @@ services:
         sync: false
       - key: LIFEOS_HOST
         value: 0.0.0.0
+      - key: LIFEOS_PUBLIC_SITE_ORIGIN
+        value: https://losai.onrender.com
       - key: LIFEOS_TTS_VOICE
         value: Despina
       - key: LIFEOS_TTS_MODEL
@@ -28,4 +30,6 @@ services:
       - key: LIFEOS_EMAIL_AUTH_ENABLED
         value: false
       - key: LIFEOS_GOOGLE_AUTH_ENABLED
-        value: false
+        value: true
+      - key: LIFEOS_ADSENSE_PUBLISHER_ID
+        sync: false

@@ -3,8 +3,9 @@ Allow: /
 Disallow: /chat
 Disallow: /voice
 Disallow: /gemini-live
+Disallow: /admin
 Disallow: /api/
 Disallow: /health
 Disallow: /audio/
 
-Sitemap: https://lifeos-ai-voice-app.onrender.com/sitemap.xml
+Sitemap: https://losai.onrender.com/sitemap.xml
