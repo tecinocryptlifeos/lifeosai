@@ -1,5 +1,6 @@
 import json
 import os
+import base64
 import subprocess
 import threading
 import unittest
@@ -70,6 +71,26 @@ class AuthAnalyticsTests(unittest.TestCase):
         self.assertNotIn("conversation_text", captured["metadata"])
         self.assertNotIn("private user message", json.dumps(captured))
 
+    def test_error_audit_stores_only_classified_technical_detail(self):
+        captured = {}
+
+        def fake_rest(table, method="GET", query="", payload=None, prefer="return=minimal"):
+            captured.update(payload or {})
+            return 201, {}
+
+        with mock.patch.object(auth, "_rest", side_effect=fake_rest):
+            auth.record_event(
+                {"id": "user-1", "email": "person@example.com"},
+                {
+                    "event_type": "voice_error",
+                    "error_code": "1008",
+                    "error_message": "private conversation words followed by GoAway",
+                },
+            )
+        self.assertEqual(captured["error_code"], "1008")
+        self.assertEqual(captured["error_message"], "Gemini Live connection closed with code 1008.")
+        self.assertNotIn("private conversation", json.dumps(captured))
+
     def test_admin_email_matching_is_case_insensitive(self):
         with mock.patch.dict(os.environ, {"LIFEOS_ADMIN_EMAILS": "Owner@Example.com,second@example.com"}, clear=True):
             self.assertTrue(auth.is_admin({"email": "owner@example.com"}))
@@ -91,6 +112,22 @@ class AuthAnalyticsTests(unittest.TestCase):
         self.assertEqual(captured["apikey"], "sb_secret_server-test")
         self.assertNotIn("Authorization", captured)
 
+    def test_new_secret_key_is_not_sent_as_bearer_to_auth_admin(self):
+        captured = {}
+
+        def fake_request(url, method="GET", headers=None, payload=None, timeout=15):
+            captured.update(headers or {})
+            return 200, {"users": []}
+
+        environment = {
+            "SUPABASE_URL": "https://example.supabase.co",
+            "SUPABASE_SECRET_KEY": "sb_secret_server-test",
+        }
+        with mock.patch.dict(os.environ, environment, clear=True), mock.patch.object(auth, "_request", side_effect=fake_request):
+            auth._auth_users()
+        self.assertEqual(captured["apikey"], "sb_secret_server-test")
+        self.assertNotIn("Authorization", captured)
+
     def test_legacy_service_role_key_remains_a_bearer_jwt(self):
         captured = {}
 
@@ -105,6 +142,71 @@ class AuthAnalyticsTests(unittest.TestCase):
         with mock.patch.dict(os.environ, environment, clear=True), mock.patch.object(auth, "_request", side_effect=fake_request):
             auth._rest("lifeos_events")
         self.assertEqual(captured["Authorization"], "Bearer legacy-jwt-test")
+
+    def test_blocked_and_admin_revoked_tokens_fail_closed(self):
+        with self.assertRaisesRegex(PermissionError, "blocked"):
+            auth._enforce_lifeos_access(
+                {"app_metadata": {"lifeos_access_blocked": True}},
+                "header.payload.signature",
+            )
+
+        claims = base64.urlsafe_b64encode(json.dumps({"iat": 100}).encode()).decode().rstrip("=")
+        with self.assertRaisesRegex(PermissionError, "signed out"):
+            auth._enforce_lifeos_access(
+                {"app_metadata": {"lifeos_session_not_before": 100}},
+                "header." + claims + ".signature",
+            )
+
+    def test_admin_can_block_a_non_admin_without_exposing_conversation_data(self):
+        target_id = "00000000-0000-4000-8000-000000000002"
+        target = {
+            "id": target_id,
+            "email": "visitor@example.com",
+            "app_metadata": {},
+        }
+        captured = {}
+
+        def fake_admin(path, method="GET", payload=None):
+            captured.update({"path": path, "method": method, "payload": payload})
+            return 200, {**target, **(payload or {})}
+
+        with mock.patch.dict(os.environ, {"LIFEOS_ADMIN_EMAILS": "owner@example.com"}, clear=True), \
+                mock.patch.object(auth, "_auth_user", return_value=target), \
+                mock.patch.object(auth, "_auth_admin_request", side_effect=fake_admin), \
+                mock.patch.object(auth, "record_event") as record:
+            result = auth.manage_user(
+                {"id": "00000000-0000-4000-8000-000000000001", "email": "owner@example.com"},
+                {"action": "block", "user_id": target_id, "conversation_text": "must never be stored"},
+            )
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(captured["method"], "PUT")
+        self.assertEqual(captured["payload"]["ban_duration"], "876000h")
+        self.assertTrue(captured["payload"]["app_metadata"]["lifeos_access_blocked"])
+        self.assertNotIn("conversation_text", json.dumps(captured))
+        self.assertEqual(record.call_args.args[1]["event_type"], "admin_block")
+
+    def test_admin_cannot_manage_self_or_another_admin(self):
+        actor = {
+            "id": "00000000-0000-4000-8000-000000000001",
+            "email": "owner@example.com",
+        }
+        with mock.patch.dict(os.environ, {"LIFEOS_ADMIN_EMAILS": "owner@example.com"}, clear=True), \
+                mock.patch.object(auth, "_auth_user", return_value=actor):
+            with self.assertRaisesRegex(PermissionError, "own access"):
+                auth.manage_user(actor, {"action": "block", "user_id": actor["id"]})
+
+    def test_error_drilldown_explains_gemini_goaway(self):
+        insight = auth._error_insight({
+            "id": "error-1",
+            "event_type": "voice_error",
+            "error_code": "1008",
+            "error_message": "GoAway signal received",
+            "metadata": {"route": "/voice"},
+        })
+        self.assertIn("session handover", insight["explanation"])
+        self.assertIn("automatic renewal", insight["recommended_action"])
+        self.assertEqual(insight["route"], "/voice")
 
 
 class ProtectedRouteTests(unittest.TestCase):
@@ -137,6 +239,7 @@ class ProtectedRouteTests(unittest.TestCase):
     def test_every_sophia_endpoint_rejects_anonymous_requests(self):
         routes = [
             ("GET", "/api/admin-dashboard", None, {}),
+            ("GET", "/api/session-status", None, {}),
             ("GET", "/audio/not-present.wav", None, {}),
             ("POST", "/api/gemini-live-token", b"{}", {"Content-Type": "application/json"}),
             ("POST", "/api/realtime-session", b"v=0", {"Content-Type": "application/sdp"}),
@@ -144,6 +247,7 @@ class ProtectedRouteTests(unittest.TestCase):
             ("POST", "/api/voice-read", b"{}", {"Content-Type": "application/json"}),
             ("POST", "/api/text-audit", b"{}", {"Content-Type": "application/json"}),
             ("POST", "/api/analytics-event", b"{}", {"Content-Type": "application/json"}),
+            ("POST", "/api/admin-user-action", b"{}", {"Content-Type": "application/json"}),
         ]
         with mock.patch.object(server, "verify_user", side_effect=PermissionError("Sign-in is required")):
             for method, path, body, headers in routes:
@@ -196,9 +300,9 @@ class GeminiGroundingTests(unittest.TestCase):
 
 
 class InterfaceContractTests(unittest.TestCase):
-    def test_release_diagnostic_identifies_v2_0_5_and_preserves_v2_0_4_features(self):
+    def test_release_diagnostic_identifies_v2_0_6_and_preserves_v2_0_5_features(self):
         application = (ROOT / "app/lifeos_voice_server.py").read_text(encoding="utf-8")
-        self.assertIn("lifeos-cost-free-growth-readiness-v2.0.5-20260715", application)
+        self.assertIn("lifeos-admin-chat-voice-control-v2.0.6-20260715", application)
         self.assertIn('"premium_igbo_priority": True', application)
         self.assertIn('"premium_voice_output": True', application)
         self.assertIn('"live_google_search": True', application)
@@ -209,6 +313,10 @@ class InterfaceContractTests(unittest.TestCase):
         self.assertIn('"premium_multilingual_chat": True', application)
         self.assertIn('"public_mobile_pwa": True', application)
         self.assertIn('"branded_black_gold_icon": True', application)
+        self.assertIn('"admin_error_drilldown": True', application)
+        self.assertIn('"responsive_chat_layout": "mobile-and-desktop"', application)
+        self.assertIn('"incremental_chat_delivery": True', application)
+        self.assertIn('"voice_volume_control": True', application)
 
     def test_chat_has_premium_igbo_search_and_source_display(self):
         application = (ROOT / "app/lifeos_voice_server.py").read_text(encoding="utf-8")
@@ -268,7 +376,7 @@ class InterfaceContractTests(unittest.TestCase):
         self.assertIn("sessionResumption:sessionResumeHandle?{handle:sessionResumeHandle}:{}", controller)
         self.assertIn("contextWindowCompression:{slidingWindow:{}}", controller)
         self.assertIn("handleMessage(event,nextSocket,resuming)", controller)
-        self.assertIn('version:"2.8.0"', controller)
+        self.assertIn('version:"2.9.0"', controller)
 
     def test_premium_igbo_policy_is_explicit_and_does_not_guess(self):
         controller = (ROOT / "web/lifeos_voice/assets/gemini_live_v1.js").read_text(encoding="utf-8")
@@ -293,12 +401,14 @@ class InterfaceContractTests(unittest.TestCase):
 
     def test_premium_voice_output_is_louder_and_limiter_protected(self):
         controller = (ROOT / "web/lifeos_voice/assets/gemini_live_v1.js").read_text(encoding="utf-8")
-        self.assertIn("const PREMIUM_OUTPUT_LEVEL=1.2", controller)
+        self.assertIn("const PREMIUM_OUTPUT_LEVEL=1.25", controller)
+        self.assertIn("DEFAULT_OUTPUT_VOLUME_PERCENT=130", controller)
         self.assertIn("outputMakeup.gain.value=2.05", controller)
         self.assertIn("outputLimiter.threshold.value=-1", controller)
         self.assertIn("outputLimiter.ratio.value=20", controller)
-        self.assertIn("const targetRms=.23", controller)
-        self.assertIn("Math.min(3.2,rmsGain,peakGain)", controller)
+        self.assertIn("const targetRms=.27", controller)
+        self.assertIn("Math.min(3.4,rmsGain,peakGain)", controller)
+        self.assertIn('id="volumeControl"', (ROOT / "web/lifeos_voice/gemini_live.html").read_text(encoding="utf-8"))
 
     def test_live_search_has_a_public_privacy_disclosure(self):
         privacy = (ROOT / "web/lifeos_voice/privacy.html").read_text(encoding="utf-8")
@@ -322,8 +432,44 @@ class InterfaceContractTests(unittest.TestCase):
     def test_voice_connection_cue_is_audible_and_status_is_explicit(self):
         controller = (ROOT / "web/lifeos_voice/assets/gemini_live_v1.js").read_text(encoding="utf-8")
         self.assertIn("Sophia is connecting to LifeOS Synthetic Intelligence", controller)
-        self.assertIn("scheduleCueTone(523.25,now,.16,.072", controller)
+        self.assertIn("scheduleCueTone(523.25,now,.16,.22", controller)
+        self.assertIn("envelope.connect(outputLimiter)", controller)
+        self.assertIn("await playConnectingCue()", controller)
         self.assertIn("await playConnectionCue()", controller)
+
+    def test_chat_has_separate_mobile_desktop_layout_and_incremental_reveal(self):
+        page = (ROOT / "web/lifeos_voice/chat.html").read_text(encoding="utf-8")
+        delivery = (ROOT / "web/lifeos_voice/assets/lifeos_chat_delivery_v2.js").read_text(encoding="utf-8")
+        self.assertIn("@media (max-width:767px)", page)
+        self.assertIn("@media (min-width:1100px)", page)
+        self.assertIn("grid-template-columns:minmax(280px,340px) minmax(0,1fr)", page)
+        self.assertIn("LifeOSChatDelivery.reveal", page)
+        self.assertIn("splitForReveal", delivery)
+        self.assertIn('node.textContent += piece', delivery)
+
+    def test_incremental_chat_delivery_runtime(self):
+        result = subprocess.run(
+            ["node", str(ROOT / "tests/test_chat_delivery.js")],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("incremental chat delivery simulation passed", result.stdout)
+
+    def test_admin_interface_has_error_drilldown_and_safe_user_controls(self):
+        page = (ROOT / "web/lifeos_voice/admin.html").read_text(encoding="utf-8")
+        controller = (ROOT / "web/lifeos_voice/assets/lifeos_admin_v1.js").read_text(encoding="utf-8")
+        self.assertIn('id="errorsPanel"', page)
+        self.assertIn('id="errorDialog"', page)
+        self.assertIn('id="usersPanel"', page)
+        self.assertIn("/api/admin-user-action", controller)
+        self.assertIn('requestUserAction(user, "sign_out")', controller)
+        self.assertIn('requestUserAction(user, "block")', controller)
+        self.assertIn('requestUserAction(user, "unblock")', controller)
+        self.assertNotIn("innerHTML", controller)
 
     def test_initial_oauth_session_is_audited_once(self):
         controller = (ROOT / "web/lifeos_voice/assets/lifeos_auth_v1.js").read_text(encoding="utf-8")
@@ -342,7 +488,7 @@ class InterfaceContractTests(unittest.TestCase):
             with self.subTest(relative=relative):
                 self.assertIn("data-lifeos-auth-gate", page)
                 self.assertIn("data-lifeos-protected", page)
-                self.assertIn("lifeos_auth_v1.js?v=2.0.2", page)
+                self.assertIn("lifeos_auth_v1.js?v=2.0.6", page)
 
 
 if __name__ == "__main__":

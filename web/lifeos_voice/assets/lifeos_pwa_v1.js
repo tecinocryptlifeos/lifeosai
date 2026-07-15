@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const release = "lifeos-cost-free-growth-readiness-v2.0.5-20260715";
+  const release = "lifeos-admin-chat-voice-control-v2.0.6-20260715";
   if (!("serviceWorker" in navigator)) return;
 
   window.addEventListener("load", async () => {

@@ -4,7 +4,9 @@
   const state = { client: null, session: null, config: null, ready: false };
   const signInAuditPending = new Set();
   const SIGN_IN_AUDIT_KEY = "lifeos-sign-in-audit-v1";
+  const ACCESS_CHECK_INTERVAL_MS = 30000;
   let resolveReady;
+  let accessCheckTimer = 0;
   const readyPromise = new Promise(resolve => { resolveReady = resolve; });
   const $ = id => document.getElementById(id);
   const all = selector => Array.from(document.querySelectorAll(selector));
@@ -161,6 +163,45 @@
     }));
   }
 
+  async function clearRevokedSession(reason) {
+    if (!state.session) return;
+    setMessage(reason || "Your LifeOS session ended. Sign in again.", "warning");
+    window.dispatchEvent(new CustomEvent("lifeos-access-revoked", {
+      detail: { reason: reason || "Access revoked" },
+    }));
+    try {
+      const result = await state.client?.auth?.signOut?.({ scope: "local" });
+      if (result?.error) console.warn("LifeOS local session cleanup reported an error", result.error);
+    } catch (error) {
+      console.warn("LifeOS local session cleanup was incomplete", error);
+    }
+    state.session = null;
+    render();
+    notifyAuthChange();
+  }
+
+  async function checkAccess() {
+    const token = accessToken();
+    if (!token || document.visibilityState === "hidden") return true;
+    try {
+      const response = await fetch("/api/session-status", {
+        cache: "no-store",
+        headers: { "Authorization": "Bearer " + token },
+      });
+      if (response.status !== 401 && response.status !== 403) return response.ok;
+      const data = await response.json().catch(() => ({}));
+      await clearRevokedSession(data.error);
+      return false;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function scheduleAccessChecks() {
+    window.clearInterval(accessCheckTimer);
+    accessCheckTimer = window.setInterval(() => { void checkAccess(); }, ACCESS_CHECK_INTERVAL_MS);
+  }
+
   async function init() {
     try {
       const config = await loadConfig();
@@ -193,6 +234,7 @@
         void auditSignInOnce();
         void event("page_view", { metadata: { route: location.pathname } });
       }
+      scheduleAccessChecks();
     } catch (error) {
       state.config = state.config || { configured: false, auth_required: true };
       finishReady();
@@ -247,19 +289,27 @@
     await readyPromise;
     const token = accessToken();
     if (!token) throw new Error("Sign in before using Sophia.");
-    return fetch(url, {
+    const response = await fetch(url, {
       ...options,
       headers: {
         ...(options.headers || {}),
         "Authorization": "Bearer " + token,
       },
     });
+    if (response.status === 401 || response.status === 403) {
+      const data = await response.clone().json().catch(() => ({}));
+      if (/blocked|signed out by an administrator|invalid or expired/i.test(data.error || "")) {
+        void clearRevokedSession(data.error);
+      }
+    }
+    return response;
   }
 
   window.LifeOSAuth = {
     init,
     event,
     authFetch,
+    checkAccess,
     whenReady: () => readyPromise,
     get session() { return state.session; },
     get config() { return state.config; },
@@ -275,5 +325,9 @@
     });
     $("googleSignIn")?.addEventListener("click", () => { void googleSignIn(); });
     $("signOut")?.addEventListener("click", () => { void signOut(); });
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") void checkAccess();
+    });
+    window.addEventListener("focus", () => { void checkAccess(); });
   });
 })();

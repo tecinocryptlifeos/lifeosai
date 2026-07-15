@@ -28,12 +28,13 @@ class FakeElement {
   async play() {}
 }
 
+const scheduledRampValues = [];
 function audioParam(value = 0) {
   return {
     value,
     setTargetAtTime() {},
     setValueAtTime() {},
-    exponentialRampToValueAtTime() {},
+    exponentialRampToValueAtTime(nextValue) { scheduledRampValues.push(nextValue); },
   };
 }
 
@@ -189,6 +190,7 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
 async function main() {
   await window.LifeOSGeminiLiveV1.start();
   assert.equal(sockets.length, 1, "the initial connection should be created");
+  assert.equal(oscillatorStarts, 1, "starting should play one quiet progress tone");
 
   const first = sockets[0];
   first.open();
@@ -203,7 +205,8 @@ async function main() {
   await flush();
   await flush();
   assert.equal(microphoneRequests, 1, "the microphone should open once");
-  assert.equal(oscillatorStarts, 3, "the initial connection cue should contain three tones");
+  assert.equal(oscillatorStarts, 4, "the connected cue should add three clear tones");
+  assert.ok(Math.max(...scheduledRampValues) >= 0.22, "the connected cue must reach an audible protected level");
 
   first.message({
     sessionResumptionUpdate: { resumable: true, newHandle: "resume-handle-1" },
@@ -230,7 +233,7 @@ async function main() {
   await flush();
   await flush();
   assert.equal(microphoneRequests, 1, "renewal must reuse the existing microphone stream");
-  assert.equal(oscillatorStarts, 6, "the resumed connection should play the connected cue");
+  assert.equal(oscillatorStarts, 7, "the resumed connection should play the connected cue");
   assert.match(elements.get("status").textContent, /resumed/i);
 
   window.LifeOSGeminiLiveV1.stop();

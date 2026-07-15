@@ -9,9 +9,9 @@ from urllib.parse import unquote, urlsplit
 import uuid
 
 try:
-    from lifeos_auth_analytics import public_config, verify_user, record_event, admin_dashboard
+    from lifeos_auth_analytics import public_config, verify_user, record_event, admin_dashboard, manage_user
 except ImportError:
-    from app.lifeos_auth_analytics import public_config, verify_user, record_event, admin_dashboard
+    from app.lifeos_auth_analytics import public_config, verify_user, record_event, admin_dashboard, manage_user
 
 
 # LIFEOS_GEMINI_LIVE_V1_IMPORT_START
@@ -45,7 +45,7 @@ WEB_DIR = BASE_DIR / "web" / "lifeos_voice"
 WEB_FILE = WEB_DIR / "index.html"
 AUDIO_DIR = WEB_DIR / "audio"
 
-LIFEOS_RELEASE = "lifeos-cost-free-growth-readiness-v2.0.5-20260715"
+LIFEOS_RELEASE = "lifeos-admin-chat-voice-control-v2.0.6-20260715"
 DEFAULT_PUBLIC_SITE_ORIGIN = "https://losai.onrender.com"
 LEGACY_PUBLIC_HOSTS = {"lifeos-ai-voice-app.onrender.com"}
 ADSENSE_SELLER_ID = "f08c47fec0942fa0"
@@ -720,6 +720,11 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
                     "public_mobile_pwa": True,
                     "branded_black_gold_icon": True,
                     "admin_audit": True,
+                    "admin_error_drilldown": True,
+                    "admin_user_controls": ["sign_out", "block", "unblock"],
+                    "responsive_chat_layout": "mobile-and-desktop",
+                    "incremental_chat_delivery": True,
+                    "voice_volume_control": True,
                     "final_public_origin": public_site_origin(),
                     "cost_free_warmup_ready": True,
                     "cost_free_warmup": "external-monitor-required",
@@ -853,6 +858,12 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
                 self._send_json(403, {"ok": False, "error": str(error)})
             except Exception as error:
                 self._send_json(503, {"ok": False, "error": str(error)[:500]})
+            return
+        if path == "/api/session-status":
+            user = self._require_user()
+            if not user:
+                return
+            self._send_json(200, {"ok": True, "user_id": user.get("id")})
             return
         if path == "/health":
             self._send_bytes(
@@ -1351,6 +1362,24 @@ Core response rules:
                 payload = json.loads(self.rfile.read(length).decode("utf-8"))
                 client_ip = (self.headers.get("X-Forwarded-For", "").split(",", 1)[0].strip() or (self.client_address[0] if self.client_address else ""))
                 self._send_json(200, record_event(user, payload, client_ip))
+            except (ValueError, json.JSONDecodeError) as error:
+                self._send_json(400, {"ok": False, "error": str(error)[:500]})
+            except Exception as error:
+                self._send_json(503, {"ok": False, "error": str(error)[:500]})
+            return
+
+        if path == "/api/admin-user-action":
+            user = self._require_user()
+            if not user:
+                return
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+                if length < 1 or length > 4000:
+                    raise ValueError("Invalid request body")
+                payload = json.loads(self.rfile.read(length).decode("utf-8"))
+                self._send_json(200, manage_user(user, payload))
+            except PermissionError as error:
+                self._send_json(403, {"ok": False, "error": str(error)})
             except (ValueError, json.JSONDecodeError) as error:
                 self._send_json(400, {"ok": False, "error": str(error)[:500]})
             except Exception as error:

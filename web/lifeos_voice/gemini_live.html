@@ -800,6 +800,11 @@ html.lifeos-voice-page-hidden .orb::after {
     <button id="speakerButton" class="control active" type="button" disabled>Speaker On</button>
     <button id="outputButton" class="control" type="button">Audio Output</button>
   </div>
+  <label class="lifeos-volume-control" for="volumeControl">
+    <span>Sophia volume</span>
+    <input id="volumeControl" type="range" min="80" max="160" step="5" value="130" aria-describedby="volumeValue">
+    <output id="volumeValue" for="volumeControl">130%</output>
+  </label>
   <div id="status" role="status" aria-live="polite">Ready</div>
   <div id="searchAttribution" class="search-attribution" aria-label="Web sources used by Sophia" hidden></div>
   <div id="outputLabel">Output: phone default</div>
@@ -824,8 +829,13 @@ html.lifeos-voice-page-hidden .orb::after {
 <!-- LIFEOS_MULTILINGUAL_VOICE_INTELLIGENCE_V2 -->
 <!-- LIFEOS_STAGE2_AUDIO_OUTPUT_REPAIR_V1 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.3/dist/umd/supabase.js" integrity="sha384-sihuiVHG7vyEIuePVbLI4QpHu1dbhCZe4Zqp0FuqnFeEnyIhF3koyXoBZyfbFsYs" crossorigin="anonymous"></script>
-<script src="/assets/lifeos_auth_v1.js?v=2.0.2"></script>
-<script src="/assets/gemini_live_v1.js?v=2.8.0"></script>
+<style id="lifeos-premium-volume-v206">
+.lifeos-volume-control{order:6!important;width:min(100%,620px);margin:2px auto 0;padding:11px 14px;display:grid;grid-template-columns:auto minmax(120px,1fr) auto;align-items:center;gap:12px;border:1px solid rgba(234,190,83,.34);border-radius:14px;background:rgba(5,7,12,.82);color:#fff0c4;font-size:12px;font-weight:800}
+.lifeos-volume-control input{width:100%;accent-color:#eabe53}.lifeos-volume-control output{min-width:42px;color:#eabe53;text-align:right}.lifeos-volume-control:focus-within{border-color:#eabe53;box-shadow:0 0 0 3px rgba(234,190,83,.12)}
+@media(max-width:520px){.lifeos-volume-control{grid-template-columns:1fr auto}.lifeos-volume-control input{grid-column:1/-1;grid-row:2}}
+</style>
+<script src="/assets/lifeos_auth_v1.js?v=2.0.6"></script>
+<script src="/assets/gemini_live_v1.js?v=2.9.0"></script>
 <!-- LIFEOS_GEMINI_LIVE_PAGE_V1 -->
 <!-- LIFEOS_GEMINI_LIVE_INTERFACE_AUDIO_V3 -->
 <!-- LIFEOS_SYNTHETIC_INTELLIGENCE_IDENTITY_LOCK_V1 -->
@@ -840,6 +850,6 @@ html.lifeos-voice-page-hidden .orb::after {
 <!-- LIFEOS_VOICE_HEADING_COLOR_MIX_V3 -->
 <!-- LIFEOS_VOICE_AGENT_REFERENCE_V5 -->
 
-<script src="/assets/lifeos_pwa_v1.js?v=2.0.5" defer></script>
+<script src="/assets/lifeos_pwa_v1.js?v=2.0.6" defer></script>
 </body>
 </html>

@@ -984,6 +984,7 @@ textarea{
     </section>
   </main>
 
+<script src="/assets/lifeos_chat_delivery_v2.js?v=2.0.6"></script>
 <script>
 const messagesBox = document.getElementById("messages");
 const input = document.getElementById("input");
@@ -1018,32 +1019,36 @@ function saveThread() {
   localStorage.setItem(THREADS, JSON.stringify(threads.slice(0, 20)));
 }
 
+function appendLifeOSSources(div, sourcesValue) {
+  if (!Array.isArray(sourcesValue) || !sourcesValue.length) return;
+  const sources = document.createElement("div");
+  sources.className = "web-sources";
+  const heading = document.createElement("strong");
+  heading.textContent = "Web sources";
+  sources.appendChild(heading);
+  sourcesValue.slice(0, 5).forEach(source => {
+    try {
+      const url = new URL(String(source.url || ""));
+      if (!/^https?:$/.test(url.protocol)) return;
+      const link = document.createElement("a");
+      link.href = url.href;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = String(source.title || url.hostname).slice(0, 180);
+      sources.appendChild(link);
+    } catch (error) {}
+  });
+  if (sources.children.length > 1) div.appendChild(sources);
+}
+
 function render() {
   messagesBox.innerHTML = "";
-  current.forEach(m => {
+  current.forEach((m, index) => {
     const div = document.createElement("div");
     div.className = "msg " + (m.role === "user" ? "user" : "assistant");
+    div.dataset.messageIndex = String(index);
     div.textContent = m.content;
-    if (m.role === "assistant" && Array.isArray(m.sources) && m.sources.length) {
-      const sources = document.createElement("div");
-      sources.className = "web-sources";
-      const heading = document.createElement("strong");
-      heading.textContent = "Web sources";
-      sources.appendChild(heading);
-      m.sources.slice(0, 5).forEach(source => {
-        try {
-          const url = new URL(String(source.url || ""));
-          if (!/^https?:$/.test(url.protocol)) return;
-          const link = document.createElement("a");
-          link.href = url.href;
-          link.target = "_blank";
-          link.rel = "noopener noreferrer";
-          link.textContent = String(source.title || url.hostname).slice(0, 180);
-          sources.appendChild(link);
-        } catch (error) {}
-      });
-      if (sources.children.length > 1) div.appendChild(sources);
-    }
+    if (m.role === "assistant") appendLifeOSSources(div, m.sources);
     messagesBox.appendChild(div);
   });
   messagesBox.scrollTop = messagesBox.scrollHeight;
@@ -1118,8 +1123,27 @@ async function sendMessage(voiceTriggered = false) {
   }
   lifeosChatController = null;
 
+  const responseNode = messagesBox.querySelector(
+    `[data-message-index="${current.indexOf(loading)}"]`
+  );
+  if (responseNode) {
+    if (window.LifeOSChatDelivery?.reveal) {
+      await window.LifeOSChatDelivery.reveal(responseNode, loading.content, {
+        delay: 24,
+        onProgress: () => {
+          messagesBox.scrollTop = messagesBox.scrollHeight;
+        }
+      });
+    } else {
+      responseNode.textContent = loading.content;
+    }
+    appendLifeOSSources(responseNode, loading.sources);
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+  } else {
+    render();
+  }
+
   save();
-  render();
 
   if (!window.LifeOSAuth?.session) {
     lifeosSending = false;
@@ -3380,7 +3404,56 @@ html body.lifeos-vc-on #lifeosVC .vcOrb.ai-speaking #lifeosVCLogo {
 
 <!-- LIFEOS_LOGO_HOME_AND_VOICE_ROUTE_REPAIR_V1 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.3/dist/umd/supabase.js" integrity="sha384-sihuiVHG7vyEIuePVbLI4QpHu1dbhCZe4Zqp0FuqnFeEnyIhF3koyXoBZyfbFsYs" crossorigin="anonymous"></script>
-<script src="/assets/lifeos_auth_v1.js?v=2.0.2"></script>
-<script src="/assets/lifeos_pwa_v1.js?v=2.0.5" defer></script>
+<style id="lifeos-chat-responsive-v206">
+html body #chatApp.app{width:min(100%,560px)!important;min-height:calc(100dvh - 20px)!important;background:rgba(3,3,5,.36)!important}
+html body #chatApp .inner{min-height:calc(100dvh - 20px)!important;display:flex!important;flex-direction:column!important;padding:clamp(12px,3.5vw,18px)!important;gap:12px!important}
+html body #chatApp .chat{min-width:0!important;min-height:0!important}
+html body #chatApp .messages{min-height:260px!important;max-height:none!important;overscroll-behavior:contain}
+html body #chatApp .msg.lifeos-revealing::after{content:"";display:inline-block;width:.5em;height:1em;margin-left:3px;vertical-align:-.12em;border-right:2px solid var(--gold);animation:lifeosTypingCaret .72s steps(1,end) infinite}
+@keyframes lifeosTypingCaret{50%{opacity:0}}
+
+@media (max-width:767px){
+  html body{padding:0!important;align-items:stretch!important}
+  html body #chatApp.app{width:100%!important;min-height:100dvh!important;border-width:0!important;border-radius:0!important}
+  html body #chatApp .inner{min-height:100dvh!important;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))!important}
+  html body #chatApp .topbar{align-items:flex-start!important}
+  html body #chatApp .hero{padding-top:2px!important}
+  html body #chatApp .hero h1{font-size:clamp(24px,7vw,32px)!important}
+  html body #chatApp .chat{flex:1 1 auto!important;padding:10px!important;border-radius:20px!important}
+  html body #chatApp .messages{flex:1 1 42dvh!important;min-height:38dvh!important;height:auto!important}
+  html body #chatApp .composer{position:sticky!important;bottom:0!important;z-index:8!important;padding:8px 0 0!important;background:linear-gradient(180deg,transparent,#07080d 24%)!important}
+  html body #chatApp .msg{max-width:94%!important;font-size:14px!important}
+  html body #chatApp footer{padding-bottom:env(safe-area-inset-bottom)!important}
+  html body .lifeos-chat-character-visible{width:100vw!important;opacity:.14!important;background-size:auto 76%!important;background-position:72% top!important}
+}
+
+@media (min-width:768px) and (max-width:1099px){
+  html body #chatApp.app{width:min(920px,calc(100% - 28px))!important}
+  html body #chatApp .inner{min-height:calc(100dvh - 28px)!important}
+  html body #chatApp .messages{min-height:48dvh!important}
+}
+
+@media (min-width:1100px){
+  html body{display:block!important;padding:22px!important}
+  html body #chatApp.app{width:min(1480px,calc(100vw - 44px))!important;min-height:calc(100dvh - 44px)!important;margin:0 auto!important;border-radius:28px!important}
+  html body #chatApp.app::before{background:linear-gradient(90deg,rgba(3,3,6,.84) 0%,rgba(3,3,6,.58) 43%,rgba(3,3,6,.76) 100%),url("/assets/lifeos-bg.jpg?v=1781879659") center/cover no-repeat!important;opacity:.88!important}
+  html body #chatApp .inner{min-height:calc(100dvh - 44px)!important;display:grid!important;grid-template-columns:minmax(280px,340px) minmax(0,1fr)!important;grid-template-rows:auto minmax(0,1fr) auto!important;gap:18px!important;padding:22px!important}
+  html body #chatApp .topbar{grid-column:1/-1!important}
+  html body #chatApp .hero{grid-column:1!important;grid-row:2!important;align-self:start!important;padding:clamp(28px,7vh,78px) 10px 0 4px!important}
+  html body #chatApp .hero h1{font-size:clamp(34px,3.2vw,56px)!important;line-height:1.01!important}
+  html body #chatApp .hero .intro{font-size:15px!important;max-width:30ch!important}
+  html body #chatApp .chat{grid-column:2!important;grid-row:2/4!important;min-height:calc(100dvh - 150px)!important;padding:18px!important;border-radius:25px!important;background:rgba(5,7,12,.76)!important;backdrop-filter:blur(15px)!important}
+  html body #chatApp .messages{min-height:0!important;height:calc(100dvh - 330px)!important;max-height:none!important;padding:6px 8px 6px 2px!important}
+  html body #chatApp .msg{max-width:min(80%,820px)!important;font-size:15px!important;padding:13px 15px!important}
+  html body #chatApp .composer{padding-top:10px!important}
+  html body #chatApp textarea{min-height:58px!important;max-height:150px!important}
+  html body #chatApp footer{grid-column:1!important;grid-row:3!important;align-self:end!important;text-align:left!important;padding:0 12px 4px 4px!important;max-width:35ch!important}
+  html body .lifeos-chat-character-visible{width:min(48vw,760px)!important;opacity:.23!important;background-size:auto 92%!important;background-position:right center!important}
+}
+
+@media (prefers-reduced-motion:reduce){html body #chatApp .msg.lifeos-revealing::after{animation:none!important}}
+</style>
+<script src="/assets/lifeos_auth_v1.js?v=2.0.6"></script>
+<script src="/assets/lifeos_pwa_v1.js?v=2.0.6" defer></script>
 </body>
 </html>

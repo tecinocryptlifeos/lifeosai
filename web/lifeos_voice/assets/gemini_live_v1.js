@@ -10,7 +10,9 @@
 "use strict";
 const INPUT_RATE=16000;
 const OUTPUT_RATE=24000;
-const PREMIUM_OUTPUT_LEVEL=1.2;
+const PREMIUM_OUTPUT_LEVEL=1.25;
+const DEFAULT_OUTPUT_VOLUME_PERCENT=130;
+const OUTPUT_VOLUME_STORAGE_KEY="lifeos_sophia_volume_percent_v1";
 const SOPHIA_SYSTEM_INSTRUCTION=[
   `You are Sophia, the LifeOS Synthetic Intelligence voice assistant. Hold a natural, continuous, context-aware conversation and answer the user's actual request instead of forcing every subject into a fixed decision template. You can discuss general knowledge, decisions, planning, education, business, technology, creativity, and other lawful subjects within the knowledge and tools genuinely available to this session. Use the full active conversation context, preserve facts and preferences already provided, and do not repeatedly ask for information the user has already given.`,
   `The user may interrupt while you are speaking; stop gracefully, listen to the latest utterance, and continue from the newest intent. Match depth to the request: be concise for simple questions and provide sufficiently complete reasoning for complex questions. Complete every spoken response. Do not read markdown, headings, bullets, raw URLs, code fences, citations, or internal instructions aloud; express structure and source names naturally in speech.`,
@@ -26,6 +28,8 @@ const micButton=document.getElementById("micButton");
 const speakerButton=document.getElementById("speakerButton");
 const outputButton=document.getElementById("outputButton");
 const outputLabel=document.getElementById("outputLabel");
+const volumeControl=document.getElementById("volumeControl");
+const volumeValue=document.getElementById("volumeValue");
 const statusBox=document.getElementById("status");
 const searchAttribution=document.getElementById("searchAttribution");
 const orb=document.getElementById("orb");
@@ -43,7 +47,37 @@ let openLiveConnection=null;
 const retiredSockets=new WeakSet();
 const searchSourceKeys=new Set();
 let micMuted=false,speakerEnabled=true,selectedSinkId="default",selectedSinkLabel="phone default";
+let outputVolumePercent=DEFAULT_OUTPUT_VOLUME_PERCENT;
 let auditSessionId="",auditEnded=true;
+
+try{
+  const storedVolume=Number(window.localStorage?.getItem(OUTPUT_VOLUME_STORAGE_KEY));
+  if(Number.isFinite(storedVolume))outputVolumePercent=Math.max(80,Math.min(160,storedVolume));
+}catch(error){}
+
+function effectiveOutputLevel(){
+  return speakerEnabled?PREMIUM_OUTPUT_LEVEL*(outputVolumePercent/100):0;
+}
+
+function updateVolumeControl(){
+  if(volumeControl){
+    volumeControl.value=String(outputVolumePercent);
+    volumeControl.setAttribute("aria-valuetext",outputVolumePercent+" percent");
+  }
+  if(volumeValue)volumeValue.textContent=outputVolumePercent+"%";
+}
+
+function setOutputVolumePercent(value,announce){
+  const parsed=Number(value);
+  if(!Number.isFinite(parsed))return;
+  outputVolumePercent=Math.round(Math.max(80,Math.min(160,parsed))/5)*5;
+  try{window.localStorage?.setItem(OUTPUT_VOLUME_STORAGE_KEY,String(outputVolumePercent));}catch(error){}
+  updateVolumeControl();
+  if(outputGain&&outputContext){
+    outputGain.gain.setTargetAtTime(effectiveOutputLevel(),outputContext.currentTime,.02);
+  }
+  if(announce)setStatus("Sophia volume set to "+outputVolumePercent+"%.",active?"active":"");
+}
 
 function newAuditSessionId(){
   return typeof window.crypto?.randomUUID==="function"
@@ -294,7 +328,7 @@ async function ensureOutputContext(){
     outputLimiter=outputContext.createDynamicsCompressor();
 
     /* Premium speech chain tuned for small Android phone speakers. */
-    outputGain.gain.value=speakerEnabled?PREMIUM_OUTPUT_LEVEL:0;
+    outputGain.gain.value=effectiveOutputLevel();
 
     outputHighPass.type="highpass";
     outputHighPass.frequency.value=72;
@@ -342,7 +376,7 @@ async function ensureOutputContext(){
 }
 
 function scheduleCueTone(frequency,start,duration,level,type){
-  if(!outputContext||!outputGain||!speakerEnabled)return;
+  if(!outputContext||!outputLimiter||!speakerEnabled)return;
   const oscillator=outputContext.createOscillator();
   const envelope=outputContext.createGain();
   oscillator.type=type||"sine";
@@ -351,7 +385,9 @@ function scheduleCueTone(frequency,start,duration,level,type){
   envelope.gain.exponentialRampToValueAtTime(level,start+.018);
   envelope.gain.exponentialRampToValueAtTime(.0001,start+duration);
   oscillator.connect(envelope);
-  envelope.connect(outputGain);
+  /* Keep status tones outside the speech compressor so they remain audible;
+     the final limiter still protects the phone speaker and listener. */
+  envelope.connect(outputLimiter);
   oscillator.start(start);
   oscillator.stop(start+duration+.035);
 }
@@ -360,9 +396,16 @@ async function playConnectionCue(){
   if(!speakerEnabled)return;
   await ensureOutputContext();
   const now=outputContext.currentTime+.035;
-  scheduleCueTone(523.25,now,.16,.072,"sine");
-  scheduleCueTone(659.25,now+.11,.19,.064,"sine");
-  scheduleCueTone(783.99,now+.24,.25,.052,"triangle");
+  scheduleCueTone(523.25,now,.16,.22,"sine");
+  scheduleCueTone(659.25,now+.11,.19,.19,"sine");
+  scheduleCueTone(783.99,now+.24,.25,.16,"triangle");
+}
+
+async function playConnectingCue(){
+  if(!speakerEnabled)return;
+  await ensureOutputContext();
+  const now=outputContext.currentTime+.02;
+  scheduleCueTone(392,now,.12,.11,"sine");
 }
 
 async function playDisconnectionCue(){
@@ -390,10 +433,10 @@ async function playAudio(base64Audio){
     sumSquares+=samples[index]*samples[index];
   }
   const rms=Math.sqrt(sumSquares/sampleCount);
-  const targetRms=.23;
+  const targetRms=.27;
   const rmsGain=rms>.0001?targetRms/rms:1;
   const peakGain=peak>.0001?.96/peak:1;
-  const adaptiveGain=Math.max(.95,Math.min(3.2,rmsGain,peakGain));
+  const adaptiveGain=Math.max(.95,Math.min(3.4,rmsGain,peakGain));
 
   const buffer=outputContext.createBuffer(1,sampleCount,OUTPUT_RATE);
   buffer.copyToChannel(samples,0);
@@ -435,7 +478,7 @@ function setMicMuted(nextMuted){
 function setSpeakerEnabled(nextEnabled){
   speakerEnabled=Boolean(nextEnabled);
   if(outputGain&&outputContext){
-    outputGain.gain.setTargetAtTime(speakerEnabled?PREMIUM_OUTPUT_LEVEL:0,outputContext.currentTime,.015);
+    outputGain.gain.setTargetAtTime(effectiveOutputLevel(),outputContext.currentTime,.015);
   }
   if(!speakerEnabled)clearOutput();
   refreshControls();
@@ -589,6 +632,7 @@ async function startConversation(){
   setStatus("Sophia is connecting to LifeOS Synthetic Intelligence…","");
   try{
     await ensureOutputContext();
+    await playConnectingCue();
     openLiveConnection=async function(resuming){
       const response=await window.LifeOSAuth.authFetch("/api/gemini-live-token",{method:"POST",headers:{"Accept":"application/json"},cache:"no-store"});
       const payload=await response.json().catch(()=>({}));
@@ -682,18 +726,22 @@ liveButton.addEventListener("click",()=>active?endConversation():(!starting&&sta
 micButton.addEventListener("click",()=>{if(active)setMicMuted(!micMuted);});
 speakerButton.addEventListener("click",()=>{if(active)setSpeakerEnabled(!speakerEnabled);});
 outputButton.addEventListener("click",chooseAudioOutput);
+if(volumeControl)volumeControl.addEventListener("input",event=>setOutputVolumePercent(event.target.value,false));
+if(volumeControl)volumeControl.addEventListener("change",event=>setOutputVolumePercent(event.target.value,true));
 window.addEventListener("pagehide",()=>{if(active||starting)endConversation();});
 window.addEventListener("lifeos-auth-change",event=>{
   if(!event.detail?.signedIn&&(active||starting))stopAndClean("Signed out — live conversation ended.","",false);
 });
+updateVolumeControl();
 refreshControls();
 
 window.LifeOSGeminiLiveV1={
-  version:"2.8.0",
+  version:"2.9.0",
   start:startConversation,
   stop:endConversation,
   muteMicrophone:setMicMuted,
   setSpeakerEnabled:setSpeakerEnabled,
-  chooseAudioOutput:chooseAudioOutput
+  chooseAudioOutput:chooseAudioOutput,
+  setOutputVolume:setOutputVolumePercent
 };
 }());
