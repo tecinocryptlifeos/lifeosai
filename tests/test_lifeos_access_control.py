@@ -300,9 +300,9 @@ class GeminiGroundingTests(unittest.TestCase):
 
 
 class InterfaceContractTests(unittest.TestCase):
-    def test_release_diagnostic_identifies_v2_0_6_and_preserves_v2_0_5_features(self):
+    def test_release_diagnostic_identifies_v2_1_0_and_preserves_v2_0_6_features(self):
         application = (ROOT / "app/lifeos_voice_server.py").read_text(encoding="utf-8")
-        self.assertIn("lifeos-admin-chat-voice-control-v2.0.6-20260715", application)
+        self.assertIn("lifeos-account-registration-completion-v2.1.0-20260717", application)
         self.assertIn('"premium_igbo_priority": True', application)
         self.assertIn('"premium_voice_output": True', application)
         self.assertIn('"live_google_search": True', application)
@@ -317,6 +317,8 @@ class InterfaceContractTests(unittest.TestCase):
         self.assertIn('"responsive_chat_layout": "mobile-and-desktop"', application)
         self.assertIn('"incremental_chat_delivery": True', application)
         self.assertIn('"voice_volume_control": True', application)
+        self.assertIn('"profile_completion_gate": True', application)
+        self.assertIn('"server_enforced_profile": True', application)
 
     def test_chat_has_premium_igbo_search_and_source_display(self):
         application = (ROOT / "app/lifeos_voice_server.py").read_text(encoding="utf-8")
@@ -355,11 +357,13 @@ class InterfaceContractTests(unittest.TestCase):
             self.assertIn("data-lifeos-protected", page)
             self.assertIn("Continue with Google", page)
 
-    def test_email_sign_in_is_hidden_unless_explicitly_enabled(self):
+    def test_email_password_and_registration_are_feature_gated(self):
         controller = (ROOT / "web/lifeos_voice/assets/lifeos_auth_v1.js").read_text(encoding="utf-8")
-        self.assertIn('show(email, emailEnabled)', controller)
-        self.assertIn('show(emailButton, emailEnabled)', controller)
-        self.assertIn('!state.config?.email_enabled', controller)
+        self.assertIn('all("[data-lifeos-email-auth]")', controller)
+        self.assertIn('all("[data-lifeos-registration]")', controller)
+        self.assertIn('state.config?.registration_enabled', controller)
+        self.assertIn('emailPasswordSignIn', controller)
+        self.assertIn('emailSignUp', controller)
 
     def test_multilingual_policy_and_despina_remain_in_live_controller(self):
         controller = (ROOT / "web/lifeos_voice/assets/gemini_live_v1.js").read_text(encoding="utf-8")
@@ -415,7 +419,7 @@ class InterfaceContractTests(unittest.TestCase):
         self.assertIn("Live web search", privacy)
         self.assertIn("Google Search grounding", privacy)
         self.assertIn("does not give Sophia access to private accounts", privacy)
-        self.assertIn("Last updated: 15 July 2026", privacy)
+        self.assertIn("Last updated: 17 July 2026", privacy)
 
     def test_live_goaway_runtime_renewal(self):
         result = subprocess.run(
@@ -488,7 +492,7 @@ class InterfaceContractTests(unittest.TestCase):
             with self.subTest(relative=relative):
                 self.assertIn("data-lifeos-auth-gate", page)
                 self.assertIn("data-lifeos-protected", page)
-                self.assertIn("lifeos_auth_v1.js?v=2.0.6", page)
+                self.assertIn("lifeos_auth_v1.js?v=2.1.0", page)
 
 
 if __name__ == "__main__":

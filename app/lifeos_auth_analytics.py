@@ -6,7 +6,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 
 def _env(name):
@@ -29,7 +29,16 @@ def configured():
     return bool(_env("SUPABASE_URL") and _public_key() and _server_key())
 
 
+def _integer_setting(name, default, minimum, maximum):
+    try:
+        value = int(_env(name) or default)
+    except (TypeError, ValueError):
+        value = default
+    return max(minimum, min(maximum, value))
+
+
 def public_config():
+    email_enabled = _enabled("LIFEOS_EMAIL_AUTH_ENABLED")
     return {
         "ok": True,
         "configured": configured(),
@@ -37,8 +46,11 @@ def public_config():
         "supabase_anon_key": _public_key(),
         "auth_required": True,
         "auth_mode": "mandatory",
-        "email_enabled": _enabled("LIFEOS_EMAIL_AUTH_ENABLED"),
+        "email_enabled": email_enabled,
+        "registration_enabled": email_enabled and _enabled("LIFEOS_REGISTRATION_ENABLED"),
         "google_enabled": _enabled("LIFEOS_GOOGLE_AUTH_ENABLED"),
+        "minimum_age": _integer_setting("LIFEOS_MINIMUM_AGE", 13, 13, 18),
+        "password_min_length": _integer_setting("LIFEOS_PASSWORD_MIN_LENGTH", 10, 8, 128),
     }
 
 
@@ -168,6 +180,144 @@ def _auth_users():
     if isinstance(data, dict) and isinstance(data.get("users"), list):
         return data["users"]
     return data if isinstance(data, list) else []
+
+
+PROFILE_REQUIRED_FIELDS = ("first_name", "surname", "date_of_birth", "country")
+
+
+def _clean_profile_text(value, maximum=160):
+    return " ".join(str(value or "").split())[:maximum]
+
+
+def _birth_date(value):
+    raw = str(value or "").strip()
+    try:
+        parsed = date.fromisoformat(raw)
+    except (TypeError, ValueError):
+        raise ValueError("Enter a valid date of birth")
+    if parsed > date.today():
+        raise ValueError("Date of birth cannot be in the future")
+    return parsed
+
+
+def _age_on(birth_date, today=None):
+    today = today or date.today()
+    return today.year - birth_date.year - (
+        (today.month, today.day) < (birth_date.month, birth_date.day)
+    )
+
+
+def _profile_payload(payload):
+    if not isinstance(payload, dict):
+        raise ValueError("Invalid profile request")
+    first_name = _clean_profile_text(payload.get("first_name"), 80)
+    surname = _clean_profile_text(payload.get("surname"), 80)
+    country = _clean_profile_text(payload.get("country"), 100)
+    phone = _clean_profile_text(payload.get("phone"), 40) or None
+    if not first_name:
+        raise ValueError("First name is required")
+    if not surname:
+        raise ValueError("Surname is required")
+    if not country:
+        raise ValueError("Country is required")
+    birth = _birth_date(payload.get("date_of_birth"))
+    minimum_age = _integer_setting("LIFEOS_MINIMUM_AGE", 13, 13, 18)
+    if _age_on(birth) < minimum_age:
+        raise ValueError(
+            f"LifeOS accounts require a minimum age of {minimum_age}"
+        )
+    if payload.get("accept_terms") is not True:
+        raise ValueError("Accept the Terms and Privacy Policy to continue")
+    return {
+        "first_name": first_name,
+        "surname": surname,
+        "full_name": f"{first_name} {surname}",
+        "date_of_birth": birth.isoformat(),
+        "country": country,
+        "phone": phone,
+        "terms_accepted_at": datetime.now(timezone.utc).isoformat(),
+        "minimum_age_confirmed": True,
+    }
+
+
+def _profile_complete(profile):
+    if not isinstance(profile, dict):
+        return False
+    if any(not str(profile.get(field) or "").strip() for field in PROFILE_REQUIRED_FIELDS):
+        return False
+    if not profile.get("terms_accepted_at"):
+        return False
+    try:
+        birth = _birth_date(profile.get("date_of_birth"))
+    except ValueError:
+        return False
+    return _age_on(birth) >= _integer_setting("LIFEOS_MINIMUM_AGE", 13, 13, 18)
+
+
+def account_profile(user):
+    user_id = _user_id(user.get("id"))
+    status, rows = _rest(
+        "lifeos_profiles",
+        query=urllib.parse.urlencode({
+            "select": "user_id,email,display_name,first_name,surname,date_of_birth,country,phone,terms_accepted_at,created_at,last_sign_in_at,account_status",
+            "user_id": "eq." + user_id,
+            "limit": "1",
+        }),
+    )
+    if status != 200 or not isinstance(rows, list):
+        raise RuntimeError("The LifeOS account profile could not be loaded")
+    profile = rows[0] if rows else {
+        "user_id": user_id,
+        "email": user.get("email"),
+        "display_name": (user.get("user_metadata") or {}).get("full_name") or "",
+        "first_name": (user.get("user_metadata") or {}).get("first_name") or "",
+        "surname": (user.get("user_metadata") or {}).get("surname") or "",
+        "date_of_birth": (user.get("user_metadata") or {}).get("date_of_birth"),
+        "country": (user.get("user_metadata") or {}).get("country") or "",
+        "phone": (user.get("user_metadata") or {}).get("phone") or "",
+        "terms_accepted_at": (user.get("user_metadata") or {}).get("terms_accepted_at"),
+    }
+    safe_profile = {
+        "email": profile.get("email") or user.get("email"),
+        "display_name": profile.get("display_name") or "",
+        "first_name": profile.get("first_name") or "",
+        "surname": profile.get("surname") or "",
+        "date_of_birth": profile.get("date_of_birth"),
+        "country": profile.get("country") or "",
+        "phone": profile.get("phone") or "",
+        "terms_accepted_at": profile.get("terms_accepted_at"),
+    }
+    return {
+        "ok": True,
+        "complete": _profile_complete(safe_profile),
+        "minimum_age": _integer_setting("LIFEOS_MINIMUM_AGE", 13, 13, 18),
+        "profile": safe_profile,
+    }
+
+
+def update_account_profile(user, payload):
+    values = _profile_payload(payload)
+    current_metadata = user.get("user_metadata")
+    metadata = dict(current_metadata) if isinstance(current_metadata, dict) else {}
+    metadata.update(values)
+    status, updated = _auth_admin_request(
+        "users/" + _user_id(user.get("id")),
+        method="PUT",
+        payload={"user_metadata": metadata},
+    )
+    if status != 200 or not isinstance(updated, dict):
+        raise RuntimeError("The LifeOS account profile could not be updated")
+    result = account_profile(updated)
+    if not result.get("complete"):
+        raise RuntimeError("The LifeOS account profile remains incomplete")
+    return result
+
+
+def require_complete_profile(user):
+    result = account_profile(user)
+    if not result.get("complete"):
+        raise PermissionError("Complete your LifeOS profile before using Sophia")
+    return result
 
 
 def _safe_error_fields(event_type, payload):
@@ -354,7 +504,7 @@ def admin_dashboard(user):
         raise RuntimeError("Could not load analytics: " + str(events)[:400])
     status2, profiles = _rest(
         "lifeos_profiles",
-        query=urllib.parse.urlencode({"select":"user_id,email,display_name,created_at,last_sign_in_at,account_status", "order":"last_sign_in_at.desc.nullslast", "limit":"250"}),
+        query=urllib.parse.urlencode({"select":"user_id,email,display_name,first_name,surname,date_of_birth,country,phone,terms_accepted_at,created_at,last_sign_in_at,account_status", "order":"last_sign_in_at.desc.nullslast", "limit":"250"}),
         prefer="count=exact",
     )
     if status2 != 200:
@@ -387,6 +537,12 @@ def admin_dashboard(user):
                 or (item.get("user_metadata") or {}).get("name")
                 or ""
             ),
+            "first_name": (item.get("user_metadata") or {}).get("first_name") or "",
+            "surname": (item.get("user_metadata") or {}).get("surname") or "",
+            "date_of_birth": (item.get("user_metadata") or {}).get("date_of_birth") or None,
+            "country": (item.get("user_metadata") or {}).get("country") or "",
+            "phone": (item.get("user_metadata") or {}).get("phone") or "",
+            "terms_accepted_at": (item.get("user_metadata") or {}).get("terms_accepted_at") or None,
             "created_at": item.get("created_at"),
             "last_sign_in_at": item.get("last_sign_in_at"),
             "account_status": (

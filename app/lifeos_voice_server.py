@@ -9,9 +9,9 @@ from urllib.parse import unquote, urlsplit
 import uuid
 
 try:
-    from lifeos_auth_analytics import public_config, verify_user, record_event, admin_dashboard, manage_user
+    from lifeos_auth_analytics import public_config, verify_user, record_event, admin_dashboard, manage_user, account_profile, update_account_profile, require_complete_profile
 except ImportError:
-    from app.lifeos_auth_analytics import public_config, verify_user, record_event, admin_dashboard, manage_user
+    from app.lifeos_auth_analytics import public_config, verify_user, record_event, admin_dashboard, manage_user, account_profile, update_account_profile, require_complete_profile
 
 
 # LIFEOS_GEMINI_LIVE_V1_IMPORT_START
@@ -45,7 +45,7 @@ WEB_DIR = BASE_DIR / "web" / "lifeos_voice"
 WEB_FILE = WEB_DIR / "index.html"
 AUDIO_DIR = WEB_DIR / "audio"
 
-LIFEOS_RELEASE = "lifeos-admin-chat-voice-control-v2.0.6-20260715"
+LIFEOS_RELEASE = "lifeos-account-registration-completion-v2.1.0-20260717"
 DEFAULT_PUBLIC_SITE_ORIGIN = "https://losai.onrender.com"
 LEGACY_PUBLIC_HOSTS = {"lifeos-ai-voice-app.onrender.com"}
 ADSENSE_SELLER_ID = "f08c47fec0942fa0"
@@ -596,12 +596,17 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
             {"X-Robots-Tag": "noindex, nofollow, noarchive"},
         )
 
-    def _require_user(self):
+    def _require_user(self, require_profile=True):
         try:
             user, _ = verify_user(self.headers)
+            if require_profile:
+                require_complete_profile(user)
             return user
         except PermissionError as error:
-            self._send_json(401, {"ok": False, "error": str(error)})
+            message = str(error)
+            status = 403 if "Complete your LifeOS profile" in message else 401
+            code = "PROFILE_REQUIRED" if status == 403 else "AUTH_REQUIRED"
+            self._send_json(status, {"ok": False, "error": message, "code": code})
         except RuntimeError as error:
             self._send_json(503, {"ok": False, "error": str(error)})
         except Exception:
@@ -717,6 +722,14 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
                     "live_session_resumption": True,
                     "connected_audio_cue": True,
                     "mandatory_sign_in": True,
+                    "email_password_accounts": True,
+                    "public_registration": True,
+                    "email_confirmation": True,
+                    "password_reset": True,
+                    "profile_fields": ["first_name", "surname", "date_of_birth", "country", "phone"],
+                    "profile_completion_gate": True,
+                    "server_enforced_profile": True,
+                    "minimum_age": 13,
                     "public_mobile_pwa": True,
                     "branded_black_gold_icon": True,
                     "admin_audit": True,
@@ -845,8 +858,20 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
         if path in {"/admin", "/admin/"}:
             self._serve_file(WEB_DIR / "admin.html", private_headers)
             return
+        if path in {"/reset-password", "/reset-password/"}:
+            self._serve_file(WEB_DIR / "reset_password.html", private_headers)
+            return
         if path == "/api/auth-config":
             self._send_json(200, public_config())
+            return
+        if path == "/api/account-profile":
+            user = self._require_user(require_profile=False)
+            if not user:
+                return
+            try:
+                self._send_json(200, account_profile(user))
+            except Exception as error:
+                self._send_json(503, {"ok": False, "error": str(error)[:500]})
             return
         if path == "/api/admin-dashboard":
             user = self._require_user()
@@ -860,10 +885,18 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
                 self._send_json(503, {"ok": False, "error": str(error)[:500]})
             return
         if path == "/api/session-status":
-            user = self._require_user()
+            user = self._require_user(require_profile=False)
             if not user:
                 return
-            self._send_json(200, {"ok": True, "user_id": user.get("id")})
+            try:
+                profile = account_profile(user)
+                self._send_json(200, {
+                    "ok": True,
+                    "user_id": user.get("id"),
+                    "profile_complete": bool(profile.get("complete")),
+                })
+            except Exception as error:
+                self._send_json(503, {"ok": False, "error": str(error)[:500]})
             return
         if path == "/health":
             self._send_bytes(
@@ -1350,6 +1383,24 @@ Core response rules:
     def do_POST(self):
         path = self._path()
 
+
+        if path == "/api/account-profile":
+            user = self._require_user(require_profile=False)
+            if not user:
+                return
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+                if length < 1 or length > 12000:
+                    raise ValueError("Invalid request body")
+                payload = json.loads(self.rfile.read(length).decode("utf-8"))
+                self._send_json(200, update_account_profile(user, payload))
+            except PermissionError as error:
+                self._send_json(403, {"ok": False, "error": str(error)})
+            except (ValueError, json.JSONDecodeError) as error:
+                self._send_json(400, {"ok": False, "error": str(error)[:500]})
+            except Exception as error:
+                self._send_json(503, {"ok": False, "error": str(error)[:500]})
+            return
 
         if path == "/api/analytics-event":
             user = self._require_user()

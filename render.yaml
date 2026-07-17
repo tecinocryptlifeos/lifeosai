@@ -28,7 +28,13 @@ services:
       - key: LIFEOS_AUTH_REQUIRED
         value: true
       - key: LIFEOS_EMAIL_AUTH_ENABLED
-        value: false
+        value: true
+      - key: LIFEOS_REGISTRATION_ENABLED
+        value: true
+      - key: LIFEOS_MINIMUM_AGE
+        value: 13
+      - key: LIFEOS_PASSWORD_MIN_LENGTH
+        value: 10
       - key: LIFEOS_GOOGLE_AUTH_ENABLED
         value: true
       - key: LIFEOS_ADSENSE_PUBLISHER_ID

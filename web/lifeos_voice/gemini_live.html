@@ -756,6 +756,7 @@ html.lifeos-voice-page-hidden .orb::after {
 .auth-actions{display:grid;gap:8px}.auth-secondary{min-height:44px;border:1px solid rgba(234,190,83,.42);border-radius:11px;background:#12151c;color:#fff0c4;font-weight:800}
 .auth-userbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;font-size:11px}.auth-link,.admin-link{color:#ebc25c}.auth-link{border:0;background:transparent;font-weight:800}
 .auth-status{display:inline-flex;padding:5px 8px;border:1px solid rgba(234,190,83,.42);border-radius:999px;font-size:10px;font-weight:900}
+.lifeos-auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}.lifeos-auth-tabs button{min-height:42px;border:1px solid rgba(234,190,83,.42);border-radius:11px;background:#12151c;color:#fff0c4;font-weight:800}.lifeos-auth-tabs button[aria-selected="true"]{background:linear-gradient(180deg,#efc75e,#b87d1d);color:#171005}.lifeos-auth-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.lifeos-auth-grid>*{min-width:0}.lifeos-auth-grid>button,.lifeos-auth-consent{grid-column:1/-1}.lifeos-auth-field{display:grid;gap:4px;color:rgba(255,247,223,.75);font-size:11px}.lifeos-auth-consent{display:flex;align-items:flex-start;gap:8px;color:rgba(255,247,223,.78);font-size:11px;line-height:1.45}.lifeos-auth-consent input{margin-top:3px}.lifeos-auth-consent a{color:#ebc25c}@media(max-width:560px){.lifeos-auth-grid{grid-template-columns:1fr}}
 #voiceApp{width:100%}.auth-userbar.protected{margin:0 0 8px;padding:8px 10px;border:1px solid rgba(234,190,83,.28);border-radius:11px;background:rgba(4,6,10,.48)}
 .search-attribution{margin:12px 0 0;padding:12px;border:1px solid rgba(234,190,83,.28);border-radius:12px;background:rgba(4,6,10,.62);color:#fff0c4;text-align:left;font-size:12px;line-height:1.45;overflow-wrap:anywhere}
 .search-attribution[hidden]{display:none}.search-source-list{display:flex;flex-wrap:wrap;gap:7px;margin-top:7px}.search-source-list a{display:inline-flex;padding:5px 8px;border:1px solid rgba(234,190,83,.34);border-radius:999px;color:#ebc25c;text-decoration:none}.google-search-suggestions{margin-bottom:8px;max-width:100%;overflow:auto}
@@ -782,11 +783,36 @@ html.lifeos-voice-page-hidden .orb::after {
 
 <section id="authGate" data-lifeos-auth-gate aria-labelledby="authTitle">
   <div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><h2 id="authTitle">LifeOS Account</h2><span id="authStatusBadge" class="auth-status">CHECKING</span></div>
-  <p class="auth-copy">Every visitor must sign in before Sophia can start. Operational events are recorded for safety; conversation content is not included in the audit.</p>
-  <input id="authEmail" class="auth-input" type="email" autocomplete="email" placeholder="Email address">
-  <div class="auth-actions">
-    <button id="emailSignIn" class="primary" type="button">Email me a secure sign-in link</button>
-    <button id="googleSignIn" class="auth-secondary" type="button">Continue with Google</button>
+  <p class="auth-copy">Sign in or create an account before Sophia can start. Operational events are recorded; conversation content is not.</p>
+  <div class="lifeos-auth-tabs" data-lifeos-auth-tabs role="tablist" aria-label="LifeOS account options"><button id="authTabSignIn" type="button" role="tab" aria-selected="true">Sign in</button><button id="authTabSignUp" type="button" role="tab" aria-selected="false" data-lifeos-registration>Create account</button></div>
+  <div id="authSignInPanel" data-lifeos-email-auth>
+    <input id="authEmail" class="auth-input" type="email" autocomplete="email" placeholder="Email address">
+    <input id="authPassword" class="auth-input" type="password" autocomplete="current-password" placeholder="Password">
+    <div class="auth-actions"><button id="emailPasswordSignIn" class="primary" type="button">Sign in with email</button><button id="forgotPassword" class="auth-secondary" type="button">Forgot password</button></div>
+  </div>
+  <div id="authSignUpPanel" class="lifeos-auth-grid" data-lifeos-registration hidden>
+    <input id="authFirstName" class="auth-input" type="text" autocomplete="given-name" placeholder="First name" required>
+    <input id="authSurname" class="auth-input" type="text" autocomplete="family-name" placeholder="Surname" required>
+    <label class="lifeos-auth-field">Date of birth<input id="authDateOfBirth" class="auth-input" type="date" autocomplete="bday" required></label>
+    <input id="authCountry" class="auth-input" type="text" autocomplete="country-name" placeholder="Country" required>
+    <input id="authPhone" class="auth-input" type="tel" autocomplete="tel" placeholder="Phone number (optional)">
+    <input id="authSignupEmail" class="auth-input" type="email" autocomplete="email" placeholder="Email address" required>
+    <input id="authSignupPassword" class="auth-input" type="password" autocomplete="new-password" placeholder="Password (10+ characters, letter and number)" required>
+    <label class="lifeos-auth-consent"><input id="authAcceptTerms" type="checkbox"> I confirm that I am at least 13 and accept the <a href="/terms" target="_blank" rel="noopener">Terms</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</label>
+    <button id="emailSignUp" class="primary" type="button">Create LifeOS account</button>
+  </div>
+  <div class="auth-actions" data-lifeos-google-entry><button id="googleSignIn" class="auth-secondary" type="button">Continue with Google</button></div>
+  <div id="profileCompletionPanel" data-lifeos-profile-completion hidden>
+    <p class="auth-copy"><strong>Complete your profile</strong><br>These details are required once before Chat or Voice access.</p>
+    <div class="lifeos-auth-grid">
+      <input id="profileFirstName" class="auth-input" type="text" autocomplete="given-name" placeholder="First name" required>
+      <input id="profileSurname" class="auth-input" type="text" autocomplete="family-name" placeholder="Surname" required>
+      <label class="lifeos-auth-field">Date of birth<input id="profileDateOfBirth" class="auth-input" type="date" autocomplete="bday" required></label>
+      <input id="profileCountry" class="auth-input" type="text" autocomplete="country-name" placeholder="Country" required>
+      <input id="profilePhone" class="auth-input" type="tel" autocomplete="tel" placeholder="Phone number (optional)">
+      <label class="lifeos-auth-consent"><input id="profileAcceptTerms" type="checkbox"> I confirm that I am at least 13 and accept the <a href="/terms" target="_blank" rel="noopener">Terms</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</label>
+    </div>
+    <div class="auth-actions"><button id="saveProfile" class="primary" type="button">Save profile and continue</button><button id="profileSignOut" class="auth-secondary" type="button">Sign out</button></div>
   </div>
   <p id="authMessage" class="auth-copy" role="status" aria-live="polite"></p>
 </section>
@@ -834,7 +860,8 @@ html.lifeos-voice-page-hidden .orb::after {
 .lifeos-volume-control input{width:100%;accent-color:#eabe53}.lifeos-volume-control output{min-width:42px;color:#eabe53;text-align:right}.lifeos-volume-control:focus-within{border-color:#eabe53;box-shadow:0 0 0 3px rgba(234,190,83,.12)}
 @media(max-width:520px){.lifeos-volume-control{grid-template-columns:1fr auto}.lifeos-volume-control input{grid-column:1/-1;grid-row:2}}
 </style>
-<script src="/assets/lifeos_auth_v1.js?v=2.0.6"></script>
+<script src="/assets/lifeos_account_v1.js?v=2.1.0"></script>
+<script src="/assets/lifeos_auth_v1.js?v=2.1.0"></script>
 <script src="/assets/gemini_live_v1.js?v=2.9.0"></script>
 <!-- LIFEOS_GEMINI_LIVE_PAGE_V1 -->
 <!-- LIFEOS_GEMINI_LIVE_INTERFACE_AUDIO_V3 -->

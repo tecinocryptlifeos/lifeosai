@@ -900,18 +900,50 @@ textarea{
 .chat-auth-gate{width:min(100%,520px);margin:auto;padding:22px;border:1px solid rgba(243,201,105,.46);border-radius:24px;background:rgba(8,9,15,.94);box-shadow:0 24px 80px rgba(0,0,0,.46)}
 .chat-auth-gate h1{margin:0 0 8px}.chat-auth-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}.chat-auth-copy{color:var(--muted);font-size:13px;line-height:1.5}.chat-auth-input{width:100%;min-height:48px;margin:10px 0;padding:0 12px;border:1px solid rgba(243,201,105,.42);border-radius:12px;background:#0b0d12;color:var(--text)}
 .chat-auth-actions{display:grid;gap:9px}.chat-auth-actions button{min-height:48px;border:1px solid rgba(243,201,105,.5);border-radius:12px;background:linear-gradient(180deg,#efc75e,#b87d1d);color:#171005;font-weight:900}.chat-auth-actions .secondary{background:#12151c;color:#fff0c4}.chat-auth-status{padding:5px 8px;border:1px solid rgba(243,201,105,.42);border-radius:999px;color:var(--gold);font-size:10px;font-weight:900}
+.lifeos-auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}.lifeos-auth-tabs button{min-height:42px;border:1px solid rgba(243,201,105,.38);border-radius:10px;background:#11141b;color:#fff0c4;font-weight:850}.lifeos-auth-tabs button[aria-selected="true"]{background:linear-gradient(180deg,#efc75e,#b87d1d);color:#171005}.lifeos-auth-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.lifeos-auth-grid>*{min-width:0}.lifeos-auth-grid>button,.lifeos-auth-consent{grid-column:1/-1}.lifeos-auth-field{display:grid;gap:4px;color:rgba(255,247,223,.75);font-size:11px}.lifeos-auth-consent{display:flex;align-items:flex-start;gap:8px;color:rgba(255,247,223,.78);font-size:11px;line-height:1.45}.lifeos-auth-consent input{margin-top:3px}.lifeos-auth-consent a{color:var(--gold)}@media(max-width:560px){.lifeos-auth-grid{grid-template-columns:1fr}}
 .chat-account{display:flex;align-items:flex-end;flex-direction:column;gap:4px;color:var(--muted);font-size:11px}.chat-account a,.chat-account button{color:var(--gold)}.chat-account button{padding:0;border:0;background:transparent;font-weight:800}.chat-account-links{display:flex;gap:7px;align-items:center}
 [hidden]{display:none!important}
 </style>
 </head>
 <body>
   <section id="authGate" class="chat-auth-gate" data-lifeos-auth-gate aria-labelledby="authTitle">
-    <div class="chat-auth-heading"><h1 id="authTitle">Sign in to LifeOS</h1><span id="authStatusBadge" class="chat-auth-status">CHECKING</span></div>
-    <p class="chat-auth-copy">Every visitor must sign in before using Sophia. The operations audit records access and service events, not conversation content.</p>
-    <input id="authEmail" class="chat-auth-input" type="email" autocomplete="email" placeholder="Email address">
-    <div class="chat-auth-actions">
-      <button id="emailSignIn" type="button">Email me a secure sign-in link</button>
-      <button id="googleSignIn" class="secondary" type="button">Continue with Google</button>
+    <div class="chat-auth-heading"><h1 id="authTitle">LifeOS Account</h1><span id="authStatusBadge" class="chat-auth-status">CHECKING</span></div>
+    <p class="chat-auth-copy">Sign in or create an account before using Sophia. Operational events are recorded; conversation content is not.</p>
+    <div class="lifeos-auth-tabs" data-lifeos-auth-tabs role="tablist" aria-label="LifeOS account options">
+      <button id="authTabSignIn" type="button" role="tab" aria-selected="true">Sign in</button>
+      <button id="authTabSignUp" type="button" role="tab" aria-selected="false" data-lifeos-registration>Create account</button>
+    </div>
+    <div id="authSignInPanel" data-lifeos-email-auth>
+      <input id="authEmail" class="chat-auth-input" type="email" autocomplete="email" placeholder="Email address">
+      <input id="authPassword" class="chat-auth-input" type="password" autocomplete="current-password" placeholder="Password">
+      <div class="chat-auth-actions">
+        <button id="emailPasswordSignIn" type="button">Sign in with email</button>
+        <button id="forgotPassword" class="secondary" type="button">Forgot password</button>
+      </div>
+    </div>
+    <div id="authSignUpPanel" class="lifeos-auth-grid" data-lifeos-registration hidden>
+      <input id="authFirstName" class="chat-auth-input" type="text" autocomplete="given-name" placeholder="First name" required>
+      <input id="authSurname" class="chat-auth-input" type="text" autocomplete="family-name" placeholder="Surname" required>
+      <label class="lifeos-auth-field">Date of birth<input id="authDateOfBirth" class="chat-auth-input" type="date" autocomplete="bday" required></label>
+      <input id="authCountry" class="chat-auth-input" type="text" autocomplete="country-name" placeholder="Country" required>
+      <input id="authPhone" class="chat-auth-input" type="tel" autocomplete="tel" placeholder="Phone number (optional)">
+      <input id="authSignupEmail" class="chat-auth-input" type="email" autocomplete="email" placeholder="Email address" required>
+      <input id="authSignupPassword" class="chat-auth-input" type="password" autocomplete="new-password" placeholder="Password (10+ characters, letter and number)" required>
+      <label class="lifeos-auth-consent"><input id="authAcceptTerms" type="checkbox"> I confirm that I am at least 13 and accept the <a href="/terms" target="_blank" rel="noopener">Terms</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</label>
+      <button id="emailSignUp" type="button">Create LifeOS account</button>
+    </div>
+    <div class="chat-auth-actions" data-lifeos-google-entry><button id="googleSignIn" class="secondary" type="button">Continue with Google</button></div>
+    <div id="profileCompletionPanel" data-lifeos-profile-completion hidden>
+      <p class="chat-auth-copy"><strong>Complete your profile</strong><br>These details are required once before Chat or Voice access.</p>
+      <div class="lifeos-auth-grid">
+        <input id="profileFirstName" class="chat-auth-input" type="text" autocomplete="given-name" placeholder="First name" required>
+        <input id="profileSurname" class="chat-auth-input" type="text" autocomplete="family-name" placeholder="Surname" required>
+        <label class="lifeos-auth-field">Date of birth<input id="profileDateOfBirth" class="chat-auth-input" type="date" autocomplete="bday" required></label>
+        <input id="profileCountry" class="chat-auth-input" type="text" autocomplete="country-name" placeholder="Country" required>
+        <input id="profilePhone" class="chat-auth-input" type="tel" autocomplete="tel" placeholder="Phone number (optional)">
+        <label class="lifeos-auth-consent"><input id="profileAcceptTerms" type="checkbox"> I confirm that I am at least 13 and accept the <a href="/terms" target="_blank" rel="noopener">Terms</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</label>
+      </div>
+      <div class="chat-auth-actions"><button id="saveProfile" type="button">Save profile and continue</button><button id="profileSignOut" class="secondary" type="button">Sign out</button></div>
     </div>
     <p id="authMessage" class="chat-auth-copy" role="status" aria-live="polite"></p>
   </section>
@@ -3453,7 +3485,8 @@ html body #chatApp .msg.lifeos-revealing::after{content:"";display:inline-block;
 
 @media (prefers-reduced-motion:reduce){html body #chatApp .msg.lifeos-revealing::after{animation:none!important}}
 </style>
-<script src="/assets/lifeos_auth_v1.js?v=2.0.6"></script>
+<script src="/assets/lifeos_account_v1.js?v=2.1.0"></script>
+<script src="/assets/lifeos_auth_v1.js?v=2.1.0"></script>
 <script src="/assets/lifeos_pwa_v1.js?v=2.0.6" defer></script>
 </body>
 </html>

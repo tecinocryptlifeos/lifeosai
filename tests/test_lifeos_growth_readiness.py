@@ -63,7 +63,7 @@ class GrowthReadinessStaticTests(unittest.TestCase):
         self.assertIn("https://www.aboutads.info/choices/", privacy)
         self.assertIn("https://policies.google.com/technologies/partner-sites", privacy)
         self.assertIn("Advertising is restricted to public content pages", privacy)
-        self.assertIn("Last updated: 15 July 2026", privacy)
+        self.assertIn("Last updated: 17 July 2026", privacy)
 
     def test_github_actions_is_release_ci_not_a_hosting_keepalive(self):
         workflow = (ROOT / ".github/workflows/lifeos-release-tests.yml").read_text(
@@ -186,7 +186,7 @@ class GrowthReadinessRuntimeTests(unittest.TestCase):
                 payload = json.loads(response.read().decode("utf-8"))
         self.assertEqual(
             payload["release"],
-            "lifeos-admin-chat-voice-control-v2.0.6-20260715",
+            "lifeos-account-registration-completion-v2.1.0-20260717",
         )
         self.assertEqual(payload["final_public_origin"], FINAL_ORIGIN)
         self.assertTrue(payload["cost_free_warmup_ready"])

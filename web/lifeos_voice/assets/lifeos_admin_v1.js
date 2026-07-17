@@ -120,7 +120,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     const query = byId("userFilter").value.trim().toLowerCase();
     (state.data?.users || []).filter(user => !query || `${user.email || ""} ${user.display_name || ""}`.toLowerCase().includes(query)).forEach(user => {
       const row = document.createElement("tr");
-      [user.email, user.display_name, date(user.created_at), date(user.last_sign_in_at)].forEach(value => row.appendChild(element("td", "", value)));
+      [
+        user.email,
+        user.display_name,
+        user.date_of_birth,
+        user.country,
+        user.phone,
+        date(user.created_at),
+        date(user.last_sign_in_at),
+      ].forEach(value => row.appendChild(element("td", "", value)));
       const statusCell = document.createElement("td");
       statusCell.appendChild(element("span", "account-status " + (user.account_status === "blocked" ? "blocked" : ""), user.account_status || "active"));
       row.appendChild(statusCell);
