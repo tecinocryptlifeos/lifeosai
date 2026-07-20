@@ -1,4 +1,5 @@
 import base64
+import json
 import os
 import time
 import unittest
@@ -57,12 +58,26 @@ class FakeStore:
         self.parents = []
         self.inbound = set()
         self.replies = []
+        self.enqueued = []
+        self.recent = []
 
     def settings(self):
         return dict(self.settings_value)
 
     def latest_sent_at(self):
         return self.latest
+
+    def enqueue_invitation(self, payload, idempotency_key):
+        self.enqueued.append((dict(payload), idempotency_key))
+        return {
+            "id": "00000000-0000-4000-8000-000000000020",
+            **payload,
+            "attempts": 0,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }, True
+
+    def recent_messages(self, limit=30):
+        return list(self.recent[:limit])
 
     def claim_next(self, worker_id):
         return dict(self.claimed) if self.claimed else None
@@ -221,6 +236,135 @@ class GmailMessageTests(unittest.TestCase):
             )
 
 
+class QueueInvitationTests(unittest.TestCase):
+    actor_id = "00000000-0000-4000-8000-000000000001"
+    request_id = "00000000-0000-4000-8000-000000000002"
+
+    def values(self, **overrides):
+        values = {
+            "request_id": self.request_id,
+            "approved": True,
+            "recipient_name": "Test Member",
+            "recipient_email": "Member@Example.com",
+            "subject": "You're invited to explore LifeOS",
+            "body_text": "Hello,\n\nYou are invited to explore the LifeOS public interface.",
+            "invitation_url": "https://losai.onrender.com",
+        }
+        values.update(overrides)
+        return values
+
+    def test_admin_invitation_uses_fixed_sender_and_canonical_link(self):
+        payload, key = queue._invitation_payload(
+            runtime_config(),
+            self.values(body_text="Hello, this is the approved LifeOS invitation message."),
+            created_by=self.actor_id,
+        )
+        self.assertEqual(payload["sender_email"], "losaiadminpatric@gmail.com")
+        self.assertEqual(payload["recipient_email"], "Member@example.com")
+        self.assertEqual(payload["message_type"], "invitation")
+        self.assertEqual(payload["status"], "queued")
+        self.assertIn("https://losai.onrender.com", payload["body_text"])
+        self.assertEqual(payload["created_by"], self.actor_id)
+        self.assertEqual(
+            key,
+            f"lifeos-admin-invitation:{self.actor_id}:{self.request_id}",
+        )
+        self.assertNotIn("client-secret-private", json.dumps(payload))
+
+    def test_invitation_rejects_unapproved_sender_override_and_external_url(self):
+        with self.assertRaisesRegex(ValueError, "approve"):
+            queue._invitation_payload(
+                runtime_config(),
+                self.values(approved=False),
+                created_by=self.actor_id,
+            )
+        with self.assertRaisesRegex(ValueError, "sender is fixed"):
+            queue._invitation_payload(
+                runtime_config(),
+                self.values(sender_email="lifeostecinoai@gmail.com"),
+                created_by=self.actor_id,
+            )
+        with self.assertRaisesRegex(ValueError, "losai.onrender.com"):
+            queue._invitation_payload(
+                runtime_config(),
+                self.values(invitation_url="https://example.com/invite"),
+                created_by=self.actor_id,
+            )
+
+    def test_runtime_queues_once_without_bypassing_database_gate(self):
+        store = FakeStore()
+        store.settings_value["enabled"] = False
+        runtime = queue.LifeOSQueueRuntime(
+            runtime_config(),
+            store=store,
+            gmail=FakeGmail(),
+            worker_id="worker-test",
+        )
+        result = runtime.enqueue_invitation(
+            self.values(),
+            created_by=self.actor_id,
+        )
+        self.assertTrue(result["created"])
+        self.assertFalse(result["delivery_gate_enabled"])
+        self.assertEqual(len(store.enqueued), 1)
+        self.assertEqual(store.enqueued[0][0]["max_attempts"], 3)
+        self.assertEqual(result["message"]["status"], "queued")
+
+    def test_store_returns_existing_row_for_a_duplicate_request(self):
+        calls = []
+        existing = {
+            "id": "00000000-0000-4000-8000-000000000020",
+            "direction": "outbound",
+            "message_type": "invitation",
+            "status": "queued",
+            "recipient_email": "member@example.com",
+            "subject": "LifeOS invitation",
+            "body_text": "Approved invitation",
+        }
+
+        def transport(url, **kwargs):
+            calls.append((url, kwargs))
+            return (201, []) if kwargs["method"] == "POST" else (200, [existing])
+
+        store = queue.SupabaseQueueStore(runtime_config(), transport=transport)
+        row, created = store.enqueue_invitation(
+            {"idempotency_key": "same-request"},
+            "same-request",
+        )
+        self.assertFalse(created)
+        self.assertEqual(row["id"], existing["id"])
+        self.assertEqual(len(calls), 2)
+        self.assertIn("on_conflict=idempotency_key", calls[0][0])
+        self.assertIn("resolution=ignore-duplicates", calls[0][1]["headers"]["Prefer"])
+
+    def test_admin_snapshot_exposes_message_preview_but_no_credentials(self):
+        store = FakeStore()
+        store.recent = [{
+            "id": "message-1",
+            "direction": "inbound",
+            "message_type": "reply",
+            "status": "replied",
+            "sender_email": "member@example.com",
+            "recipient_email": "losaiadminpatric@gmail.com",
+            "subject": "Re: LifeOS invitation",
+            "body_text": "Thank you. I received the invitation.",
+            "gmail_message_id": "private-gmail-id",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }]
+        runtime = queue.LifeOSQueueRuntime(
+            runtime_config(),
+            store=store,
+            gmail=FakeGmail(),
+            worker_id="worker-test",
+        )
+        result = runtime.admin_snapshot()
+        rendered = json.dumps(result)
+        self.assertIn("Thank you. I received the invitation.", rendered)
+        self.assertNotIn("private-gmail-id", rendered)
+        self.assertNotIn("client-secret-private", rendered)
+        self.assertFalse(result["automatic_reply_enabled"])
+
+
 class QueueDispatchTests(unittest.TestCase):
     def test_worker_flag_blocks_every_delivery_action(self):
         store = FakeStore()
@@ -340,8 +484,14 @@ class QueueReplySyncTests(unittest.TestCase):
                     "id": "gmail-inbound",
                     "threadId": "thread-1",
                     "internalDate": str(int(datetime.now(timezone.utc).timestamp() * 1000)),
-                    "snippet": "Thank you for the invitation.",
+                    "snippet": "Short preview only.",
                     "payload": {
+                        "mimeType": "text/plain",
+                        "body": {
+                            "data": base64.urlsafe_b64encode(
+                                b"Thank you for the invitation. This is the full reply."
+                            ).decode("ascii").rstrip("=")
+                        },
                         "headers": [
                             {"name": "From", "value": "Member <member@example.com>"},
                             {"name": "Subject", "value": "Re: LifeOS invitation"},
@@ -360,6 +510,10 @@ class QueueReplySyncTests(unittest.TestCase):
         self.assertEqual(result["replies_recorded"], 1)
         self.assertEqual(len(store.replies), 1)
         self.assertEqual(store.replies[0][2]["sender_email"], "member@example.com")
+        self.assertEqual(
+            queue._gmail_body_text(store.replies[0][1]),
+            "Thank you for the invitation. This is the full reply.",
+        )
 
 
 if __name__ == "__main__":

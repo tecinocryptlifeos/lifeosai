@@ -9,9 +9,9 @@ from urllib.parse import unquote, urlsplit
 import uuid
 
 try:
-    from lifeos_auth_analytics import public_config, verify_user, record_event, admin_dashboard, manage_user, account_profile, update_account_profile, require_complete_profile
+    from lifeos_auth_analytics import public_config, verify_user, record_event, admin_dashboard, manage_user, account_profile, update_account_profile, require_complete_profile, is_admin
 except ImportError:
-    from app.lifeos_auth_analytics import public_config, verify_user, record_event, admin_dashboard, manage_user, account_profile, update_account_profile, require_complete_profile
+    from app.lifeos_auth_analytics import public_config, verify_user, record_event, admin_dashboard, manage_user, account_profile, update_account_profile, require_complete_profile, is_admin
 
 
 # LIFEOS_GEMINI_LIVE_V1_IMPORT_START
@@ -42,14 +42,20 @@ except ImportError:
 try:
     from lifeos_queue_runtime import (
         queue_internal_authorized,
+        queue_admin_snapshot,
+        queue_enqueue_invitation,
         queue_status,
+        queue_sync_replies_for_admin,
         run_queue_mode,
         start_queue_worker,
     )
 except ImportError:
     from app.lifeos_queue_runtime import (
         queue_internal_authorized,
+        queue_admin_snapshot,
+        queue_enqueue_invitation,
         queue_status,
+        queue_sync_replies_for_admin,
         run_queue_mode,
         start_queue_worker,
     )
@@ -61,7 +67,7 @@ WEB_FILE = WEB_DIR / "index.html"
 AUDIO_DIR = WEB_DIR / "audio"
 
 LIFEOS_RELEASE = "lifeos-account-registration-completion-v2.1.0-20260717"
-LIFEOS_QUEUE_RELEASE = "lifeos-queue-runtime-v1.1.0-20260720"
+LIFEOS_QUEUE_RELEASE = "lifeos-queue-admin-interface-v1.2.0-20260720"
 DEFAULT_PUBLIC_SITE_ORIGIN = "https://losai.onrender.com"
 LEGACY_PUBLIC_HOSTS = {"lifeos-ai-voice-app.onrender.com"}
 ADSENSE_SELLER_ID = "f08c47fec0942fa0"
@@ -629,6 +635,18 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
             self._send_json(503, {"ok": False, "error": "The authentication service is unavailable"})
         return None
 
+    def _require_admin(self):
+        user = self._require_user()
+        if not user:
+            return None
+        if not is_admin(user):
+            self._send_json(
+                403,
+                {"ok": False, "error": "Administrator access is required"},
+            )
+            return None
+        return user
+
     def _safe_file(self, root, relative_path):
         root = root.resolve()
         target = (root / relative_path).resolve()
@@ -730,6 +748,9 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
                     "release": LIFEOS_RELEASE,
                     "lifeos_queue_release": LIFEOS_QUEUE_RELEASE,
                     "lifeos_queue_runtime": True,
+                    "lifeos_queue_admin_interface": True,
+                    "lifeos_queue_invitation_preview": True,
+                    "lifeos_queue_reply_sync_control": True,
                     "multilingual_voice": True,
                     "premium_igbo_priority": True,
                     "premium_voice_output": True,
@@ -901,6 +922,21 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
                 self._send_json(403, {"ok": False, "error": str(error)})
             except Exception as error:
                 self._send_json(503, {"ok": False, "error": str(error)[:500]})
+            return
+        if path == "/api/admin-lifeos-queue":
+            user = self._require_admin()
+            if not user:
+                return
+            try:
+                self._send_json(200, queue_admin_snapshot(limit=30))
+            except Exception as error:
+                self._send_json(
+                    503,
+                    {
+                        "ok": False,
+                        "error": f"{type(error).__name__}: {error}"[:500],
+                    },
+                )
             return
         if path == "/api/session-status":
             user = self._require_user(require_profile=False)
@@ -1499,6 +1535,44 @@ Core response rules:
                 self._send_json(400, {"ok": False, "error": str(error)[:500]})
             except Exception as error:
                 self._send_json(503, {"ok": False, "error": str(error)[:500]})
+            return
+
+        if path == "/api/admin-lifeos-queue":
+            user = self._require_admin()
+            if not user:
+                return
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+                if length < 1 or length > 16000:
+                    raise ValueError("Invalid request body")
+                payload = json.loads(self.rfile.read(length).decode("utf-8"))
+                if not isinstance(payload, dict):
+                    raise ValueError("Invalid request body")
+                action = str(payload.get("action") or "").strip().lower()
+                if action == "enqueue_invitation":
+                    result = queue_enqueue_invitation(
+                        payload,
+                        created_by=str(user.get("id") or ""),
+                    )
+                    self._send_json(200, result)
+                    return
+                if action == "reply_sync":
+                    result = queue_sync_replies_for_admin()
+                    self._send_json(200 if result.get("ok") else 503, result)
+                    return
+                raise ValueError("Unsupported LifeOS Queue action")
+            except PermissionError as error:
+                self._send_json(403, {"ok": False, "error": str(error)})
+            except (ValueError, json.JSONDecodeError) as error:
+                self._send_json(400, {"ok": False, "error": str(error)[:500]})
+            except Exception as error:
+                self._send_json(
+                    503,
+                    {
+                        "ok": False,
+                        "error": f"{type(error).__name__}: {error}"[:500],
+                    },
+                )
             return
 
         # LIFEOS_GEMINI_LIVE_V1_POST_ROUTE_START

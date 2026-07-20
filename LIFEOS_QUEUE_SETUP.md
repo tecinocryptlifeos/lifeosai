@@ -1,4 +1,4 @@
-# LifeOS Queue Runtime v1.1.0
+# LifeOS Queue Runtime v1.2.0
 
 Human-facing name: **LifeOS Queue**
 
@@ -17,6 +17,24 @@ sent.
 
 The infrastructure owner and authorized Gmail mailbox are intentionally
 different accounts.
+
+## Administrator invitation interface
+
+The browser-accessible Queue control is inside the protected LifeOS
+administrator page at `https://losai.onrender.com/admin`. It is not an
+unauthenticated public sender form.
+
+An administrator can:
+
+- enter a recipient name and email;
+- edit and review the exact subject, message, and canonical LifeOS link;
+- approve the exact preview before creating one idempotent Queue row;
+- inspect the verified Gmail sender, worker, delivery gate, and policy;
+- view recent invitation and reply activity; and
+- run a protected Gmail reply synchronization.
+
+The interface cannot override the sender, bypass the daily/spacing limits, or
+open the database delivery gate. It never receives Gmail or Supabase secrets.
 
 ## Production environment variables
 
@@ -86,10 +104,13 @@ dispatch request cannot bypass either safety gate.
 1. Deploy with the Render worker disabled and the Supabase Queue disabled.
 2. Run the protected status verification and confirm the expected Gmail.
 3. Set `LIFEOS_QUEUE_WORKER_ENABLED=true` and redeploy.
-4. Add one approved test message while the database Queue remains disabled.
+4. From `/admin`, review and queue one approved test invitation while the
+   database Queue remains disabled.
 5. Enable `lifeos_queue_settings.enabled` and verify one controlled send.
 6. Confirm the Supabase row is `sent` and contains Gmail message/thread IDs.
 7. Only after the live test passes, disable the old Google OAuth client secret.
 
-Reply synchronization records Gmail metadata and a short snippet in the
-service-role-only Queue table; it does not expose message content publicly.
+Reply synchronization records Gmail metadata and up to 5,000 characters of the
+plain-text response in the service-role-only Queue table. The protected admin
+interface shows a bounded preview. It does not expose message content publicly
+and it does not send an automatic reply.

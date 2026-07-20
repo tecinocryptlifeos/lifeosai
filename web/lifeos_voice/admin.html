@@ -6,6 +6,7 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <title>LifeOS Administration &amp; Operations</title>
   <link rel="icon" href="/icons/lifeos-icon-192.png" type="image/png">
+  <link rel="stylesheet" href="/assets/lifeos_queue_admin_v1.css?v=1.2.0">
   <style>
     :root{color-scheme:dark;--bg:#030405;--panel:#0b0e14;--panel2:#111620;--gold:#f0c55b;--cream:#fff1c7;--muted:#b8b09d;--line:#5e4a21;--green:#9be9b9;--red:#ffadad;--orange:#ffd08a}
     *{box-sizing:border-box}html{background:var(--bg)}body{margin:0;min-height:100dvh;background:radial-gradient(circle at 10% 0,#4b351522,transparent 32rem),var(--bg);color:var(--cream);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;padding:max(16px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
@@ -50,6 +51,47 @@
     <div id="dashboard" hidden>
       <section aria-labelledby="overviewTitle"><h2 id="overviewTitle" class="eyebrow">Live overview</h2><div id="metrics" class="metrics"></div></section>
 
+      <section id="queuePanel" class="panel queue-panel" tabindex="-1" aria-labelledby="queueTitle">
+        <div class="panel-head">
+          <div><h2 id="queueTitle">LifeOS Queue invitation control</h2><p class="panel-copy">Review the exact invitation before queueing it. Replies are captured for review; no automatic reply is sent.</p></div>
+          <div class="actions"><button id="refreshQueue" type="button">Refresh queue</button><button id="syncQueueReplies" type="button">Sync replies now</button></div>
+        </div>
+        <div id="queueStatusCards" class="queue-status-grid" aria-live="polite"></div>
+        <p id="queueMessage" class="queue-message" role="status" aria-live="polite">Loading LifeOS Queue…</p>
+
+        <form id="invitationForm" class="queue-form">
+          <div class="queue-form-grid">
+            <label>Recipient name<input id="queueRecipientName" class="queue-input" type="text" maxlength="160" autocomplete="name" placeholder="Recipient name (optional)"></label>
+            <label>Recipient email<input id="queueRecipientEmail" class="queue-input" type="email" maxlength="320" autocomplete="email" placeholder="name@example.com" required></label>
+          </div>
+          <label>Subject<input id="queueSubject" class="queue-input" type="text" minlength="3" maxlength="200" required value="You're invited to explore LifeOS"></label>
+          <label>Invitation message<textarea id="queueBody" class="queue-textarea" minlength="20" maxlength="5000" rows="11" required>Hello,
+
+You’re invited to explore LifeOS, a decision-intelligence platform designed to help you clarify choices, compare risks and consequences, and identify practical next actions.
+
+Open LifeOS:
+https://losai.onrender.com
+
+This invitation was sent by LifeOS Queue on behalf of the LifeOS team. If you were not expecting it, no action is required.
+
+Regards,
+LifeOS Team</textarea></label>
+          <label>Invitation link<input id="queueInvitationUrl" class="queue-input" type="url" maxlength="500" required value="https://losai.onrender.com"></label>
+
+          <section class="queue-preview" aria-labelledby="queuePreviewTitle">
+            <div class="eyebrow" id="queuePreviewTitle">Exact email preview</div>
+            <dl class="queue-preview-meta"><dt>From</dt><dd id="queuePreviewFrom">LifeOS Queue &lt;losaiadminpatric@gmail.com&gt;</dd><dt>To</dt><dd id="queuePreviewTo">Enter a recipient email</dd><dt>Subject</dt><dd id="queuePreviewSubject">You're invited to explore LifeOS</dd></dl>
+            <pre id="queuePreviewBody" class="queue-preview-body"></pre>
+          </section>
+
+          <label class="queue-approval"><input id="queueApproved" type="checkbox"> <span>I have reviewed the recipient, subject, message, and link. Queue this exact invitation.</span></label>
+          <div class="actions"><button id="queueInvitation" class="primary" type="submit" disabled>Queue approved invitation</button><span class="muted">Queueing does not bypass the 10-per-day, 30-minute spacing, or database delivery gate.</span></div>
+        </form>
+
+        <div class="panel-head queue-activity-head"><div><h3>Invitation and reply activity</h3><p class="panel-copy">A reply appears here after Gmail synchronization.</p></div></div>
+        <div class="scroll"><table class="queue-table"><thead><tr><th>Time</th><th>Direction</th><th>Contact</th><th>Subject</th><th>Message</th><th>Status</th></tr></thead><tbody id="queueMessages"></tbody></table></div>
+      </section>
+
       <section id="errorsPanel" class="panel" tabindex="-1" aria-labelledby="errorsTitle">
         <div class="panel-head"><div><h2 id="errorsTitle">Service problems</h2><p class="panel-copy">Tap an error to see what happened and the recommended next check.</p></div><button id="showAllErrors" type="button">Show all errors</button></div>
         <div id="errorList" class="error-list"></div>
@@ -75,5 +117,6 @@
   <script src="/assets/lifeos_account_v1.js?v=2.1.0"></script>
   <script src="/assets/lifeos_auth_v1.js?v=2.1.0"></script>
   <script src="/assets/lifeos_admin_v1.js?v=2.0.6"></script>
+  <script src="/assets/lifeos_queue_admin_v1.js?v=1.2.0"></script>
 </body>
 </html>

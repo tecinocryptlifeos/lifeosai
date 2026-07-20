@@ -239,6 +239,7 @@ class ProtectedRouteTests(unittest.TestCase):
     def test_every_sophia_endpoint_rejects_anonymous_requests(self):
         routes = [
             ("GET", "/api/admin-dashboard", None, {}),
+            ("GET", "/api/admin-lifeos-queue", None, {}),
             ("GET", "/api/session-status", None, {}),
             ("GET", "/api/lifeos-queue/status", None, {}),
             ("GET", "/audio/not-present.wav", None, {}),
@@ -250,11 +251,69 @@ class ProtectedRouteTests(unittest.TestCase):
             ("POST", "/api/text-audit", b"{}", {"Content-Type": "application/json"}),
             ("POST", "/api/analytics-event", b"{}", {"Content-Type": "application/json"}),
             ("POST", "/api/admin-user-action", b"{}", {"Content-Type": "application/json"}),
+            ("POST", "/api/admin-lifeos-queue", b"{}", {"Content-Type": "application/json"}),
         ]
         with mock.patch.object(server, "verify_user", side_effect=PermissionError("Sign-in is required")):
             for method, path, body, headers in routes:
                 with self.subTest(path=path):
                     self.assertEqual(self.request_status(method, path, body, headers), 401)
+
+    def test_queue_interface_rejects_signed_in_non_admins(self):
+        user = {
+            "id": "00000000-0000-4000-8000-000000000010",
+            "email": "member@example.com",
+        }
+        with mock.patch.object(server, "verify_user", return_value=(user, "token")), \
+                mock.patch.object(server, "require_complete_profile"), \
+                mock.patch.object(server, "is_admin", return_value=False):
+            self.assertEqual(
+                self.request_status("GET", "/api/admin-lifeos-queue"),
+                403,
+            )
+            self.assertEqual(
+                self.request_status(
+                    "POST",
+                    "/api/admin-lifeos-queue",
+                    b'{"action":"reply_sync"}',
+                    {"Content-Type": "application/json"},
+                ),
+                403,
+            )
+
+    def test_admin_can_queue_an_invitation_through_the_protected_route(self):
+        user = {
+            "id": "00000000-0000-4000-8000-000000000001",
+            "email": "owner@example.com",
+        }
+        payload = json.dumps({
+            "action": "enqueue_invitation",
+            "request_id": "00000000-0000-4000-8000-000000000002",
+            "approved": True,
+            "recipient_email": "member@example.com",
+            "subject": "LifeOS invitation",
+            "body_text": "This is the approved LifeOS invitation message.",
+            "invitation_url": "https://losai.onrender.com",
+        }).encode("utf-8")
+        with mock.patch.object(server, "verify_user", return_value=(user, "token")), \
+                mock.patch.object(server, "require_complete_profile"), \
+                mock.patch.object(server, "is_admin", return_value=True), \
+                mock.patch.object(
+                    server,
+                    "queue_enqueue_invitation",
+                    return_value={"ok": True, "created": True},
+                ) as enqueue:
+            status = self.request_status(
+                "POST",
+                "/api/admin-lifeos-queue",
+                payload,
+                {"Content-Type": "application/json"},
+            )
+        self.assertEqual(status, 200)
+        self.assertEqual(
+            enqueue.call_args.kwargs["created_by"],
+            user["id"],
+        )
+        self.assertNotIn("sender_email", enqueue.call_args.args[0])
 
 
 class GeminiGroundingTests(unittest.TestCase):
@@ -475,6 +534,21 @@ class InterfaceContractTests(unittest.TestCase):
         self.assertIn('requestUserAction(user, "sign_out")', controller)
         self.assertIn('requestUserAction(user, "block")', controller)
         self.assertIn('requestUserAction(user, "unblock")', controller)
+        self.assertNotIn("innerHTML", controller)
+
+    def test_admin_interface_has_an_exact_invitation_preview_and_reply_control(self):
+        page = (ROOT / "web/lifeos_voice/admin.html").read_text(encoding="utf-8")
+        controller = (ROOT / "web/lifeos_voice/assets/lifeos_queue_admin_v1.js").read_text(encoding="utf-8")
+        self.assertIn('id="queuePanel"', page)
+        self.assertIn('id="queuePreviewBody"', page)
+        self.assertIn('id="queueApproved"', page)
+        self.assertIn("You're invited to explore LifeOS", page)
+        self.assertIn("https://losai.onrender.com", page)
+        self.assertIn("losaiadminpatric@gmail.com", page)
+        self.assertIn("/api/admin-lifeos-queue", controller)
+        self.assertIn('action: "enqueue_invitation"', controller)
+        self.assertIn('action: "reply_sync"', controller)
+        self.assertIn("window.LifeOSAuth.authFetch", controller)
         self.assertNotIn("innerHTML", controller)
 
     def test_initial_oauth_session_is_audited_once(self):

@@ -8,6 +8,7 @@ worker flag and the database setting are explicitly enabled.
 from __future__ import annotations
 
 import base64
+import html
 import hmac
 import json
 import os
@@ -18,6 +19,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
@@ -31,10 +33,11 @@ except ImportError:
     from app.lifeos_queue import normalize_email
 
 
-RUNTIME_VERSION = "1.1.0"
+RUNTIME_VERSION = "1.2.0"
 DEFAULT_GMAIL_ADDRESS = "losaiadminpatric@gmail.com"
 DEFAULT_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
 DEFAULT_GMAIL_API_ROOT = "https://gmail.googleapis.com/gmail/v1"
+PUBLIC_INVITATION_ORIGIN = "https://losai.onrender.com"
 TRUE_VALUES = {"1", "true", "yes", "on"}
 
 
@@ -94,6 +97,106 @@ def _parse_datetime(value: Any) -> datetime | None:
 
 def _safe_header(value: Any, maximum: int = 998) -> str:
     return " ".join(str(value or "").replace("\r", " ").replace("\n", " ").split())[:maximum]
+
+
+def _invitation_url(value: Any) -> str:
+    raw = str(value or PUBLIC_INVITATION_ORIGIN).strip()
+    if len(raw) > 500:
+        raise ValueError("Invitation URL is too long.")
+    try:
+        parsed = urllib.parse.urlsplit(raw)
+        parsed_port = parsed.port
+    except ValueError as error:
+        raise ValueError("Enter a valid LifeOS invitation URL.") from error
+    if (
+        parsed.scheme != "https"
+        or (parsed.hostname or "").lower() != "losai.onrender.com"
+        or parsed.username
+        or parsed.password
+        or parsed_port not in (None, 443)
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise ValueError(
+            "Invitation URL must be on https://losai.onrender.com without a query or fragment."
+        )
+    path = parsed.path or ""
+    if path and not path.startswith("/"):
+        raise ValueError("Enter a valid LifeOS invitation URL.")
+    return PUBLIC_INVITATION_ORIGIN + ("" if path in {"", "/"} else path)
+
+
+def _invitation_payload(
+    config: "QueueRuntimeConfig",
+    values: dict[str, Any],
+    *,
+    created_by: str,
+) -> tuple[dict[str, Any], str]:
+    if not isinstance(values, dict):
+        raise ValueError("Invitation data is required.")
+    if values.get("approved") is not True:
+        raise ValueError("Review and approve the exact invitation before queueing it.")
+    if "sender_email" in values:
+        raise ValueError("The LifeOS Queue sender is fixed and cannot be overridden.")
+
+    try:
+        actor_id = str(uuid.UUID(str(created_by or "")))
+    except (ValueError, TypeError, AttributeError) as error:
+        raise ValueError("A verified administrator ID is required.") from error
+    try:
+        request_id = str(uuid.UUID(str(values.get("request_id") or "")))
+    except (ValueError, TypeError, AttributeError) as error:
+        raise ValueError("A valid invitation request ID is required.") from error
+
+    recipient_email = normalize_email(str(values.get("recipient_email") or ""))
+    recipient_name = " ".join(str(values.get("recipient_name") or "").split())
+    if len(recipient_name) > 160:
+        raise ValueError("Recipient name must be 160 characters or fewer.")
+
+    subject = _safe_header(values.get("subject"), 201)
+    if len(subject) < 3:
+        raise ValueError("Invitation subject must contain at least 3 characters.")
+    if len(subject) > 200:
+        raise ValueError("Invitation subject must be 200 characters or fewer.")
+
+    body_text = (
+        str(values.get("body_text") or "")
+        .replace("\r\n", "\n")
+        .replace("\r", "\n")
+        .strip()
+    )
+    if len(body_text) < 20:
+        raise ValueError("Invitation message must contain at least 20 characters.")
+    if len(body_text) > 5000:
+        raise ValueError("Invitation message must be 5,000 characters or fewer.")
+    invitation_url = _invitation_url(values.get("invitation_url"))
+    if invitation_url not in body_text:
+        body_text += "\n\n" + invitation_url
+
+    idempotency_key = f"lifeos-admin-invitation:{actor_id}:{request_id}"
+    return (
+        {
+            "direction": "outbound",
+            "message_type": "invitation",
+            "status": "queued",
+            "sender_email": config.gmail_address,
+            "recipient_email": recipient_email,
+            "recipient_name": recipient_name or None,
+            "subject": subject,
+            "body_text": body_text,
+            "body_html": None,
+            "invitation_url": invitation_url,
+            "scheduled_at": _utc_now().isoformat(),
+            "max_attempts": 3,
+            "idempotency_key": idempotency_key,
+            "metadata": {
+                "source": "lifeos_admin_interface",
+                "request_id": request_id,
+            },
+            "created_by": actor_id,
+        },
+        idempotency_key,
+    )
 
 
 def _error_parts(payload: Any) -> tuple[str, str]:
@@ -421,14 +524,7 @@ class GmailQueueClient:
     def thread_metadata(self, thread_id: str) -> dict[str, Any]:
         return self._request(
             "threads/" + urllib.parse.quote(str(thread_id), safe=""),
-            query=[
-                ("format", "metadata"),
-                ("metadataHeaders", "From"),
-                ("metadataHeaders", "To"),
-                ("metadataHeaders", "Subject"),
-                ("metadataHeaders", "Date"),
-                ("metadataHeaders", "Message-ID"),
-            ],
+            query={"format": "full"},
         )
 
 
@@ -499,6 +595,43 @@ class SupabaseQueueStore:
         if not isinstance(rows, list) or not rows:
             return None
         return _parse_datetime(rows[0].get("sent_at"))
+
+    def enqueue_invitation(
+        self,
+        payload: dict[str, Any],
+        idempotency_key: str,
+    ) -> tuple[dict[str, Any], bool]:
+        rows = self._request(
+            "lifeos_queue_messages",
+            method="POST",
+            query={"on_conflict": "idempotency_key"},
+            payload=payload,
+            prefer="resolution=ignore-duplicates,return=representation",
+        )
+        if isinstance(rows, list) and rows:
+            return dict(rows[0]), True
+        existing = self._request(
+            "lifeos_queue_messages",
+            query={
+                "select": "id,direction,message_type,status,sender_email,recipient_email,recipient_name,subject,body_text,invitation_url,attempts,max_attempts,scheduled_at,sent_at,replied_at,parent_message_id,created_at",
+                "idempotency_key": "eq." + idempotency_key,
+                "limit": "1",
+            },
+        )
+        if not isinstance(existing, list) or not existing:
+            raise QueueRuntimeError("The invitation could not be queued.")
+        return dict(existing[0]), False
+
+    def recent_messages(self, limit: int = 30) -> list[dict[str, Any]]:
+        rows = self._request(
+            "lifeos_queue_messages",
+            query={
+                "select": "id,direction,message_type,status,sender_email,recipient_email,recipient_name,subject,body_text,invitation_url,attempts,max_attempts,scheduled_at,sent_at,replied_at,parent_message_id,created_at",
+                "order": "created_at.desc",
+                "limit": str(max(1, min(50, limit))),
+            },
+        )
+        return [dict(row) for row in rows] if isinstance(rows, list) else []
 
     def claim_next(self, worker_id: str) -> dict[str, Any] | None:
         rows = self._request(
@@ -618,7 +751,7 @@ class SupabaseQueueStore:
                 "recipient_email": self.config.gmail_address,
                 "recipient_name": sender_name or None,
                 "subject": subject or "(no subject)",
-                "body_text": str(gmail_message.get("snippet") or "")[:500],
+                "body_text": _gmail_body_text(gmail_message),
                 "scheduled_at": received_at.isoformat(),
                 "sent_at": received_at.isoformat(),
                 "delivered_at": received_at.isoformat(),
@@ -650,6 +783,47 @@ def _gmail_headers(message: dict[str, Any]) -> dict[str, str]:
         for item in headers
         if isinstance(item, dict) and item.get("name")
     }
+
+
+def _gmail_body_text(message: dict[str, Any], maximum: int = 5000) -> str:
+    plain_parts: list[str] = []
+    html_parts: list[str] = []
+
+    def decode_part(part: dict[str, Any]) -> str:
+        encoded = str((part.get("body") or {}).get("data") or "")
+        if not encoded:
+            return ""
+        try:
+            encoded += "=" * (-len(encoded) % 4)
+            return base64.urlsafe_b64decode(encoded).decode("utf-8", "replace")
+        except (ValueError, UnicodeDecodeError):
+            return ""
+
+    def collect(part: Any) -> None:
+        if not isinstance(part, dict):
+            return
+        mime_type = str(part.get("mimeType") or "").lower()
+        body = decode_part(part)
+        if body:
+            if mime_type == "text/plain":
+                plain_parts.append(body)
+            elif mime_type == "text/html":
+                html_parts.append(body)
+        for child in part.get("parts") or []:
+            collect(child)
+
+    collect(message.get("payload") or {})
+    body = "\n".join(part.strip() for part in plain_parts if part.strip()).strip()
+    if not body and html_parts:
+        markup = "\n".join(html_parts)
+        markup = re.sub(r"(?is)<(script|style).*?>.*?</\1>", " ", markup)
+        markup = re.sub(r"(?i)<br\s*/?>|</p\s*>|</div\s*>", "\n", markup)
+        body = html.unescape(re.sub(r"(?s)<[^>]+>", " ", markup))
+        body = "\n".join(" ".join(line.split()) for line in body.splitlines())
+        body = "\n".join(line for line in body.splitlines() if line).strip()
+    if not body:
+        body = str(message.get("snippet") or "").strip()
+    return body[:maximum]
 
 
 class LifeOSQueueRuntime:
@@ -730,6 +904,71 @@ class LifeOSQueueRuntime:
             result["remote_check"] = "failed"
             result["last_error"] = self._safe_error(error)
         return result
+
+    @staticmethod
+    def _safe_admin_message(row: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "id": str(row.get("id") or ""),
+            "direction": str(row.get("direction") or ""),
+            "message_type": str(row.get("message_type") or ""),
+            "status": str(row.get("status") or ""),
+            "sender_email": str(row.get("sender_email") or ""),
+            "recipient_email": str(row.get("recipient_email") or ""),
+            "recipient_name": str(row.get("recipient_name") or ""),
+            "subject": str(row.get("subject") or "")[:200],
+            "body_preview": str(row.get("body_text") or "")[:800],
+            "invitation_url": str(row.get("invitation_url") or "")[:500],
+            "attempts": int(row.get("attempts") or 0),
+            "max_attempts": int(row.get("max_attempts") or 0),
+            "scheduled_at": row.get("scheduled_at"),
+            "sent_at": row.get("sent_at"),
+            "replied_at": row.get("replied_at"),
+            "parent_message_id": row.get("parent_message_id"),
+            "created_at": row.get("created_at"),
+        }
+
+    def admin_snapshot(self, *, limit: int = 30) -> dict[str, Any]:
+        queue = self.status(check_remote=True)
+        messages = [
+            self._safe_admin_message(row)
+            for row in self.store.recent_messages(limit=limit)
+        ]
+        return {
+            "ok": bool(queue.get("ok")),
+            "queue": queue,
+            "messages": messages,
+            "reply_behavior": "captured_only",
+            "automatic_reply_enabled": False,
+        }
+
+    def enqueue_invitation(
+        self,
+        values: dict[str, Any],
+        *,
+        created_by: str,
+    ) -> dict[str, Any]:
+        if self.config.missing_delivery_settings():
+            raise QueueRuntimeError("LifeOS Queue delivery is not fully configured.")
+        payload, idempotency_key = _invitation_payload(
+            self.config,
+            values,
+            created_by=created_by,
+        )
+        row, created = self.store.enqueue_invitation(payload, idempotency_key)
+        return {
+            "ok": True,
+            "created": created,
+            "message": self._safe_admin_message(row),
+            "delivery_gate_enabled": bool(self.store.settings().get("enabled")),
+        }
+
+    def sync_replies_for_admin(self) -> dict[str, Any]:
+        result = self.sync_replies_once()
+        self._remember(
+            last_reply_sync_at=_utc_now().isoformat(),
+            last_reply_sync_result=result,
+        )
+        return {"ok": True, **result}
 
     def dispatch_once(self) -> dict[str, Any]:
         now = _utc_now()
@@ -983,6 +1222,30 @@ def run_queue_mode(mode: str) -> dict[str, Any]:
         return runtime.run(mode)
     except ValueError:
         raise
+    except Exception as error:
+        return {
+            "ok": False,
+            "status": "failed",
+            "error": runtime._safe_error(error),
+        }
+
+
+def queue_admin_snapshot(*, limit: int = 30) -> dict[str, Any]:
+    return get_queue_runtime().admin_snapshot(limit=limit)
+
+
+def queue_enqueue_invitation(
+    values: dict[str, Any],
+    *,
+    created_by: str,
+) -> dict[str, Any]:
+    return get_queue_runtime().enqueue_invitation(values, created_by=created_by)
+
+
+def queue_sync_replies_for_admin() -> dict[str, Any]:
+    runtime = get_queue_runtime()
+    try:
+        return runtime.sync_replies_for_admin()
     except Exception as error:
         return {
             "ok": False,
