@@ -39,3 +39,19 @@ services:
         value: true
       - key: LIFEOS_ADSENSE_PUBLISHER_ID
         sync: false
+      - key: LIFEOS_QUEUE_GMAIL_ADDRESS
+        value: losaiadminpatric@gmail.com
+      - key: LIFEOS_QUEUE_GOOGLE_CLIENT_ID
+        sync: false
+      - key: LIFEOS_QUEUE_GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: LIFEOS_QUEUE_GOOGLE_REFRESH_TOKEN
+        sync: false
+      - key: LIFEOS_QUEUE_INTERNAL_SECRET
+        sync: false
+      - key: LIFEOS_QUEUE_WORKER_ENABLED
+        value: false
+      - key: LIFEOS_QUEUE_POLL_SECONDS
+        value: 60
+      - key: LIFEOS_QUEUE_REPLY_SYNC_SECONDS
+        value: 900

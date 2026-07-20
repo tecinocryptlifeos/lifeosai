@@ -240,7 +240,9 @@ class ProtectedRouteTests(unittest.TestCase):
         routes = [
             ("GET", "/api/admin-dashboard", None, {}),
             ("GET", "/api/session-status", None, {}),
+            ("GET", "/api/lifeos-queue/status", None, {}),
             ("GET", "/audio/not-present.wav", None, {}),
+            ("POST", "/api/lifeos-queue/run", b'{"mode":"verify"}', {"Content-Type": "application/json"}),
             ("POST", "/api/gemini-live-token", b"{}", {"Content-Type": "application/json"}),
             ("POST", "/api/realtime-session", b"v=0", {"Content-Type": "application/sdp"}),
             ("POST", "/api/chat-decision", b"{}", {"Content-Type": "application/json"}),

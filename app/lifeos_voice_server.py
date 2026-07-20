@@ -39,6 +39,21 @@ try:
 except ImportError:
     from app.lifeos_public_tts import generate_lifeos_voice_wav
 
+try:
+    from lifeos_queue_runtime import (
+        queue_internal_authorized,
+        queue_status,
+        run_queue_mode,
+        start_queue_worker,
+    )
+except ImportError:
+    from app.lifeos_queue_runtime import (
+        queue_internal_authorized,
+        queue_status,
+        run_queue_mode,
+        start_queue_worker,
+    )
+
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 WEB_DIR = BASE_DIR / "web" / "lifeos_voice"
@@ -46,6 +61,7 @@ WEB_FILE = WEB_DIR / "index.html"
 AUDIO_DIR = WEB_DIR / "audio"
 
 LIFEOS_RELEASE = "lifeos-account-registration-completion-v2.1.0-20260717"
+LIFEOS_QUEUE_RELEASE = "lifeos-queue-runtime-v1.1.0-20260720"
 DEFAULT_PUBLIC_SITE_ORIGIN = "https://losai.onrender.com"
 LEGACY_PUBLIC_HOSTS = {"lifeos-ai-voice-app.onrender.com"}
 ADSENSE_SELLER_ID = "f08c47fec0942fa0"
@@ -712,6 +728,8 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
                 {
                     "ok": True,
                     "release": LIFEOS_RELEASE,
+                    "lifeos_queue_release": LIFEOS_QUEUE_RELEASE,
+                    "lifeos_queue_runtime": True,
                     "multilingual_voice": True,
                     "premium_igbo_priority": True,
                     "premium_voice_output": True,
@@ -897,6 +915,25 @@ class LifeOSVoiceHandler(BaseHTTPRequestHandler):
                 })
             except Exception as error:
                 self._send_json(503, {"ok": False, "error": str(error)[:500]})
+            return
+        if path == "/api/lifeos-queue/status":
+            if not queue_internal_authorized(self.headers):
+                self._send_json(
+                    401,
+                    {"ok": False, "error": "LifeOS Queue authorization is required"},
+                )
+                return
+            try:
+                result = queue_status(check_remote=True)
+                self._send_json(200 if result.get("ok") else 503, result)
+            except Exception as error:
+                self._send_json(
+                    503,
+                    {
+                        "ok": False,
+                        "error": f"{type(error).__name__}: {error}"[:500],
+                    },
+                )
             return
         if path == "/health":
             self._send_bytes(
@@ -1384,6 +1421,33 @@ Core response rules:
         path = self._path()
 
 
+        if path == "/api/lifeos-queue/run":
+            if not queue_internal_authorized(self.headers):
+                self._send_json(
+                    401,
+                    {"ok": False, "error": "LifeOS Queue authorization is required"},
+                )
+                return
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+                if length < 1 or length > 2000:
+                    raise ValueError("Invalid request body")
+                payload = json.loads(self.rfile.read(length).decode("utf-8"))
+                mode = str(payload.get("mode") or "verify")
+                self._send_json(200, run_queue_mode(mode))
+            except (ValueError, json.JSONDecodeError) as error:
+                self._send_json(400, {"ok": False, "error": str(error)[:500]})
+            except Exception as error:
+                self._send_json(
+                    503,
+                    {
+                        "ok": False,
+                        "error": f"{type(error).__name__}: {error}"[:500],
+                    },
+                )
+            return
+
+
         if path == "/api/account-profile":
             user = self._require_user(require_profile=False)
             if not user:
@@ -1583,6 +1647,15 @@ def main():
         print("❌ GEMINI_API_KEY is missing.")
         raise SystemExit(1)
 
+    queue_boot = start_queue_worker()
+    print(
+        "✅ LifeOS Queue runtime "
+        + (
+            "started"
+            if queue_boot.get("background_worker_alive")
+            else "loaded with worker disabled"
+        )
+    )
     print(f"✅ LifeOS AI Voice server running at http://{HOST}:{PORT}")
     ThreadingHTTPServer((HOST, PORT), LifeOSVoiceHandler).serve_forever()
 
