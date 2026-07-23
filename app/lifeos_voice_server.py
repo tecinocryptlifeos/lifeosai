@@ -66,7 +66,7 @@ WEB_DIR = BASE_DIR / "web" / "lifeos_voice"
 WEB_FILE = WEB_DIR / "index.html"
 AUDIO_DIR = WEB_DIR / "audio"
 
-LIFEOS_RELEASE = "lifeos-account-registration-completion-v2.1.0-20260717"
+LIFEOS_RELEASE = "lifeos-gemini31-resilient-live-v3.0.0-20260723"
 LIFEOS_QUEUE_RELEASE = "lifeos-queue-admin-interface-v1.2.0-20260720"
 DEFAULT_PUBLIC_SITE_ORIGIN = "https://losai.onrender.com"
 LEGACY_PUBLIC_HOSTS = {"lifeos-ai-voice-app.onrender.com"}
@@ -1416,23 +1416,54 @@ Core response rules:
 
 
 
-    # LIFEOS_GEMINI_LIVE_V1_HANDLER_START
-    def _handle_gemini_live_token_v1(self):
+    # LIFEOS_GEMINI_LIVE_V2_HANDLER_START
+    def _handle_gemini_live_token_v1(self, user=None):
         try:
-            client_id = (
-                self.headers.get("X-Forwarded-For", "")
-                .split(",", 1)[0]
-                .strip()
-            )
+            user_id = str((user or {}).get("id", "") or "").strip()[:120]
+            client_id = f"user:{user_id}" if user_id else ""
+            if not client_id:
+                client_id = (
+                    self.headers.get("X-Forwarded-For", "")
+                    .split(",", 1)[0]
+                    .strip()
+                )
             if not client_id:
                 client_id = str(
                     self.client_address[0]
                     if self.client_address
                     else "unknown"
                 )
+
+            model_preference = "primary"
+            length = int(self.headers.get("Content-Length", "0") or "0")
+            if length < 0 or length > 4096:
+                self._send_json(
+                    413,
+                    {"ok": False, "error": "The token request body is too large."},
+                )
+                return
+            if length:
+                try:
+                    payload = json.loads(self.rfile.read(length).decode("utf-8"))
+                except (UnicodeDecodeError, json.JSONDecodeError):
+                    self._send_json(
+                        400,
+                        {"ok": False, "error": "The token request body is invalid."},
+                    )
+                    return
+                if not isinstance(payload, dict):
+                    self._send_json(
+                        400,
+                        {"ok": False, "error": "The token request must be an object."},
+                    )
+                    return
+                model_preference = str(
+                    payload.get("model_preference", "primary") or "primary"
+                )[:20]
+
             self._send_json(
                 200,
-                create_gemini_live_token(client_id),
+                create_gemini_live_token(client_id, model_preference),
             )
         except GeminiLiveRateLimit as error:
             self._send_json(
@@ -1451,7 +1482,7 @@ Core response rules:
                     "error": f"{type(error).__name__}: {error}"[:500],
                 },
             )
-    # LIFEOS_GEMINI_LIVE_V1_HANDLER_END
+    # LIFEOS_GEMINI_LIVE_V2_HANDLER_END
 
     def do_POST(self):
         path = self._path()
@@ -1577,10 +1608,11 @@ Core response rules:
 
         # LIFEOS_GEMINI_LIVE_V1_POST_ROUTE_START
         if path == "/api/gemini-live-token":
-            if not self._require_user():
+            user = self._require_user()
+            if not user:
                 return
             try:
-                self._handle_gemini_live_token_v1()
+                self._handle_gemini_live_token_v1(user)
             except RuntimeError as error:
                 self._send_json(503, {"ok": False, "error": str(error)})
             return

@@ -128,6 +128,7 @@ for (const id of ["liveButton", "micButton", "speakerButton", "outputButton", "o
 }
 
 let tokenRequests = 0;
+const tokenPreferences = [];
 let microphoneRequests = 0;
 const track = { enabled: true, stop() {} };
 
@@ -162,16 +163,26 @@ window.LifeOSGoldenVisualizer = {
 window.LifeOSAuth = {
   session: { user: { id: "test-user" } },
   async whenReady() {},
-  async authFetch() {
+  async authFetch(pathname, options = {}) {
+    assert.equal(pathname, "/api/gemini-live-token");
     tokenRequests += 1;
+    const body = JSON.parse(options.body || "{}");
+    const preference = body.model_preference || "primary";
+    tokenPreferences.push(preference);
     return {
       ok: true,
+      status: 200,
       async json() {
         return {
           ok: true,
           token: `token-${tokenRequests}`,
           websocket_url: "wss://live.example.test",
-          model: "gemini-live-test",
+          model: preference === "fallback"
+            ? "gemini-2.5-flash-native-audio-preview-12-2025"
+            : "gemini-3.1-flash-live-preview",
+          model_preference: preference,
+          fallback_available: true,
+          thinking_level: "medium",
         };
       },
     };
@@ -197,6 +208,7 @@ async function main() {
   assert.deepEqual(first.sent[0].setup.sessionResumption, {});
   assert.deepEqual(first.sent[0].setup.contextWindowCompression, { slidingWindow: {} });
   assert.deepEqual(first.sent[0].setup.tools, [{ googleSearch: {} }]);
+  assert.equal(first.sent[0].setup.model, "models/gemini-3.1-flash-live-preview");
   assert.equal(first.sent[0].setup.generationConfig.thinkingConfig.thinkingLevel, "medium");
   assert.match(first.sent[0].setup.systemInstruction.parts[0].text, /PREMIUM IGBO PRIORITY/);
   assert.match(first.sent[0].setup.systemInstruction.parts[0].text, /Google Search grounding is available/);
@@ -222,6 +234,7 @@ async function main() {
   });
   assert.equal(sockets.length, 2, "a fresh connection should replace the retiring one");
   assert.equal(tokenRequests, 2, "the renewed connection should use a fresh ephemeral token");
+  assert.deepEqual(tokenPreferences, ["primary", "primary"]);
 
   const second = sockets[1];
   second.open();
@@ -238,7 +251,35 @@ async function main() {
 
   window.LifeOSGeminiLiveV1.stop();
   assert.equal(second.closeCall.code, 1000);
-  console.log("Gemini Live GoAway renewal simulation passed");
+
+  await window.LifeOSGeminiLiveV1.start();
+  assert.equal(sockets.length, 3, "a new conversation should try Gemini 3.1 first");
+  const primaryCapacitySocket = sockets[2];
+  primaryCapacitySocket.open();
+  primaryCapacitySocket.readyState = FakeWebSocket.CLOSED;
+  primaryCapacitySocket.emit("close", {
+    code: 1011,
+    reason: "RESOURCE_EXHAUSTED: quota temporarily limited",
+  });
+  await new Promise(resolve => setTimeout(resolve, 320));
+  await flush();
+
+  assert.equal(sockets.length, 4, "provider capacity failure should open one fallback connection");
+  assert.deepEqual(tokenPreferences, ["primary", "primary", "primary", "fallback"]);
+  const fallback = sockets[3];
+  fallback.open();
+  assert.equal(
+    fallback.sent[0].setup.model,
+    "models/gemini-2.5-flash-native-audio-preview-12-2025"
+  );
+  fallback.message({ setupComplete: {} });
+  await flush();
+  await flush();
+  assert.match(elements.get("status").textContent, /resilient voice mode/i);
+
+  window.LifeOSGeminiLiveV1.stop();
+  assert.equal(fallback.closeCall.code, 1000);
+  console.log("Gemini Live primary, renewal and capacity fallback simulation passed");
 }
 
 main().catch(error => {

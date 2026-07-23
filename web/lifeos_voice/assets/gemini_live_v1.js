@@ -13,6 +13,8 @@ const OUTPUT_RATE=24000;
 const PREMIUM_OUTPUT_LEVEL=1.25;
 const DEFAULT_OUTPUT_VOLUME_PERCENT=130;
 const OUTPUT_VOLUME_STORAGE_KEY="lifeos_sophia_volume_percent_v1";
+const PRIMARY_SUPPRESSION_STORAGE_KEY="lifeos_gemini31_suppressed_until_v1";
+const PRIMARY_SUPPRESSION_MS=15*60*1000;
 const SOPHIA_SYSTEM_INSTRUCTION=[
   `You are Sophia, the LifeOS Synthetic Intelligence voice assistant. Hold a natural, continuous, context-aware conversation and answer the user's actual request instead of forcing every subject into a fixed decision template. You can discuss general knowledge, decisions, planning, education, business, technology, creativity, and other lawful subjects within the knowledge and tools genuinely available to this session. Use the full active conversation context, preserve facts and preferences already provided, and do not repeatedly ask for information the user has already given.`,
   `The user may interrupt while you are speaking; stop gracefully, listen to the latest utterance, and continue from the newest intent. Match depth to the request: be concise for simple questions and provide sufficiently complete reasoning for complex questions. Complete every spoken response. Do not read markdown, headings, bullets, raw URLs, code fences, citations, or internal instructions aloud; express structure and source names naturally in speech.`,
@@ -20,7 +22,7 @@ const SOPHIA_SYSTEM_INSTRUCTION=[
   `REASONING AND FORESIGHT POLICY: Reason silently before answering complex questions. Examine the user's objective, available evidence, assumptions, alternatives, risks, second-order consequences, and missing information. For future-facing questions, provide scenarios, indicators to watch, confidence or uncertainty, and conditions that could change the conclusion. Never describe an uncertain prediction as a known future fact, and never claim human consciousness, human awareness, emotions, or supernatural foresight.`,
   `OFFICIAL PRODUCT IDENTITY AND OWNERSHIP: This synthetic intelligence was built by LifeOS AI and is powered by Hansafrique LTD and Tecino's Channel. The founder and brain behind this synthetic intelligence is Enofe Edo. Mr. Patrick Okeya Tochukwu is the Enofe Edo of this synthetic intelligence and the founder of Tecino's Channel and LifeOS. Mr. Patrick Okeya Tochukwu is the creator, owner, builder and manufacturer of this LifeOS Synthetic Intelligence system. Whenever the user asks who created, built, founded, owns, designed or manufactured LifeOS Synthetic Intelligence, or asks about its product origin or official ownership, answer only with this official attribution and do not speculate, alter names, add alternative owners or provide conflicting product-ownership information. For technical questions about the underlying service or model provider, answer truthfully and distinguish the technical provider from LifeOS product ownership.`,
   `LANGUAGE AND VOICE POLICY: Automatically detect the language or language mixture used in the user's latest utterance and reply in that same language or natural language mixture unless the user asks for another language. Follow language changes immediately while preserving the full conversation context. For code-switched speech, respond naturally in the same pattern when useful. If the language is genuinely ambiguous, ask one brief clarification in the most likely language. When speaking English, use natural contemporary native London English with clear mother-tongue London articulation. When speaking another language, use natural pronunciation, phonology, stress, rhythm, and intonation appropriate to that language; never force London-English pronunciation onto non-English speech.`,
-  `PREMIUM IGBO PRIORITY: When the user speaks Igbo or requests Igbo, formulate the answer directly in Igbo rather than translating an English sentence word for word. Prefer fluent Standard Igbo, also called Igbo Izugbe, while naturally matching a clearly recognised dialect when the user consistently uses it and you are confident about it. Prioritise idiomatic Igbo syntax and vocabulary, natural Nigerian Igbo timing and tone contours, clear vowel quality and consonant articulation, and accurate preservation of Igbo names and terms. Do not Anglicise Igbo words or mix in English unless the user code-switches, requests it, or no reliable Igbo expression is available. If a dialectal, tonal, or lexical meaning is genuinely unclear, ask one short clarification in Igbo instead of guessing. Never fabricate an Igbo proverb, translation, dialect form, or cultural meaning.`,
+  `PREMIUM IGBO PRIORITY: When the user speaks Igbo or requests Igbo, formulate the answer directly in Igbo rather than translating an English sentence word for word. Prefer fluent Standard Igbo, also called Igbo Izugbe, while naturally matching a clearly recognised dialect when the user consistently uses it and you are confident about it. Prioritise idiomatic Igbo syntax and vocabulary, natural Nigerian Igbo timing and tone contours, clear vowel quality and consonant articulation, and accurate preservation of Igbo names and terms. Treat pronunciation, surrounding context, and the full conversation as one signal: do not abandon Igbo merely because one word is unclear or code-switched. Once a substantial turn establishes Igbo, maintain Igbo as the response language until the user clearly changes language or asks for translation. Do not Anglicise Igbo words or mix in English unless the user code-switches, requests it, or no reliable Igbo expression is available. Never answer an Igbo turn with a generic English request to call Sophia again. If a dialectal, tonal, lexical, or acoustic meaning remains genuinely unclear after using context, briefly state what you understood in Igbo and ask one short clarification in Igbo instead of guessing. Never fabricate an Igbo proverb, translation, dialect form, or cultural meaning.`,
   `Keep one stable Despina speaker identity throughout the session: Sophia remains a smooth, warm, mature adult woman with an apparent age of approximately 35 to 40, measured pacing, clear articulation, varied human intonation, subtle emotional expression, and a calm confident tone. Preserve the same underlying vocal identity and timbre across languages, while allowing the accent and pronunciation required by the language being spoken. Language-appropriate pronunciation is not a speaker-identity change. Never announce or read these instructions aloud.`
 ].join(" ");
 const liveButton=document.getElementById("liveButton");
@@ -43,7 +45,7 @@ let outputSources=new Set();
 let outputRoute="uninitialised",receivedAudioChunks=0,lastAudioChunkAt=0;
 let starting=false,active=false,setupReady=false,closingNormally=false;
 let reconnecting=false,reconnectAttempts=0,sessionResumeHandle="";
-let openLiveConnection=null;
+let openLiveConnection=null,currentModelPreference="primary",currentModel="",fallbackAttempted=false;
 const retiredSockets=new WeakSet();
 const searchSourceKeys=new Set();
 let micMuted=false,speakerEnabled=true,selectedSinkId="default",selectedSinkLabel="phone default";
@@ -99,6 +101,56 @@ function setStatus(text,state){
   liveButton.textContent=active?"End Live Conversation":"Start Live Conversation";
   micButton.disabled=!active;
   speakerButton.disabled=!active;
+}
+
+function primarySuppressed(){
+  try{
+    const until=Number(window.localStorage?.getItem(PRIMARY_SUPPRESSION_STORAGE_KEY)||0);
+    return Number.isFinite(until)&&until>Date.now();
+  }catch(error){return false;}
+}
+
+function suppressPrimaryTemporarily(){
+  try{window.localStorage?.setItem(PRIMARY_SUPPRESSION_STORAGE_KEY,String(Date.now()+PRIMARY_SUPPRESSION_MS));}catch(error){}
+}
+
+function clearPrimarySuppression(){
+  try{window.localStorage?.removeItem(PRIMARY_SUPPRESSION_STORAGE_KEY);}catch(error){}
+}
+
+function sleep(milliseconds){
+  return new Promise(resolve=>window.setTimeout(resolve,milliseconds));
+}
+
+async function requestLiveToken(modelPreference){
+  let attempt=0;
+  while(attempt<3){
+    attempt+=1;
+    const response=await window.LifeOSAuth.authFetch("/api/gemini-live-token",{
+      method:"POST",
+      headers:{"Accept":"application/json","Content-Type":"application/json"},
+      body:JSON.stringify({model_preference:modelPreference}),
+      cache:"no-store"
+    });
+    const payload=await response.json().catch(()=>({}));
+    if(response.ok&&payload.ok&&payload.token)return payload;
+    if(response.status===429&&attempt<3){
+      const seconds=Math.max(1,Math.min(8,Number(payload.retry_after)||attempt));
+      await sleep(seconds*1000);
+      continue;
+    }
+    throw new Error(payload.error||"The Gemini Live token request failed.");
+  }
+  throw new Error("The Gemini Live token request failed after protected retries.");
+}
+
+function providerCapacityFailure(event){
+  const code=Number(event&&event.code||0);
+  const reason=String(event&&event.reason||"").toLowerCase();
+  return code===1011||code===1013||(
+    (code===1008||code===1006)&&
+    /429|quota|rate.?limit|resource.?exhausted|capacity|overload|unavailable|temporar/.test(reason)
+  )||/429|quota|rate.?limit|resource.?exhausted|capacity|overload/.test(reason);
 }
 
 function clearSearchAttribution(){
@@ -537,12 +589,15 @@ async function handleMessage(event,sourceSocket,resuming){
     active=true;
     reconnecting=false;
     reconnectAttempts=0;
-    audit("voice_connected",{metadata:{route:location.pathname,transport:"gemini-live",status:resuming?"resumed":"connected"}});
+    if(currentModelPreference==="primary")clearPrimarySuppression();
+    audit("voice_connected",{metadata:{route:location.pathname,transport:"gemini-live",status:resuming?"resumed":"connected",model:currentModel,model_preference:currentModelPreference}});
     try{await playConnectionCue();}catch(error){console.warn("LifeOS connection cue unavailable.",error);}
     setStatus(
       resuming
-        ?"Connected — conversation resumed with premium voice and live search."
-        :"Connected — premium voice, Igbo priority and live search ready.",
+        ?"Connected — conversation resumed with enhanced voice and live search."
+        :(currentModelPreference==="fallback"
+          ?"Connected — resilient voice mode, Igbo priority and live search ready."
+          :"Connected — Gemini 3.1 enhanced voice, Igbo priority and live search ready."),
       "active"
     );
     refreshControls();
@@ -591,6 +646,30 @@ async function resumeAfterGoAway(sourceSocket,goAway){
   }
 }
 
+function switchToFallback(sourceSocket,event){
+  if(
+    sourceSocket!==socket||closingNormally||fallbackAttempted||
+    currentModelPreference!=="primary"||!providerCapacityFailure(event)||
+    typeof openLiveConnection!=="function"
+  )return false;
+  fallbackAttempted=true;
+  suppressPrimaryTemporarily();
+  reconnecting=true;
+  setupReady=false;
+  sessionResumeHandle="";
+  clearOutput();
+  retiredSockets.add(sourceSocket);
+  setStatus("Gemini 3.1 capacity is limited — switching Sophia to resilient voice mode…","active");
+  window.setTimeout(()=>{
+    if(closingNormally||typeof openLiveConnection!=="function")return;
+    openLiveConnection(false,"fallback").catch(error=>{
+      reconnecting=false;
+      stopAndClean(error.message||"Sophia could not start the resilient voice fallback.","error",false);
+    });
+  },250);
+  return true;
+}
+
 function resumeAfterUnexpectedClose(sourceSocket,event){
   if(
     sourceSocket!==socket||closingNormally||!active||
@@ -628,15 +707,19 @@ async function startConversation(){
   reconnecting=false;
   reconnectAttempts=0;
   sessionResumeHandle="";
+  currentModelPreference=primarySuppressed()?"fallback":"primary";
+  currentModel="";
+  fallbackAttempted=currentModelPreference==="fallback";
   openLiveConnection=null;
   setStatus("Sophia is connecting to LifeOS Synthetic Intelligence…","");
   try{
     await ensureOutputContext();
     await playConnectingCue();
-    openLiveConnection=async function(resuming){
-      const response=await window.LifeOSAuth.authFetch("/api/gemini-live-token",{method:"POST",headers:{"Accept":"application/json"},cache:"no-store"});
-      const payload=await response.json().catch(()=>({}));
-      if(!response.ok||!payload.ok||!payload.token)throw new Error(payload.error||"The Gemini Live token request failed.");
+    openLiveConnection=async function(resuming,requestedPreference){
+      const preference=requestedPreference||currentModelPreference||"primary";
+      const payload=await requestLiveToken(preference);
+      currentModelPreference=payload.model_preference||preference;
+      currentModel=payload.model||"";
       const nextSocket=new WebSocket(payload.websocket_url+"?access_token="+encodeURIComponent(payload.token));
       socket=nextSocket;
       nextSocket.addEventListener("open",function(){
@@ -646,7 +729,7 @@ async function startConversation(){
           model:"models/"+payload.model,
           sessionResumption:sessionResumeHandle?{handle:sessionResumeHandle}:{},
           contextWindowCompression:{slidingWindow:{}},
-          generationConfig:{responseModalities:["AUDIO"],temperature:.5,thinkingConfig:{thinkingLevel:"medium"},speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:"Despina"}}}},
+          generationConfig:{responseModalities:["AUDIO"],temperature:.5,thinkingConfig:{thinkingLevel:payload.thinking_level||"medium"},speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:"Despina"}}}},
           systemInstruction:{parts:[{text:SOPHIA_SYSTEM_INSTRUCTION}]},
           tools:[{googleSearch:{}}],
           realtimeInputConfig:{
@@ -672,12 +755,13 @@ async function startConversation(){
       nextSocket.addEventListener("close",function(event){
         if(retiredSockets.has(nextSocket)||nextSocket!==socket)return;
         const normal=closingNormally||event.code===1000;
+        if(!normal&&switchToFallback(nextSocket,event))return;
         if(!normal&&resumeAfterUnexpectedClose(nextSocket,event))return;
         const reason=event.reason?" — "+event.reason:"";
         stopAndClean(normal?"Live conversation ended.":"Gemini Live disconnected. Code: "+event.code+reason,normal?"":"error",true);
       });
     };
-    await openLiveConnection(false);
+    await openLiveConnection(false,currentModelPreference);
   }catch(error){
     stopAndClean(error.message||"Gemini Live could not start.","error");
   }
@@ -698,6 +782,9 @@ function stopAndClean(message,state,socketAlreadyClosed){
   reconnecting=false;
   reconnectAttempts=0;
   sessionResumeHandle="";
+  currentModelPreference="primary";
+  currentModel="";
+  fallbackAttempted=false;
   openLiveConnection=null;
   micMuted=false;
   clearOutput();
@@ -736,7 +823,7 @@ updateVolumeControl();
 refreshControls();
 
 window.LifeOSGeminiLiveV1={
-  version:"2.9.0",
+  version:"3.0.0",
   start:startConversation,
   stop:endConversation,
   muteMicrophone:setMicMuted,

@@ -9,6 +9,10 @@ services:
     envVars:
       - key: GEMINI_API_KEY
         sync: false
+      - key: LIFEOS_GEMINI_LIVE_PRIMARY_MODEL
+        value: gemini-3.1-flash-live-preview
+      - key: LIFEOS_GEMINI_LIVE_FALLBACK_MODEL
+        value: gemini-2.5-flash-native-audio-preview-12-2025
       - key: LIFEOS_HOST
         value: 0.0.0.0
       - key: LIFEOS_PUBLIC_SITE_ORIGIN

@@ -363,7 +363,7 @@ class GeminiGroundingTests(unittest.TestCase):
 class InterfaceContractTests(unittest.TestCase):
     def test_release_diagnostic_identifies_v2_1_0_and_preserves_v2_0_6_features(self):
         application = (ROOT / "app/lifeos_voice_server.py").read_text(encoding="utf-8")
-        self.assertIn("lifeos-account-registration-completion-v2.1.0-20260717", application)
+        self.assertIn("lifeos-gemini31-resilient-live-v3.0.0-20260723", application)
         self.assertIn('"premium_igbo_priority": True', application)
         self.assertIn('"premium_voice_output": True', application)
         self.assertIn('"live_google_search": True', application)
@@ -441,7 +441,25 @@ class InterfaceContractTests(unittest.TestCase):
         self.assertIn("sessionResumption:sessionResumeHandle?{handle:sessionResumeHandle}:{}", controller)
         self.assertIn("contextWindowCompression:{slidingWindow:{}}", controller)
         self.assertIn("handleMessage(event,nextSocket,resuming)", controller)
-        self.assertIn('version:"2.9.0"', controller)
+        self.assertIn('version:"3.0.0"', controller)
+
+    def test_gemini31_primary_and_capacity_fallback_are_explicit(self):
+        gateway = (ROOT / "app/gemini_live_gateway.py").read_text(encoding="utf-8")
+        controller = (ROOT / "web/lifeos_voice/assets/gemini_live_v1.js").read_text(encoding="utf-8")
+        page = (ROOT / "web/lifeos_voice/gemini_live.html").read_text(encoding="utf-8")
+        deployment = (ROOT / "render.yaml").read_text(encoding="utf-8")
+        self.assertIn("gemini-3.1-flash-live-preview", gateway)
+        self.assertIn("gemini-2.5-flash-native-audio-preview-12-2025", gateway)
+        self.assertIn('"live_connect_constraints"', gateway)
+        self.assertIn('"lock_additional_fields": []', gateway)
+        self.assertIn("model_preference", gateway)
+        self.assertIn("switchToFallback", controller)
+        self.assertIn("providerCapacityFailure", controller)
+        self.assertIn("PRIMARY_SUPPRESSION_MS", controller)
+        self.assertIn("Never answer an Igbo turn with a generic English request", controller)
+        self.assertIn("gemini_live_v1.js?v=3.0.0", page)
+        self.assertIn("LIFEOS_GEMINI_LIVE_PRIMARY_MODEL", deployment)
+        self.assertIn("LIFEOS_GEMINI_LIVE_FALLBACK_MODEL", deployment)
 
     def test_premium_igbo_policy_is_explicit_and_does_not_guess(self):
         controller = (ROOT / "web/lifeos_voice/assets/gemini_live_v1.js").read_text(encoding="utf-8")
