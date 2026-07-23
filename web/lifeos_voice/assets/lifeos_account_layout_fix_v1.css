@@ -1,0 +1,112 @@
+/* LIFEOS_ACCOUNT_LAYOUT_FIX_V1 */
+
+html.lifeos-account-layout-fix,
+body.lifeos-account-layout-fix {
+  width: 100% !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+  background-size: cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+}
+
+body.lifeos-account-layout-fix::before,
+body.lifeos-account-layout-fix::after {
+  background-size: cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+}
+
+.lifeos-account-background-cover {
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  background-size: cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+}
+
+.lifeos-account-overlay-scroll {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 100% !important;
+
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+
+  height: 100vh !important;
+  height: 100dvh !important;
+
+  max-height: 100dvh !important;
+
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch !important;
+
+  align-items: flex-start !important;
+  justify-content: center !important;
+
+  scroll-padding-bottom:
+    calc(120px + env(safe-area-inset-bottom)) !important;
+
+  padding:
+    max(12px, env(safe-area-inset-top))
+    12px
+    calc(96px + env(safe-area-inset-bottom)) !important;
+}
+
+.lifeos-account-card-scroll,
+.lifeos-account-scroll-unclip {
+  box-sizing: border-box !important;
+  height: auto !important;
+  min-height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.lifeos-account-card-scroll {
+  width: min(100%, 46rem) !important;
+  max-width: 46rem !important;
+  flex: 0 0 auto !important;
+  margin: auto !important;
+
+  padding-bottom:
+    calc(24px + env(safe-area-inset-bottom)) !important;
+}
+
+#emailPasswordSignIn,
+.lifeos-account-submit-visible {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+
+  position: relative !important;
+  pointer-events: auto !important;
+  z-index: 20 !important;
+
+  width: 100% !important;
+  min-height: 48px !important;
+  flex: 0 0 auto !important;
+
+  margin-bottom:
+    calc(24px + env(safe-area-inset-bottom)) !important;
+}
+
+@media (max-width: 767px) {
+  .lifeos-account-overlay-scroll {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .lifeos-account-card-scroll {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
