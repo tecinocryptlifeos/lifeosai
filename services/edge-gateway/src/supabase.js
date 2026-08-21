@@ -1,4 +1,8 @@
-import { GatewayError } from "./policy.js";
+import {
+  GatewayError,
+  jsonResponse,
+  requireIdempotencyKey,
+} from "./policy.js";
 
 function enabled(value) {
   return ["1", "true", "yes", "on"].includes(String(value || "").trim().toLowerCase());
@@ -163,4 +167,125 @@ export async function verifySession(request, env, options = {}) {
     }
   }
   return { user, token, profile };
+}
+// LOSAI_ACCOUNT_PROFILE_EDGE_FALLBACK_V1
+function directProfileText(body, field) {
+  return String(body?.[field] ?? "").trim();
+}
+
+function buildDirectProfileRow(body, session, minimumAge) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    throw new GatewayError(
+      400,
+      "INVALID_PROFILE",
+      "The LifeOS profile request must be a JSON object.",
+    );
+  }
+
+  if (body.accept_terms !== true) {
+    throw new GatewayError(
+      422,
+      "PROFILE_TERMS_REQUIRED",
+      "Accept the Terms and Privacy Policy before continuing.",
+    );
+  }
+
+  const row = {
+    user_id: session.user.id,
+    email: session.user.email || null,
+    first_name: directProfileText(body, "first_name"),
+    surname: directProfileText(body, "surname"),
+    date_of_birth: directProfileText(body, "date_of_birth"),
+    country: directProfileText(body, "country"),
+    phone: directProfileText(body, "phone") || null,
+    terms_accepted_at: new Date().toISOString(),
+  };
+
+  if (!profileComplete(row, minimumAge)) {
+    throw new GatewayError(
+      422,
+      "PROFILE_INVALID",
+      "Complete the required profile details and minimum-age verification before continuing.",
+    );
+  }
+
+  return row;
+}
+
+async function upsertDirectProfile(env, token, row) {
+  const { url, key } = requireSupabase(env);
+
+  const { response } = await fetchJson(
+    env,
+    `${url}/rest/v1/lifeos_profiles?on_conflict=user_id`,
+    {
+      method: "POST",
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Prefer: "resolution=merge-duplicates,return=minimal",
+      },
+      body: JSON.stringify(row),
+    },
+  );
+
+  if (!response.ok) {
+    throw new GatewayError(
+      503,
+      "PROFILE_SAVE_FAILED",
+      "The LifeOS account profile could not be saved.",
+    );
+  }
+}
+
+export async function handleAccountProfileDirect(request, env, session) {
+  if (request.method === "GET") {
+    return jsonResponse(request, env, 200, session.profile);
+  }
+
+  requireIdempotencyKey(request);
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    throw new GatewayError(
+      400,
+      "INVALID_JSON",
+      "The request body must be valid JSON.",
+    );
+  }
+
+  const minimumAge = integerSetting(
+    env.LIFEOS_MINIMUM_AGE,
+    13,
+    13,
+    18,
+  );
+
+  const row = buildDirectProfileRow(
+    body,
+    session,
+    minimumAge,
+  );
+
+  await upsertDirectProfile(
+    env,
+    session.token,
+    row,
+  );
+
+  const profile = await loadProfile(
+    env,
+    session.token,
+    session.user.id,
+  );
+
+  return jsonResponse(
+    request,
+    env,
+    200,
+    profile,
+  );
 }

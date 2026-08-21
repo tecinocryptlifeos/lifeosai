@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test test/*.test.js",
-    "check": "node --check src/index.js && node --check src/policy.js && node --check src/supabase.js && node --check src/gemini.js && node --check src/chat.js && node --check src/health.js",
+    "check": "node --check src/index.js && node --check src/policy.js && node --check src/supabase.js && node --check src/gemini.js && node --check src/chat.js",
     "deploy": "wrangler deploy"
   },
   "devDependencies": {

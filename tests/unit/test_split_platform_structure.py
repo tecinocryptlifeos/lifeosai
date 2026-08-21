@@ -47,16 +47,18 @@ class SplitPlatformStructureTests(unittest.TestCase):
         self.assertNotIn("new WebSocket", homepage)
         self.assertNotIn("wss://", homepage)
 
-    def test_five_minute_cron_and_nonautomatic_render_deploy_are_explicit(self):
-        wrangler = (
-            ROOT / "infrastructure/cloudflare/wrangler.toml.template"
+    def test_cloudflare_is_the_runtime_owner_for_critical_edge_routes(self):
+        architecture = (
+            ROOT / "docs/architecture/FINAL_ARCHITECTURE_DECISION.md"
         ).read_text(encoding="utf-8")
-        render = (
-            ROOT / "infrastructure/render/render.split-platform.yaml"
+        worker = (
+            ROOT / "services/edge-gateway/src/index.js"
         ).read_text(encoding="utf-8")
-        self.assertIn('crons = ["*/5 * * * *"]', wrangler)
-        self.assertIn("autoDeployTrigger: off", render)
-        self.assertIn("LIFEOS_GATEWAY_REQUIRED", render)
+        self.assertIn("Cloudflare Worker", architecture)
+        self.assertIn("Render | Removed from the production request path", architecture)
+        self.assertIn('render_dependency: false', worker)
+        self.assertNotIn("onrender.com", worker)
+        self.assertNotIn("RENDER_ORIGIN", worker)
 
     def test_account_and_api_are_disallowed_from_public_indexing(self):
         robots = (ROOT / "web/lifeos_voice/robots.txt").read_text(encoding="utf-8")

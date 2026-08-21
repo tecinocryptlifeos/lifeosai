@@ -1,31 +1,31 @@
 # LOSAI final split-platform architecture decision
 
-Status: implementation candidate; production routing remains unchanged until every gate passes.
+Status: implementation in progress; production routing remains unchanged until every test and deployment gate passes.
 
 | Responsibility | Permanent owner | Failure behavior |
 |---|---|---|
 | Development and recovery | Termux | Recreate the feature branch from GitHub; never develop directly on `main` |
-| Source of truth and CI | GitHub | No deploy proceeds from an untested or unreviewed commit |
-| Homepage and public/private static interfaces | Cloudflare Pages | Remain available when both Python services are down |
-| Stable API address, session validation, rate limiting, Live tokens, health state | Cloudflare Worker | Critical edge routes remain available; incompatible routes return controlled maintenance |
-| Full legacy Python application | Render | Primary origin; no public front door after gateway enforcement |
-| Slim Python compatibility service | Optional standby (Northflank deferred) | Not a release dependency; when absent, Python-dependent features use controlled edge maintenance if Render fails |
-| Identity and durable application data | Supabase | Shared system of record with RLS; no passwords exposed to administrators |
+| Source of truth and CI | GitHub | No deploy proceeds from an untested commit |
+| Homepage and public/private static interfaces | Cloudflare Pages | Remain available independently of backend services |
+| Stable API address, session validation, rate limiting, Live tokens, chat decision, account profile, health/config | Cloudflare Worker | Critical edge routes remain available; unsupported legacy routes return controlled maintenance |
+| Identity and durable application data | Supabase | Shared system of record with RLS |
+| Render | Removed from the production request path | No Worker route may depend on Render availability |
+| Northflank | Deferred | Not a release dependency |
 
-Public routes are `losai.ng.eu.org/`, `/chat`, `/voice`, `/account`, and `/admin`. The temporary Pages address is used until custom-domain approval. The stable API is `api.losai.ng.eu.org`.
+The public production web interface is `https://lifeosai.pages.dev` until any later custom-domain cutover is explicitly verified. The Worker is the Cloudflare edge API layer.
 
-The homepage uses an ordinary secure link to the product. WebSocket transport is used only for live voice. Pages owns homepage, legal/public pages, account interface, chat, premium voice visualizer, assets/PWA, analytics, Search Console, and public-content-only AdSense.
+The Cloudflare Worker directly validates Supabase access tokens and profile status, enforces exact-origin CORS and security headers, rate-limits requests, issues one-use constrained Gemini Live ephemeral tokens, provides the Worker-native chat decision path with Gemini grounding, handles account-profile reads/writes directly through Supabase, and exposes `/health` and `/config`.
 
-The Worker validates Supabase access tokens and profile status, enforces exact-origin CORS and security headers, rate-limits and issues one-use constrained Gemini Live ephemeral tokens, exposes `/health` and `/config`, and protects configured Python origins with a shared secret. Cloudflare's scheduled handler probes Render every five minutes and probes an optional standby only when one is configured, stores the result in KV, and alerts whenever the preferred origin changes.
+The Worker no longer probes, selects, proxies to, or falls back through Render or another Python origin. Legacy routes that have not yet been implemented natively at the edge return a controlled maintenance response rather than silently reintroducing a Python dependency.
 
 Routing is deterministic:
 
-1. When Render is healthy, compatible API traffic goes to Render.
-2. When Render is known unhealthy and a configured standby is healthy, critical config/session/Live-token work stays at the edge and supported compatibility traffic may go once to that standby.
-3. When no standby is configured, or when every configured Python origin is unavailable, Pages, Supabase identity/data, Worker health/config/session validation, and Live-token issuance stay available. Python-dependent noncritical features return a controlled maintenance response.
+1. Pages serves the public interface.
+2. The Worker serves the stable API and critical edge-native application routes.
+3. Supabase is the identity and durable-data system of record.
+4. Gemini is reached directly from the Worker for chat grounding and constrained Live token issuance.
+5. Unsupported legacy Python-dependent routes return controlled maintenance until an edge-native implementation is deliberately added.
 
-Replay policy is intentionally narrow. Only `/health`, `/config`, and public-content reads may be automatically retried. Authenticated token issuance is repeatable only through its short-lived idempotency record. Account deletion, email, database mutations, payments, and admin actions are never blindly replayed. Every mutation must carry an `Idempotency-Key`.
+Replay policy remains narrow. Authenticated token issuance and chat are protected by short-lived idempotency records. Account and other mutations require an `Idempotency-Key`. No request is replayed against a hidden or undeclared backend origin.
 
-The capacity acceptance target is 50 simultaneous public users. This is a release contract, not a claim of unlimited upstream Gemini, Render, any optional standby provider, Supabase, or Cloudflare quota.
-
-Gemini's official ephemeral-token API supports one-use tokens plus expiry and Live connection constraints: [Gemini Live ephemeral tokens](https://ai.google.dev/gemini-api/docs/live-api/ephemeral-tokens). Cloudflare documents scheduled triggers in Wrangler and their replacement behavior on deploy: [Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/).
+The capacity acceptance target remains 50 simultaneous public users. This is a release contract, not a claim of unlimited Gemini, Supabase, Cloudflare, or other provider quota.
