@@ -1,6 +1,8 @@
 name: Cloudflare Worker production deploy (active)
 
 on:
+  push:
+    branches: [main]
   pull_request:
     types: [closed]
     branches: [main]
@@ -15,23 +17,20 @@ env:
 
 jobs:
   deploy:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Check out production source
         uses: actions/checkout@v4
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "24"
           cache: npm
           cache-dependency-path: services/edge-gateway/package-lock.json
-
       - name: Install pinned edge toolchain
         run: npm ci --ignore-scripts --prefix services/edge-gateway
-
       - name: Verify Worker source
         run: |
           npm --prefix services/edge-gateway test
@@ -41,7 +40,6 @@ jobs:
             exit 1
           fi
           echo "CLOUDFLARE_WORKER_EXTERNAL_ORIGIN=PASS"
-
       - name: Verify required production secrets and canonical origins
         env:
           LIFEOS_ALLOWED_ORIGINS: ${{ secrets.LIFEOS_ALLOWED_ORIGINS }}
@@ -59,21 +57,16 @@ jobs:
           import os
           required = ["LIFEOS_ALLOWED_ORIGINS","LIFEOS_PUBLIC_SITE_ORIGIN","LIFEOS_API_ORIGIN","SUPABASE_URL","SUPABASE_PUBLISHABLE_KEY","ORIGIN_STATE_KV_ID","RATE_LIMIT_NAMESPACE_ID","GEMINI_API_KEY","CLOUDFLARE_API_TOKEN","CLOUDFLARE_ACCOUNT_ID"]
           missing = [name for name in required if not os.environ.get(name, "").strip()]
-          if missing:
-              raise SystemExit("Missing required production secret(s): " + ", ".join(missing))
-          expected_site = os.environ["LIFEOS_PRODUCTION_SITE"]
-          expected_api = os.environ["LIFEOS_PRODUCTION_API"]
-          if os.environ["LIFEOS_PUBLIC_SITE_ORIGIN"].rstrip("/") != expected_site:
-              raise SystemExit("LIFEOS_PUBLIC_SITE_ORIGIN must be " + expected_site)
-          if os.environ["LIFEOS_ALLOWED_ORIGINS"].rstrip("/") != expected_site:
-              raise SystemExit("LIFEOS_ALLOWED_ORIGINS must be " + expected_site)
-          if os.environ["LIFEOS_API_ORIGIN"].rstrip("/") != expected_api:
-              raise SystemExit("LIFEOS_API_ORIGIN must be " + expected_api)
+          if missing: raise SystemExit("Missing required production secret(s): " + ", ".join(missing))
+          site = os.environ["LIFEOS_PRODUCTION_SITE"]
+          api = os.environ["LIFEOS_PRODUCTION_API"]
+          if os.environ["LIFEOS_PUBLIC_SITE_ORIGIN"].rstrip("/") != site: raise SystemExit("LIFEOS_PUBLIC_SITE_ORIGIN must be " + site)
+          if os.environ["LIFEOS_ALLOWED_ORIGINS"].rstrip("/") != site: raise SystemExit("LIFEOS_ALLOWED_ORIGINS must be " + site)
+          if os.environ["LIFEOS_API_ORIGIN"].rstrip("/") != api: raise SystemExit("LIFEOS_API_ORIGIN must be " + api)
           print("PRODUCTION_ORIGINS=PASS")
           print("GEMINI_API_KEY_PRESENT=PASS")
           print("CLOUDFLARE_DEPLOY_CREDENTIALS_PRESENT=PASS")
           PY
-
       - name: Materialize production Wrangler configuration
         env:
           LIFEOS_ALLOWED_ORIGINS: ${{ secrets.LIFEOS_ALLOWED_ORIGINS }}
@@ -91,25 +84,21 @@ jobs:
           template = Path("../../infrastructure/cloudflare/wrangler.toml.template").read_text(encoding="utf-8")
           values = {"__LIFEOS_ALLOWED_ORIGINS__":os.environ["LIFEOS_ALLOWED_ORIGINS"],"__LIFEOS_PUBLIC_SITE_ORIGIN__":os.environ["LIFEOS_PUBLIC_SITE_ORIGIN"],"__LIFEOS_API_ORIGIN__":os.environ["LIFEOS_API_ORIGIN"],"__SUPABASE_URL__":os.environ["SUPABASE_URL"],"__SUPABASE_PUBLISHABLE_KEY__":os.environ["SUPABASE_PUBLISHABLE_KEY"],"__ORIGIN_STATE_KV_ID__":os.environ["ORIGIN_STATE_KV_ID"],"__RATE_LIMIT_NAMESPACE_ID__":os.environ["RATE_LIMIT_NAMESPACE_ID"]}
           rendered = template
-          for key, value in values.items():
-              rendered = rendered.replace(key, value)
+          for key, value in values.items(): rendered = rendered.replace(key, value)
           Path("wrangler.toml").write_text(rendered, encoding="utf-8")
           PY
           test -s wrangler.toml
-
       - name: Authenticate Wrangler
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx --prefix services/edge-gateway wrangler whoami
-
       - name: Deploy authoritative Worker to production
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         working-directory: services/edge-gateway
         run: npx wrangler deploy --config wrangler.toml
-
       - name: Publish Gemini API key to the Worker
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -119,32 +108,22 @@ jobs:
         run: |
           test -n "$GEMINI_API_KEY"
           printf '%s' "$GEMINI_API_KEY" | npx wrangler secret put GEMINI_API_KEY --config wrangler.toml
-
       - name: Verify live Worker Gemini configuration
         env:
           LIFEOS_PRODUCTION_SITE: ${{ env.LIFEOS_PRODUCTION_SITE }}
         run: |
           python - <<'PY'
-          import json
-          import os
-          import urllib.error
-          import urllib.request
-
+          import json, os, urllib.error, urllib.request
           url = os.environ["LIFEOS_PRODUCTION_API"].rstrip("/") + "/api/gemini-live-status"
-          attempts = [
-              ("direct", {}),
-              ("pages-origin", {"Origin": os.environ["LIFEOS_PRODUCTION_SITE"]}),
-              ("browser-origin", {"Origin": os.environ["LIFEOS_PRODUCTION_SITE"], "Referer": os.environ["LIFEOS_PRODUCTION_SITE"] + "/", "User-Agent": "Mozilla/5.0"}),
-          ]
-          last_error = None
+          attempts = [("direct", {}), ("pages-origin", {"Origin": os.environ["LIFEOS_PRODUCTION_SITE"]}), ("browser-origin", {"Origin": os.environ["LIFEOS_PRODUCTION_SITE"], "Referer": os.environ["LIFEOS_PRODUCTION_SITE"] + "/", "User-Agent": "Mozilla/5.0"})]
           data = None
+          last_error = None
           for label, headers in attempts:
               try:
                   request = urllib.request.Request(url, headers=headers)
                   with urllib.request.urlopen(request, timeout=20) as response:
                       body = response.read().decode("utf-8")
-                      if response.status != 200:
-                          raise RuntimeError(f"HTTP {response.status}: {body[:500]}")
+                      if response.status != 200: raise RuntimeError(f"HTTP {response.status}: {body[:500]}")
                       data = json.loads(body)
                       print(f"LIVE_WORKER_HTTP_CHECK={label}:PASS")
                       break
@@ -157,15 +136,10 @@ jobs:
                   last_error = f"{label}: {exc}"
                   print(f"LIVE_WORKER_HTTP_CHECK={label}:FAIL")
                   print(last_error)
-
-          if data is None:
-              raise SystemExit("LIVE_WORKER_GEMINI_STATUS=FAIL: " + str(last_error))
-          if data.get("gemini_live") is not True:
-              raise SystemExit("LIVE_GEMINI=FAIL")
-          if data.get("gemini_key_configured") is not True:
-              raise SystemExit("LIVE_GEMINI_KEY=FAIL: Worker does not report GEMINI_API_KEY configured")
-          if data.get("version") != "edge-v1":
-              raise SystemExit(f"LIVE_WORKER_VERSION=FAIL: {data.get('version')!r}")
+          if data is None: raise SystemExit("LIVE_WORKER_GEMINI_STATUS=FAIL: " + str(last_error))
+          if data.get("gemini_live") is not True: raise SystemExit("LIVE_GEMINI=FAIL")
+          if data.get("gemini_key_configured") is not True: raise SystemExit("LIVE_GEMINI_KEY=FAIL: Worker does not report GEMINI_API_KEY configured")
+          if data.get("version") != "edge-v1": raise SystemExit(f"LIVE_WORKER_VERSION=FAIL: {data.get('version')!r}")
           print("LIVE_WORKER_GEMINI=PASS")
           print("LIVE_WORKER_KEY_CONFIGURED=PASS")
           print("LIVE_WORKER_VERSION=edge-v1")
