@@ -578,6 +578,45 @@ async function handleMessage(event,sourceSocket,resuming){
   if(sourceSocket!==socket)return;
   const text=typeof event.data==="string"?event.data:await event.data.text();
   const message=JSON.parse(text);
+  if(message.error){
+    const providerError=message.error||{};
+    const providerCode=providerError.code??providerError.statusCode??"";
+    const providerStatus=String(providerError.status||"").trim();
+    const providerMessage=String(providerError.message||providerError.statusMessage||"Gemini Live provider error").trim();
+    const providerReason=[providerStatus,providerMessage].filter(Boolean).join(": ");
+    const capacityEvent={
+      code:Number(providerCode)||0,
+      reason:providerReason
+    };
+
+    audit("gemini_provider_error",{
+      error_message:providerReason.slice(0,800),
+      metadata:{
+        route:location.pathname,
+        transport:"gemini-live",
+        provider_code:String(providerCode||""),
+        provider_status:providerStatus.slice(0,120),
+        model:currentModel,
+        model_preference:currentModelPreference
+      }
+    });
+
+    if(switchToFallback(sourceSocket,capacityEvent))return;
+
+    retiredSockets.add(sourceSocket);
+    if(sourceSocket===socket){
+      setStatus(
+        "Gemini Live error"+(providerReason?": "+providerReason.slice(0,240):"."),
+        "error"
+      );
+      stopAndClean(
+        providerReason||"Gemini Live provider error.",
+        "error",
+        true
+      );
+    }
+    return;
+  }
   if(message.sessionResumptionUpdate){
     const update=message.sessionResumptionUpdate;
     if(update.resumable&&update.newHandle)sessionResumeHandle=update.newHandle;

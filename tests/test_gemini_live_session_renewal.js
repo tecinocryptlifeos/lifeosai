@@ -262,32 +262,92 @@ async function main() {
 
   await window.LifeOSGeminiLiveV1.start();
   assert.equal(sockets.length, 3, "a new conversation should try Gemini 3.1 first");
-  const primaryCapacitySocket = sockets[2];
-  primaryCapacitySocket.open();
-  primaryCapacitySocket.readyState = FakeWebSocket.CLOSED;
-  primaryCapacitySocket.emit("close", {
-    code: 1011,
-    reason: "RESOURCE_EXHAUSTED: quota temporarily limited",
+
+  window.LifeOSGeminiLiveV1.stop();
+  await window.LifeOSGeminiLiveV1.start();
+  assert.equal(sockets.length, 4, "provider-error test should create a new primary connection");
+
+  const providerErrorSocket = sockets[3];
+  providerErrorSocket.open();
+
+  providerErrorSocket.message({
+    error: {
+      code: 429,
+      status: "RESOURCE_EXHAUSTED",
+      message: "quota temporarily limited",
+    },
   });
+
   await new Promise(resolve => setTimeout(resolve, 320));
   await flush();
 
-  assert.equal(sockets.length, 4, "provider capacity failure should open one fallback connection");
-  assert.deepEqual(tokenPreferences, ["primary", "primary", "primary", "fallback"]);
-  const fallback = sockets[3];
-  fallback.open();
   assert.equal(
-    fallback.sent[0].setup.model,
+    sockets.length,
+    5,
+    "top-level Gemini provider capacity errors should open one fallback connection"
+  );
+  assert.equal(tokenPreferences[tokenPreferences.length - 1], "fallback");
+
+  const providerFallback = sockets[4];
+  providerFallback.open();
+  assert.equal(
+    providerFallback.sent[0].setup.model,
     "models/gemini-2.5-flash-native-audio-preview-12-2025"
   );
-  fallback.message({ setupComplete: {} });
+  providerFallback.message({ setupComplete: {} });
   await flush();
   await flush();
   assert.match(elements.get("status").textContent, /resilient voice mode/i);
 
   window.LifeOSGeminiLiveV1.stop();
-  assert.equal(fallback.closeCall.code, 1000);
-  console.log("Gemini Live primary, renewal and capacity fallback simulation passed");
+
+  await window.LifeOSGeminiLiveV1.start();
+  assert.equal(sockets.length, 6, "non-capacity provider-error test should create a new primary connection");
+
+  const nonCapacitySocket = sockets[5];
+  nonCapacitySocket.open();
+  nonCapacitySocket.message({
+    error: {
+      code: 400,
+      status: "INVALID_ARGUMENT",
+      message: "invalid Live API configuration",
+    },
+  });
+
+  await flush();
+  assert.equal(
+    sockets.length,
+    6,
+    "non-capacity provider errors must not create a fallback connection"
+  );
+  assert.match(
+    elements.get("status").textContent,
+    /invalid Live API configuration/i
+  );
+
+  window.LifeOSGeminiLiveV1.stop();
+
+  await window.LifeOSGeminiLiveV1.start();
+  assert.equal(sockets.length, 7, "1008 negative test should create a new primary connection");
+
+  const nonCapacity1008Socket = sockets[6];
+  nonCapacity1008Socket.open();
+  nonCapacity1008Socket.readyState = FakeWebSocket.CLOSED;
+  nonCapacity1008Socket.emit("close", {
+    code: 1008,
+    reason: "policy violation",
+  });
+
+  await flush();
+  assert.equal(
+    sockets.length,
+    7,
+    "1008 without capacity evidence must not create a fallback connection"
+  );
+
+  window.LifeOSGeminiLiveV1.stop();
+
+  console.log("Gemini Live primary, renewal and provider-error handling simulation passed");
 }
 
 main().catch(error => {
