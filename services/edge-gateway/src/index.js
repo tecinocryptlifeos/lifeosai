@@ -37,22 +37,26 @@ function publicHealth(request, env, state) {
 }
 
 async function handleRequest(request, env) {
+  const url = new URL(request.url);
+  const pathname = url.pathname.replace(/\/$/, "") || "/";
+
+  // This is a non-sensitive deployment/readiness probe. Keep it independent
+  // of browser-origin policy so CI and external monitors can verify the live
+  // Worker after deployment. It exposes only boolean/model metadata.
+  if (request.method === "GET" && pathname === "/api/gemini-live-status") {
+    return jsonResponse(request, env, 200, geminiStatus(env));
+  }
+
   if (!requestOriginAllowed(request, env)) {
     throw new GatewayError(403, "ORIGIN_NOT_ALLOWED", "This browser origin is not allowed.");
   }
   if (request.method === "OPTIONS") return preflightResponse(request, env);
-
-  const url = new URL(request.url);
-  const pathname = url.pathname.replace(/\/$/, "") || "/";
 
   if (request.method === "GET" && pathname === "/health") {
     return publicHealth(request, env, await currentOriginState(env));
   }
   if (request.method === "GET" && ["/config", "/api/auth-config"].includes(pathname)) {
     return jsonResponse(request, env, 200, publicConfig(env));
-  }
-  if (request.method === "GET" && pathname === "/api/gemini-live-status") {
-    return jsonResponse(request, env, geminiStatus(env));
   }
   if (request.method === "GET" && ["/api/session", "/api/session-status"].includes(pathname)) {
     const session = await verifySession(request, env, { profile: "optional" });
