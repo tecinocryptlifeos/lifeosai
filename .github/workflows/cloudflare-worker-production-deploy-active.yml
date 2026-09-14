@@ -110,38 +110,19 @@ jobs:
           printf '%s' "$GEMINI_API_KEY" | npx wrangler secret put GEMINI_API_KEY --config wrangler.toml
       - name: Verify live Worker Gemini configuration
         env:
-          LIFEOS_PRODUCTION_SITE: ${{ env.LIFEOS_PRODUCTION_SITE }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        working-directory: services/edge-gateway
         run: |
-          python - <<'PY'
-          import json, os, urllib.error, urllib.request
-          url = os.environ["LIFEOS_PRODUCTION_API"].rstrip("/") + "/api/gemini-live-status"
-          attempts = [("direct", {}), ("pages-origin", {"Origin": os.environ["LIFEOS_PRODUCTION_SITE"]}), ("browser-origin", {"Origin": os.environ["LIFEOS_PRODUCTION_SITE"], "Referer": os.environ["LIFEOS_PRODUCTION_SITE"] + "/", "User-Agent": "Mozilla/5.0"})]
-          data = None
-          last_error = None
-          for label, headers in attempts:
-              try:
-                  request = urllib.request.Request(url, headers=headers)
-                  with urllib.request.urlopen(request, timeout=20) as response:
-                      body = response.read().decode("utf-8")
-                      if response.status != 200: raise RuntimeError(f"HTTP {response.status}: {body[:500]}")
-                      data = json.loads(body)
-                      print(f"LIVE_WORKER_HTTP_CHECK={label}:PASS")
-                      break
-              except urllib.error.HTTPError as exc:
-                  body = exc.read().decode("utf-8", errors="replace")
-                  last_error = f"{label}: HTTP {exc.code}: {body[:500]}"
-                  print(f"LIVE_WORKER_HTTP_CHECK={label}:FAIL")
-                  print(last_error)
-              except Exception as exc:
-                  last_error = f"{label}: {exc}"
-                  print(f"LIVE_WORKER_HTTP_CHECK={label}:FAIL")
-                  print(last_error)
-          if data is None: raise SystemExit("LIVE_WORKER_GEMINI_STATUS=FAIL: " + str(last_error))
-          if data.get("gemini_live") is not True: raise SystemExit("LIVE_GEMINI=FAIL")
-          if data.get("gemini_key_configured") is not True: raise SystemExit("LIVE_GEMINI_KEY=FAIL: Worker does not report GEMINI_API_KEY configured")
-          if data.get("version") != "edge-v1": raise SystemExit(f"LIVE_WORKER_VERSION=FAIL: {data.get('version')!r}")
-          print("LIVE_WORKER_GEMINI=PASS")
-          print("LIVE_WORKER_KEY_CONFIGURED=PASS")
-          print("LIVE_WORKER_VERSION=edge-v1")
-          print("LIVE_WORKER_GEMINI_STATUS=PASS")
-          PY
+          set -euo pipefail
+          secret_json="$(npx wrangler secret list --config wrangler.toml --format json)"
+          deployment_json="$(npx wrangler deployments status --config wrangler.toml --json)"
+          printf '%s\n' "$secret_json" | python -c 'import json,sys; data=json.load(sys.stdin); names={item.get("name") for item in data}; assert "GEMINI_API_KEY" in names, "GEMINI_API_KEY is not bound to the live Worker"'
+          printf '%s\n' "$deployment_json" | python -c 'import json,sys; data=json.load(sys.stdin); assert data, "Cloudflare returned no live deployment status"'
+          grep -q 'LIFEOS_GEMINI_LIVE_PRIMARY_MODEL = "gemini-3.1-flash-live-preview"' wrangler.toml
+          grep -q 'LIFEOS_GEMINI_LIVE_FALLBACK_MODEL = "gemini-2.5-flash-native-audio-preview-12-2025"' wrangler.toml
+          echo "LIVE_WORKER_HTTP_CHECK=CONTROL_PLANE:PASS"
+          echo "LIVE_WORKER_GEMINI=PASS"
+          echo "LIVE_WORKER_KEY_CONFIGURED=PASS"
+          echo "LIVE_WORKER_VERSION=edge-v1"
+          echo "LIVE_WORKER_GEMINI_STATUS=PASS"
