@@ -73,19 +73,6 @@ async function createGeminiToken(fetchFunction, apiKey, model) {
       config: {
         sessionResumption: {},
         responseModalities: ["AUDIO"],
-        generationConfig: {
-          responseModalities: ["AUDIO"],
-          thinkingConfig: {
-            thinkingLevel: "medium",
-          },
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: {
-                voiceName: "Despina",
-              },
-            },
-          },
-        },
       },
     },
   };
