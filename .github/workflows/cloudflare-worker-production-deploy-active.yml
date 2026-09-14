@@ -57,23 +57,10 @@ jobs:
         run: |
           python - <<'PY'
           import os
-
-          required = [
-              "LIFEOS_ALLOWED_ORIGINS",
-              "LIFEOS_PUBLIC_SITE_ORIGIN",
-              "LIFEOS_API_ORIGIN",
-              "SUPABASE_URL",
-              "SUPABASE_PUBLISHABLE_KEY",
-              "ORIGIN_STATE_KV_ID",
-              "RATE_LIMIT_NAMESPACE_ID",
-              "GEMINI_API_KEY",
-              "CLOUDFLARE_API_TOKEN",
-              "CLOUDFLARE_ACCOUNT_ID",
-          ]
+          required = ["LIFEOS_ALLOWED_ORIGINS","LIFEOS_PUBLIC_SITE_ORIGIN","LIFEOS_API_ORIGIN","SUPABASE_URL","SUPABASE_PUBLISHABLE_KEY","ORIGIN_STATE_KV_ID","RATE_LIMIT_NAMESPACE_ID","GEMINI_API_KEY","CLOUDFLARE_API_TOKEN","CLOUDFLARE_ACCOUNT_ID"]
           missing = [name for name in required if not os.environ.get(name, "").strip()]
           if missing:
               raise SystemExit("Missing required production secret(s): " + ", ".join(missing))
-
           expected_site = os.environ["LIFEOS_PRODUCTION_SITE"]
           expected_api = os.environ["LIFEOS_PRODUCTION_API"]
           if os.environ["LIFEOS_PUBLIC_SITE_ORIGIN"].rstrip("/") != expected_site:
@@ -82,7 +69,6 @@ jobs:
               raise SystemExit("LIFEOS_ALLOWED_ORIGINS must be " + expected_site)
           if os.environ["LIFEOS_API_ORIGIN"].rstrip("/") != expected_api:
               raise SystemExit("LIFEOS_API_ORIGIN must be " + expected_api)
-
           print("PRODUCTION_ORIGINS=PASS")
           print("GEMINI_API_KEY_PRESENT=PASS")
           print("CLOUDFLARE_DEPLOY_CREDENTIALS_PRESENT=PASS")
@@ -102,17 +88,8 @@ jobs:
           python - <<'PY'
           import os
           from pathlib import Path
-
           template = Path("../../infrastructure/cloudflare/wrangler.toml.template").read_text(encoding="utf-8")
-          values = {
-              "__LIFEOS_ALLOWED_ORIGINS__": os.environ["LIFEOS_ALLOWED_ORIGINS"],
-              "__LIFEOS_PUBLIC_SITE_ORIGIN__": os.environ["LIFEOS_PUBLIC_SITE_ORIGIN"],
-              "__LIFEOS_API_ORIGIN__": os.environ["LIFEOS_API_ORIGIN"],
-              "__SUPABASE_URL__": os.environ["SUPABASE_URL"],
-              "__SUPABASE_PUBLISHABLE_KEY__": os.environ["SUPABASE_PUBLISHABLE_KEY"],
-              "__ORIGIN_STATE_KV_ID__": os.environ["ORIGIN_STATE_KV_ID"],
-              "__RATE_LIMIT_NAMESPACE_ID__": os.environ["RATE_LIMIT_NAMESPACE_ID"],
-          }
+          values = {"__LIFEOS_ALLOWED_ORIGINS__":os.environ["LIFEOS_ALLOWED_ORIGINS"],"__LIFEOS_PUBLIC_SITE_ORIGIN__":os.environ["LIFEOS_PUBLIC_SITE_ORIGIN"],"__LIFEOS_API_ORIGIN__":os.environ["LIFEOS_API_ORIGIN"],"__SUPABASE_URL__":os.environ["SUPABASE_URL"],"__SUPABASE_PUBLISHABLE_KEY__":os.environ["SUPABASE_PUBLISHABLE_KEY"],"__ORIGIN_STATE_KV_ID__":os.environ["ORIGIN_STATE_KV_ID"],"__RATE_LIMIT_NAMESPACE_ID__":os.environ["RATE_LIMIT_NAMESPACE_ID"]}
           rendered = template
           for key, value in values.items():
               rendered = rendered.replace(key, value)
@@ -150,25 +127,45 @@ jobs:
           python - <<'PY'
           import json
           import os
+          import urllib.error
           import urllib.request
 
           url = os.environ["LIFEOS_PRODUCTION_API"].rstrip("/") + "/api/gemini-live-status"
-          request = urllib.request.Request(
-              url,
-              headers={"Origin": os.environ["LIFEOS_PRODUCTION_SITE"]},
-          )
-          with urllib.request.urlopen(request, timeout=20) as response:
-              if response.status != 200:
-                  raise SystemExit(f"Gemini status endpoint returned HTTP {response.status}")
-              data = json.load(response)
+          attempts = [
+              ("direct", {}),
+              ("pages-origin", {"Origin": os.environ["LIFEOS_PRODUCTION_SITE"]}),
+              ("browser-origin", {"Origin": os.environ["LIFEOS_PRODUCTION_SITE"], "Referer": os.environ["LIFEOS_PRODUCTION_SITE"] + "/", "User-Agent": "Mozilla/5.0"}),
+          ]
+          last_error = None
+          data = None
+          for label, headers in attempts:
+              try:
+                  request = urllib.request.Request(url, headers=headers)
+                  with urllib.request.urlopen(request, timeout=20) as response:
+                      body = response.read().decode("utf-8")
+                      if response.status != 200:
+                          raise RuntimeError(f"HTTP {response.status}: {body[:500]}")
+                      data = json.loads(body)
+                      print(f"LIVE_WORKER_HTTP_CHECK={label}:PASS")
+                      break
+              except urllib.error.HTTPError as exc:
+                  body = exc.read().decode("utf-8", errors="replace")
+                  last_error = f"{label}: HTTP {exc.code}: {body[:500]}"
+                  print(f"LIVE_WORKER_HTTP_CHECK={label}:FAIL")
+                  print(last_error)
+              except Exception as exc:
+                  last_error = f"{label}: {exc}"
+                  print(f"LIVE_WORKER_HTTP_CHECK={label}:FAIL")
+                  print(last_error)
 
+          if data is None:
+              raise SystemExit("LIVE_WORKER_GEMINI_STATUS=FAIL: " + str(last_error))
           if data.get("gemini_live") is not True:
               raise SystemExit("LIVE_GEMINI=FAIL")
           if data.get("gemini_key_configured") is not True:
               raise SystemExit("LIVE_GEMINI_KEY=FAIL: Worker does not report GEMINI_API_KEY configured")
           if data.get("version") != "edge-v1":
               raise SystemExit(f"LIVE_WORKER_VERSION=FAIL: {data.get('version')!r}")
-
           print("LIVE_WORKER_GEMINI=PASS")
           print("LIVE_WORKER_KEY_CONFIGURED=PASS")
           print("LIVE_WORKER_VERSION=edge-v1")
