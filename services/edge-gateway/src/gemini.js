@@ -22,6 +22,16 @@ function modelPolicy(env, requested) {
   return { primary, fallback, preference, model };
 }
 
+function providerError(data) {
+  const error = data?.error;
+  if (!error || typeof error !== "object") return null;
+  return {
+    code: Number(error.code) || null,
+    status: String(error.status || "").slice(0, 64) || null,
+    message: String(error.message || "").slice(0, 512) || null,
+  };
+}
+
 async function requestPayload(request) {
   const length = Number.parseInt(request.headers.get("Content-Length") || "0", 10) || 0;
   if (length > 4096) {
@@ -90,7 +100,12 @@ async function createGeminiToken(fetchFunction, apiKey, model) {
   );
   const data = await response.json().catch(() => ({}));
   if (!response.ok || !String(data.name || "").trim()) {
-    return { ok: false, status: response.status, data };
+    return {
+      ok: false,
+      status: response.status,
+      data,
+      provider_error: providerError(data),
+    };
   }
   return { ok: true, token: String(data.name).trim() };
 }
@@ -138,7 +153,11 @@ export async function issueGeminiToken(request, env, session, idempotencyKey) {
       502,
       "GEMINI_TOKEN_FAILED",
       "Gemini Live token issuance failed.",
-      { provider_status: Number(issued.status) || 0, requested_model: policy.model },
+      {
+        provider_status: Number(issued.status) || 0,
+        requested_model: policy.model,
+        provider_error: issued.provider_error || null,
+      },
     );
   }
 
