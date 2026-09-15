@@ -73,7 +73,7 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY'
-          import json, os, sys, urllib.error, urllib.request
+          import json, os, urllib.error, urllib.request
           from datetime import datetime, timedelta, timezone
 
           key = os.environ.get("GEMINI_API_KEY", "").strip()
@@ -85,11 +85,13 @@ jobs:
               "uses": 1,
               "expireTime": (now + timedelta(minutes=30)).isoformat().replace("+00:00", "Z"),
               "newSessionExpireTime": (now + timedelta(minutes=1)).isoformat().replace("+00:00", "Z"),
-              "liveConnectConstraints": {
-                  "model": "models/gemini-3.1-flash-live-preview",
-                  "config": {
-                      "sessionResumption": {},
-                      "responseModalities": ["AUDIO"]
+              "config": {
+                  "bidiGenerateContentSetup": {
+                      "model": "models/gemini-3.1-flash-live-preview",
+                      "generationConfig": {
+                          "responseModalities": ["AUDIO"]
+                      },
+                      "sessionResumption": {}
                   }
               }
           }
