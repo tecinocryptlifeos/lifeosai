@@ -67,6 +67,66 @@ jobs:
           print("GEMINI_API_KEY_PRESENT=PASS")
           print("CLOUDFLARE_DEPLOY_CREDENTIALS_PRESENT=PASS")
           PY
+      - name: Verify Google Gemini token provider
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, sys, urllib.error, urllib.request
+          from datetime import datetime, timedelta, timezone
+
+          key = os.environ.get("GEMINI_API_KEY", "").strip()
+          if not key:
+              raise SystemExit("GEMINI_PROVIDER_CHECK=FAIL: GEMINI_API_KEY is empty")
+
+          now = datetime.now(timezone.utc)
+          body = {
+              "uses": 1,
+              "expireTime": (now + timedelta(minutes=30)).isoformat().replace("+00:00", "Z"),
+              "newSessionExpireTime": (now + timedelta(minutes=1)).isoformat().replace("+00:00", "Z"),
+              "liveConnectConstraints": {
+                  "model": "models/gemini-3.1-flash-live-preview",
+                  "config": {
+                      "sessionResumption": {},
+                      "responseModalities": ["AUDIO"]
+                  }
+              }
+          }
+          request = urllib.request.Request(
+              "https://generativelanguage.googleapis.com/v1beta/auth_tokens",
+              data=json.dumps(body).encode(),
+              method="POST",
+              headers={"Content-Type": "application/json", "x-goog-api-key": key},
+          )
+          try:
+              with urllib.request.urlopen(request, timeout=20) as response:
+                  status = response.status
+                  data = json.loads(response.read().decode() or "{}")
+          except urllib.error.HTTPError as exc:
+              status = exc.code
+              try:
+                  data = json.loads(exc.read().decode() or "{}")
+              except Exception:
+                  data = {}
+          except Exception as exc:
+              raise SystemExit(f"GEMINI_PROVIDER_CHECK=FAIL: transport error: {type(exc).__name__}")
+
+          error = data.get("error") if isinstance(data, dict) else None
+          if not (200 <= status < 300) or not str(data.get("name", "")).strip():
+              code = error.get("code") if isinstance(error, dict) else None
+              state = error.get("status") if isinstance(error, dict) else None
+              message = error.get("message") if isinstance(error, dict) else None
+              print(f"GEMINI_PROVIDER_HTTP_STATUS={status}")
+              print(f"GEMINI_PROVIDER_ERROR_CODE={code or 'unknown'}")
+              print(f"GEMINI_PROVIDER_ERROR_STATUS={state or 'unknown'}")
+              print(f"GEMINI_PROVIDER_ERROR_MESSAGE={str(message or 'unknown')[:512]}")
+              raise SystemExit("GEMINI_PROVIDER_CHECK=FAIL")
+
+          print(f"GEMINI_PROVIDER_HTTP_STATUS={status}")
+          print("GEMINI_PROVIDER_TOKEN_ISSUED=PASS")
+          print("GEMINI_PROVIDER_CHECK=PASS")
+          PY
       - name: Materialize production Wrangler configuration
         env:
           LIFEOS_ALLOWED_ORIGINS: ${{ secrets.LIFEOS_ALLOWED_ORIGINS }}
