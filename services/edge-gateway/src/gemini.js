@@ -78,11 +78,13 @@ async function createGeminiToken(fetchFunction, apiKey, model) {
     uses: 1,
     expireTime: new Date(now + 30 * 60 * 1000).toISOString(),
     newSessionExpireTime: new Date(now + 60 * 1000).toISOString(),
-    liveConnectConstraints: {
-      model: `models/${model}`,
-      config: {
+    config: {
+      bidiGenerateContentSetup: {
+        model: `models/${model}`,
+        generationConfig: {
+          responseModalities: ["AUDIO"],
+        },
         sessionResumption: {},
-        responseModalities: ["AUDIO"],
       },
     },
   };
