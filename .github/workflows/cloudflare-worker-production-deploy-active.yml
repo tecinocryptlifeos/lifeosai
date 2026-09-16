@@ -85,14 +85,12 @@ jobs:
               "uses": 1,
               "expireTime": (now + timedelta(minutes=30)).isoformat().replace("+00:00", "Z"),
               "newSessionExpireTime": (now + timedelta(minutes=1)).isoformat().replace("+00:00", "Z"),
-              "config": {
-                  "bidiGenerateContentSetup": {
-                      "model": "models/gemini-3.1-flash-live-preview",
-                      "generationConfig": {
-                          "responseModalities": ["AUDIO"]
-                      },
-                      "sessionResumption": {}
-                  }
+              "bidiGenerateContentSetup": {
+                  "model": "models/gemini-3.1-flash-live-preview",
+                  "generationConfig": {
+                      "responseModalities": ["AUDIO"]
+                  },
+                  "sessionResumption": {}
               }
           }
           request = urllib.request.Request(
