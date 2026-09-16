@@ -81,7 +81,10 @@ async function createGeminiToken(fetchFunction, apiKey, model) {
     uses: 1,
     expireTime: new Date(now + 30 * 60 * 1000).toISOString(),
     newSessionExpireTime: new Date(now + 60 * 1000).toISOString(),
-    fieldMask: "bidiGenerateContentSetup.systemInstruction,bidiGenerateContentSetup.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName",
+    // AuthToken.fieldMask is scoped to BidiGenerateContentSetup itself.
+    // Use protobuf field names in the mask; the REST API rejects the
+    // bidiGenerateContentSetup.* and camelCase forms here.
+    fieldMask: "system_instruction",
     bidiGenerateContentSetup: {
       model: `models/${model}`,
       systemInstruction: {
