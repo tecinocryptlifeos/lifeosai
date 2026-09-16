@@ -1,1 +1,0 @@
-console.log("SOPHIA_IDENTITY_TOKEN_LOCK=PASS");
