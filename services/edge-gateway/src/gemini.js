@@ -81,28 +81,17 @@ async function createGeminiToken(fetchFunction, apiKey, model) {
     uses: 1,
     expireTime: new Date(now + 30 * 60 * 1000).toISOString(),
     newSessionExpireTime: new Date(now + 60 * 1000).toISOString(),
-    // AuthToken.fieldMask is scoped to BidiGenerateContentSetup itself.
-    // Use protobuf field names in the mask; the REST API rejects the
-    // bidiGenerateContentSetup.* and camelCase forms here.
+    // A non-empty AuthToken.fieldMask must enumerate every field present in
+    // bidiGenerateContentSetup. Lock only the system instruction here so the
+    // client remains free to supply model, audio generation and resumption
+    // settings while the official Sophia identity cannot be replaced.
     fieldMask: "system_instruction",
     bidiGenerateContentSetup: {
-      model: `models/${model}`,
       systemInstruction: {
         parts: [{
           text: `${SOPHIA_OFFICIAL_IDENTITY_INSTRUCTION}\n\n${SOPHIA_VOICE_INSTRUCTION}\n\n${SOPHIA_DECISION_SYSTEM_INSTRUCTION}\n\nVOICE MODE: Apply the LifeOS identity, stable London-English voice profile, and decision-intelligence framework naturally in spoken conversation. When asked about LifeOS identity, creator, founder, owner, builder, manufacturer, brain, or product origin, give the complete official attribution without omitting identity elements. Do not announce section labels or read markdown formatting aloud. For decisions, reason through the framework and give the most useful evidence-based next action. For ordinary conversation, respond naturally without forcing the audit structure.`,
         }],
       },
-      generationConfig: {
-        responseModalities: ["AUDIO"],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: {
-              voiceName: SOPHIA_PREBUILT_VOICE_NAME,
-            },
-          },
-        },
-      },
-      sessionResumption: {},
     },
   };
   const response = await fetchFunction(
