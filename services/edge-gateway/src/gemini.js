@@ -1,6 +1,7 @@
 import { GatewayError, stableHash } from "./policy.js";
 import { SOPHIA_DECISION_SYSTEM_INSTRUCTION } from "./decision-engine.js";
 import { SOPHIA_OFFICIAL_IDENTITY_INSTRUCTION } from "./sophia-identity.js";
+import { SOPHIA_PREBUILT_VOICE_NAME, SOPHIA_VOICE_INSTRUCTION } from "./sophia-voice.js";
 
 export const GEMINI_WEBSOCKET_URL =
   "wss://generativelanguage.googleapis.com/ws/" +
@@ -80,16 +81,23 @@ async function createGeminiToken(fetchFunction, apiKey, model) {
     uses: 1,
     expireTime: new Date(now + 30 * 60 * 1000).toISOString(),
     newSessionExpireTime: new Date(now + 60 * 1000).toISOString(),
-    fieldMask: "bidiGenerateContentSetup.systemInstruction",
+    fieldMask: "bidiGenerateContentSetup.systemInstruction,bidiGenerateContentSetup.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName",
     bidiGenerateContentSetup: {
       model: `models/${model}`,
       systemInstruction: {
         parts: [{
-          text: `${SOPHIA_OFFICIAL_IDENTITY_INSTRUCTION}\n\n${SOPHIA_DECISION_SYSTEM_INSTRUCTION}\n\nVOICE MODE: Apply the LifeOS identity and decision-intelligence framework naturally in spoken conversation. When asked about LifeOS identity, creator, founder, owner, builder, manufacturer, brain, or product origin, give the complete official attribution without omitting identity elements. Do not announce section labels or read markdown formatting aloud. For decisions, reason through the framework and give the most useful evidence-based next action. For ordinary conversation, respond naturally without forcing the audit structure.`,
+          text: `${SOPHIA_OFFICIAL_IDENTITY_INSTRUCTION}\n\n${SOPHIA_VOICE_INSTRUCTION}\n\n${SOPHIA_DECISION_SYSTEM_INSTRUCTION}\n\nVOICE MODE: Apply the LifeOS identity, stable London-English voice profile, and decision-intelligence framework naturally in spoken conversation. When asked about LifeOS identity, creator, founder, owner, builder, manufacturer, brain, or product origin, give the complete official attribution without omitting identity elements. Do not announce section labels or read markdown formatting aloud. For decisions, reason through the framework and give the most useful evidence-based next action. For ordinary conversation, respond naturally without forcing the audit structure.`,
         }],
       },
       generationConfig: {
         responseModalities: ["AUDIO"],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: {
+              voiceName: SOPHIA_PREBUILT_VOICE_NAME,
+            },
+          },
+        },
       },
       sessionResumption: {},
     },
