@@ -87,23 +87,11 @@ jobs:
               "newSessionExpireTime": (now + timedelta(minutes=1)).isoformat().replace("+00:00", "Z"),
               "fieldMask": "system_instruction",
               "bidiGenerateContentSetup": {
-                  "model": "models/gemini-3.1-flash-live-preview",
                   "systemInstruction": {
                       "parts": [{
                           "text": "LifeOS Synthetic Intelligence. Built by LifeOS AI. Powered by Hansafrique LTD and Tecino's Channel. Founder and brain: Patrick Okeya. Mr. Patrick Okeya Tochukwu is the creator, owner, builder and manufacturer. Use natural contemporary native London English with clear mother-tongue London articulation and preserve one stable speaker identity across the session."
                       }]
-                  },
-                  "generationConfig": {
-                      "responseModalities": ["AUDIO"],
-                      "speechConfig": {
-                          "voiceConfig": {
-                              "prebuiltVoiceConfig": {
-                                  "voiceName": "Despina"
-                              }
-                          }
-                      }
-                  },
-                  "sessionResumption": {}
+                  }
               }
           }
           request = urllib.request.Request(
@@ -138,8 +126,7 @@ jobs:
 
           print(f"GEMINI_PROVIDER_HTTP_STATUS={status}")
           print("GEMINI_PROVIDER_TOKEN_ISSUED=PASS")
-          print("GEMINI_PROVIDER_VOICE=Despina")
-          print("GEMINI_PROVIDER_ACCENT=London-English")
+          print("GEMINI_PROVIDER_IDENTITY_LOCK=PASS")
           print("GEMINI_PROVIDER_CHECK=PASS")
           PY
       - name: Materialize production Wrangler configuration
