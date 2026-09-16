@@ -82,11 +82,9 @@ async function createGeminiToken(fetchFunction, apiKey, model) {
     expireTime: new Date(now + 30 * 60 * 1000).toISOString(),
     newSessionExpireTime: new Date(now + 60 * 1000).toISOString(),
     // AuthToken.fieldMask is scoped to BidiGenerateContentSetup itself.
-    // Google rejects paths prefixed with bidiGenerateContentSetup.* here.
-    // Keep the server identity instruction immutable while leaving voice setup
-    // in the session configuration because ephemeral-token voice locking is not
-    // reliably honoured by the current gemini-3.1-flash-live-preview path.
-    fieldMask: "systemInstruction",
+    // Use protobuf field names in the mask; the REST API rejects the
+    // bidiGenerateContentSetup.* and camelCase forms here.
+    fieldMask: "system_instruction",
     bidiGenerateContentSetup: {
       model: `models/${model}`,
       systemInstruction: {
