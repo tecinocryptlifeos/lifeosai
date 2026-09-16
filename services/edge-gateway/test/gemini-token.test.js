@@ -31,7 +31,7 @@ test("Gemini Live token issuance falls back when the primary model token is reje
   const requestedModels = [];
   const env = makeEnv(async (_url, init) => {
     const body = JSON.parse(init.body);
-    requestedModels.push(body.config.bidiGenerateContentSetup.model);
+    requestedModels.push(body.bidiGenerateContentSetup.model);
     if (requestedModels.length === 1) {
       return new Response(JSON.stringify({ error: { message: "primary unavailable" } }), { status: 503 });
     }
