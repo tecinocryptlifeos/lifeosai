@@ -1,4 +1,5 @@
 import { GatewayError, stableHash } from "./policy.js";
+import { SOPHIA_DECISION_SYSTEM_INSTRUCTION } from "./decision-engine.js";
 
 export const GEMINI_WEBSOCKET_URL =
   "wss://generativelanguage.googleapis.com/ws/" +
@@ -80,6 +81,11 @@ async function createGeminiToken(fetchFunction, apiKey, model) {
     newSessionExpireTime: new Date(now + 60 * 1000).toISOString(),
     bidiGenerateContentSetup: {
       model: `models/${model}`,
+      systemInstruction: {
+        parts: [{
+          text: `${SOPHIA_DECISION_SYSTEM_INSTRUCTION}\n\nVOICE MODE: Apply this LifeOS decision-intelligence framework naturally in spoken conversation. Do not announce section labels or read markdown formatting aloud. When the user is making a decision, reason through the framework and give the most useful evidence-based next action. For ordinary conversation, respond naturally without forcing the audit structure.`,
+        }],
+      },
       generationConfig: {
         responseModalities: ["AUDIO"],
       },
