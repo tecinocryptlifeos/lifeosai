@@ -110,7 +110,7 @@ def _invitation_url(value: Any) -> str:
         raise ValueError("Enter a valid LifeOS invitation URL.") from error
     if (
         parsed.scheme != "https"
-        or (parsed.hostname or "").lower() != "losai.onrender.com"
+        or (parsed.hostname or "").lower() != urllib.parse.urlsplit(PUBLIC_INVITATION_ORIGIN).hostname
         or parsed.username
         or parsed.password
         or parsed_port not in (None, 443)
