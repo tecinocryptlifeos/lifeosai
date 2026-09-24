@@ -539,7 +539,7 @@ class ProtectedRouteTests(unittest.TestCase):
             "recipient_email": "member@example.com",
             "subject": "LifeOS invitation",
             "body_text": "This is the approved LifeOS invitation message.",
-            "invitation_url": "https://losai.onrender.com",
+            "invitation_url": "https://lifeosai.pages.dev",
         }).encode("utf-8")
         with mock.patch.object(server, "verify_user", return_value=(user, "token")), \
                 mock.patch.object(server, "require_complete_profile"), \
@@ -810,7 +810,7 @@ class InterfaceContractTests(unittest.TestCase):
         self.assertIn('id="queuePreviewBody"', page)
         self.assertIn('id="queueApproved"', page)
         self.assertIn("You're invited to explore LifeOS", page)
-        self.assertIn("https://losai.onrender.com", page)
+        self.assertIn("https://lifeosai.pages.dev", page)
         self.assertIn("losaiadminpatric@gmail.com", page)
         self.assertIn("/api/admin-lifeos-queue", controller)
         self.assertIn('action: "enqueue_invitation"', controller)
