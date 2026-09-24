@@ -284,7 +284,7 @@ class QueueInvitationTests(unittest.TestCase):
                 self.values(sender_email="lifeostecinoai@gmail.com"),
                 created_by=self.actor_id,
             )
-        with self.assertRaisesRegex(ValueError, "losai.onrender.com"):
+        with self.assertRaisesRegex(ValueError, "configured LifeOS public origin"):
             queue._invitation_payload(
                 runtime_config(),
                 self.values(invitation_url="https://example.com/invite"),
