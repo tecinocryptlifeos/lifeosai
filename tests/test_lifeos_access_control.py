@@ -696,7 +696,7 @@ class InterfaceContractTests(unittest.TestCase):
         gateway = (ROOT / "app/gemini_live_gateway.py").read_text(encoding="utf-8")
         controller = (ROOT / "web/lifeos_voice/assets/gemini_live_v1.js").read_text(encoding="utf-8")
         page = (ROOT / "web/lifeos_voice/gemini_live.html").read_text(encoding="utf-8")
-        deployment = (ROOT / "render.yaml").read_text(encoding="utf-8")
+        deployment = (ROOT / "infrastructure/cloudflare/wrangler.toml.template").read_text(encoding="utf-8")
         self.assertIn("gemini-3.1-flash-live-preview", gateway)
         self.assertIn("gemini-2.5-flash-native-audio-preview-12-2025", gateway)
         self.assertIn('"live_connect_constraints"', gateway)
