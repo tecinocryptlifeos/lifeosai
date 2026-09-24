@@ -18,6 +18,7 @@ from app import lifeos_voice_server as server
 ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / "web" / "lifeos_voice"
 FINAL_ORIGIN = "https://lifeosai.pages.dev"
+# Public production is served by Cloudflare Pages; build-time legacy rewriting is tested separately.
 OLD_ORIGIN = "https://lifeos-ai-voice-app.onrender.com"
 PUBLISHER_ID = "pub-1234567890123456"
 
