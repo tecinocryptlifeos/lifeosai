@@ -2,6 +2,8 @@ import http.client
 import json
 import os
 import threading
+import subprocess
+import tempfile
 import unittest
 import urllib.error
 import urllib.request
@@ -22,17 +24,34 @@ PUBLISHER_ID = "pub-1234567890123456"
 
 class GrowthReadinessStaticTests(unittest.TestCase):
     def test_public_documents_use_the_final_cost_free_origin(self):
-        public_documents = [
-            path
-            for path in WEB.glob("*.html")
-            if path.name not in {"admin.html", "chat.html", "gemini_live.html"}
-        ]
-        self.assertGreaterEqual(len(public_documents), 20)
-        for document in public_documents:
-            page = document.read_text(encoding="utf-8")
-            with self.subTest(document=document.name):
-                self.assertNotIn(OLD_ORIGIN, page)
-                self.assertIn('rel="canonical" href="' + FINAL_ORIGIN, page)
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "pages"
+            environment = os.environ.copy()
+            environment.update({
+                "LIFEOS_PUBLIC_SITE_ORIGIN": FINAL_ORIGIN,
+                "LIFEOS_API_ORIGIN": "https://losai-edge-gateway.lifeostecinoai.workers.dev",
+                "LIFEOS_PAGES_PREVIEW": "false",
+            })
+            subprocess.run(
+                ["python", "apps/web/build.py", "--output", str(output)],
+                cwd=ROOT,
+                env=environment,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            public_documents = [
+                path
+                for path in output.glob("*.html")
+                if path.name not in {"admin.html", "chat.html", "gemini_live.html"}
+            ]
+            self.assertGreaterEqual(len(public_documents), 20)
+            for document in public_documents:
+                page = document.read_text(encoding="utf-8")
+                with self.subTest(document=document.name):
+                    self.assertNotIn(OLD_ORIGIN, page)
+                    self.assertNotIn("https://losai.onrender.com", page)
+                    self.assertIn('rel="canonical" href="' + FINAL_ORIGIN, page)
 
     def test_sitemap_is_valid_complete_and_excludes_private_surfaces(self):
         sitemap_path = WEB / "sitemap.xml"
