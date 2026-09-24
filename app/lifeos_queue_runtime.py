@@ -37,7 +37,7 @@ RUNTIME_VERSION = "1.2.0"
 DEFAULT_GMAIL_ADDRESS = "losaiadminpatric@gmail.com"
 DEFAULT_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
 DEFAULT_GMAIL_API_ROOT = "https://gmail.googleapis.com/gmail/v1"
-PUBLIC_INVITATION_ORIGIN = os.environ.get("LIFEOS_PUBLIC_SITE_ORIGIN", "https://lifeosai.pages.dev").strip().rstrip("/")
+PUBLIC_INVITATION_ORIGIN = "https://lifeosai.pages.dev"
 TRUE_VALUES = {"1", "true", "yes", "on"}
 
 
