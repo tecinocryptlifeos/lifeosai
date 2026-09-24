@@ -347,7 +347,7 @@ async function main() {
 
   window.LifeOSGeminiLiveV1.stop();
 
-  console.log("Gemini Live primary, renewal and provider-error handling simulation passed");
+  console.log("Gemini Live primary, renewal and capacity fallback simulation passed");
 }
 
 main().catch(error => {

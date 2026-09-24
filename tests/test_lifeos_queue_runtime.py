@@ -248,7 +248,7 @@ class QueueInvitationTests(unittest.TestCase):
             "recipient_email": "Member@Example.com",
             "subject": "You're invited to explore LifeOS",
             "body_text": "Hello,\n\nYou are invited to explore the LifeOS public interface.",
-            "invitation_url": "https://losai.onrender.com",
+            "invitation_url": "https://lifeosai.pages.dev",
         }
         values.update(overrides)
         return values
@@ -263,7 +263,7 @@ class QueueInvitationTests(unittest.TestCase):
         self.assertEqual(payload["recipient_email"], "Member@example.com")
         self.assertEqual(payload["message_type"], "invitation")
         self.assertEqual(payload["status"], "queued")
-        self.assertIn("https://losai.onrender.com", payload["body_text"])
+        self.assertIn("https://lifeosai.pages.dev", payload["body_text"])
         self.assertEqual(payload["created_by"], self.actor_id)
         self.assertEqual(
             key,
@@ -284,7 +284,7 @@ class QueueInvitationTests(unittest.TestCase):
                 self.values(sender_email="lifeostecinoai@gmail.com"),
                 created_by=self.actor_id,
             )
-        with self.assertRaisesRegex(ValueError, "losai.onrender.com"):
+        with self.assertRaisesRegex(ValueError, "configured LifeOS public origin"):
             queue._invitation_payload(
                 runtime_config(),
                 self.values(invitation_url="https://example.com/invite"),

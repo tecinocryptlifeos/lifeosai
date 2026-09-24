@@ -2,6 +2,8 @@ import http.client
 import json
 import os
 import threading
+import subprocess
+import tempfile
 import unittest
 import urllib.error
 import urllib.request
@@ -15,24 +17,42 @@ from app import lifeos_voice_server as server
 
 ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / "web" / "lifeos_voice"
-FINAL_ORIGIN = "https://losai.onrender.com"
+FINAL_ORIGIN = "https://lifeosai.pages.dev"
+# Public production is served by Cloudflare Pages; build-time legacy rewriting is tested separately.
 OLD_ORIGIN = "https://lifeos-ai-voice-app.onrender.com"
 PUBLISHER_ID = "pub-1234567890123456"
 
 
 class GrowthReadinessStaticTests(unittest.TestCase):
     def test_public_documents_use_the_final_cost_free_origin(self):
-        public_documents = [
-            path
-            for path in WEB.glob("*.html")
-            if path.name not in {"admin.html", "chat.html", "gemini_live.html"}
-        ]
-        self.assertGreaterEqual(len(public_documents), 20)
-        for document in public_documents:
-            page = document.read_text(encoding="utf-8")
-            with self.subTest(document=document.name):
-                self.assertNotIn(OLD_ORIGIN, page)
-                self.assertIn('rel="canonical" href="' + FINAL_ORIGIN, page)
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "pages"
+            environment = os.environ.copy()
+            environment.update({
+                "LIFEOS_PUBLIC_SITE_ORIGIN": FINAL_ORIGIN,
+                "LIFEOS_API_ORIGIN": "https://losai-edge-gateway.lifeostecinoai.workers.dev",
+                "LIFEOS_PAGES_PREVIEW": "false",
+            })
+            subprocess.run(
+                ["python", "apps/web/build.py", "--output", str(output)],
+                cwd=ROOT,
+                env=environment,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            public_documents = [
+                path
+                for path in output.glob("*.html")
+                if path.name not in {"admin.html", "chat.html", "gemini_live.html"}
+            ]
+            self.assertGreaterEqual(len(public_documents), 20)
+            for document in public_documents:
+                page = document.read_text(encoding="utf-8")
+                with self.subTest(document=document.name):
+                    self.assertNotIn(OLD_ORIGIN, page)
+                    self.assertNotIn("https://losai.onrender.com", page)
+                    self.assertIn('rel="canonical" href="' + FINAL_ORIGIN, page)
 
     def test_sitemap_is_valid_complete_and_excludes_private_surfaces(self):
         sitemap_path = WEB / "sitemap.xml"
@@ -76,12 +96,14 @@ class GrowthReadinessStaticTests(unittest.TestCase):
         self.assertIn("contents: read", workflow)
         self.assertIn("python -m unittest discover -s tests -v", workflow)
 
-    def test_render_blueprint_matches_the_final_service(self):
-        blueprint = (ROOT / "render.yaml").read_text(encoding="utf-8")
-        self.assertIn("name: losai", blueprint)
-        self.assertIn("value: " + FINAL_ORIGIN, blueprint)
-        self.assertIn("LIFEOS_ADSENSE_PUBLISHER_ID", blueprint)
-        self.assertIn("LIFEOS_GOOGLE_AUTH_ENABLED\n        value: true", blueprint)
+    def test_cloudflare_worker_template_matches_the_final_service(self):
+        blueprint = (ROOT / "infrastructure/cloudflare/wrangler.toml.template").read_text(encoding="utf-8")
+        self.assertIn('name = "losai-edge-gateway"', blueprint)
+        self.assertIn('LIFEOS_PUBLIC_SITE_ORIGIN = "__LIFEOS_PUBLIC_SITE_ORIGIN__"', blueprint)
+        self.assertIn('LIFEOS_API_ORIGIN = "__LIFEOS_API_ORIGIN__"', blueprint)
+        self.assertIn('LIFEOS_GEMINI_LIVE_PRIMARY_MODEL = "gemini-3.1-flash-live-preview"', blueprint)
+        self.assertIn('LIFEOS_GEMINI_LIVE_FALLBACK_MODEL = "gemini-2.5-flash-native-audio-preview-12-2025"', blueprint)
+        self.assertIn("crons = []", blueprint)
 
     def test_private_interface_files_never_embed_advertising_code(self):
         for name in ("admin.html", "chat.html", "gemini_live.html"):

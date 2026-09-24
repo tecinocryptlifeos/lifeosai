@@ -37,7 +37,7 @@ RUNTIME_VERSION = "1.2.0"
 DEFAULT_GMAIL_ADDRESS = "losaiadminpatric@gmail.com"
 DEFAULT_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
 DEFAULT_GMAIL_API_ROOT = "https://gmail.googleapis.com/gmail/v1"
-PUBLIC_INVITATION_ORIGIN = "https://losai.onrender.com"
+PUBLIC_INVITATION_ORIGIN = "https://lifeosai.pages.dev"
 TRUE_VALUES = {"1", "true", "yes", "on"}
 
 
@@ -110,7 +110,7 @@ def _invitation_url(value: Any) -> str:
         raise ValueError("Enter a valid LifeOS invitation URL.") from error
     if (
         parsed.scheme != "https"
-        or (parsed.hostname or "").lower() != "losai.onrender.com"
+        or (parsed.hostname or "").lower() != urllib.parse.urlsplit(PUBLIC_INVITATION_ORIGIN).hostname
         or parsed.username
         or parsed.password
         or parsed_port not in (None, 443)
@@ -118,7 +118,7 @@ def _invitation_url(value: Any) -> str:
         or parsed.fragment
     ):
         raise ValueError(
-            "Invitation URL must be on https://losai.onrender.com without a query or fragment."
+            "Invitation URL must be on the configured LifeOS public origin without a query or fragment."
         )
     path = parsed.path or ""
     if path and not path.startswith("/"):

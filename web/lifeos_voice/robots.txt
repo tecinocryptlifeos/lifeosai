@@ -10,4 +10,4 @@ Disallow: /api/
 Disallow: /health
 Disallow: /audio/
 
-Sitemap: https://losai.onrender.com/sitemap.xml
+Sitemap: https://lifeosai.pages.dev/sitemap.xml

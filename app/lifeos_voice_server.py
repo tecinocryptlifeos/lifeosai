@@ -84,7 +84,7 @@ AUDIO_DIR = WEB_DIR / "audio"
 
 LIFEOS_RELEASE = "lifeos-sophia-language-app-shell-v3.1.0-20260812"
 LIFEOS_QUEUE_RELEASE = "lifeos-queue-admin-interface-v1.2.0-20260720"
-DEFAULT_PUBLIC_SITE_ORIGIN = "https://losai.onrender.com"
+DEFAULT_PUBLIC_SITE_ORIGIN = "https://lifeosai.pages.dev"
 LEGACY_PUBLIC_HOSTS = {"lifeos-ai-voice-app.onrender.com"}
 ADSENSE_SELLER_ID = "f08c47fec0942fa0"
 

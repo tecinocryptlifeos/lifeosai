@@ -539,7 +539,7 @@ class ProtectedRouteTests(unittest.TestCase):
             "recipient_email": "member@example.com",
             "subject": "LifeOS invitation",
             "body_text": "This is the approved LifeOS invitation message.",
-            "invitation_url": "https://losai.onrender.com",
+            "invitation_url": "https://lifeosai.pages.dev",
         }).encode("utf-8")
         with mock.patch.object(server, "verify_user", return_value=(user, "token")), \
                 mock.patch.object(server, "require_complete_profile"), \
@@ -696,7 +696,7 @@ class InterfaceContractTests(unittest.TestCase):
         gateway = (ROOT / "app/gemini_live_gateway.py").read_text(encoding="utf-8")
         controller = (ROOT / "web/lifeos_voice/assets/gemini_live_v1.js").read_text(encoding="utf-8")
         page = (ROOT / "web/lifeos_voice/gemini_live.html").read_text(encoding="utf-8")
-        deployment = (ROOT / "render.yaml").read_text(encoding="utf-8")
+        deployment = (ROOT / "infrastructure/cloudflare/wrangler.toml.template").read_text(encoding="utf-8")
         self.assertIn("gemini-3.1-flash-live-preview", gateway)
         self.assertIn("gemini-2.5-flash-native-audio-preview-12-2025", gateway)
         self.assertIn('"live_connect_constraints"', gateway)
@@ -810,7 +810,7 @@ class InterfaceContractTests(unittest.TestCase):
         self.assertIn('id="queuePreviewBody"', page)
         self.assertIn('id="queueApproved"', page)
         self.assertIn("You're invited to explore LifeOS", page)
-        self.assertIn("https://losai.onrender.com", page)
+        self.assertIn("https://lifeosai.pages.dev", page)
         self.assertIn("losaiadminpatric@gmail.com", page)
         self.assertIn("/api/admin-lifeos-queue", controller)
         self.assertIn('action: "enqueue_invitation"', controller)
