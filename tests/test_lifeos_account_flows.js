@@ -36,11 +36,11 @@ assert.strictEqual(requiredProfile.phone, null);
   const signup = await account.signUp(client, {
     first_name: "Ada", surname: "Okafor", date_of_birth: "1990-05-10", country: "Nigeria",
     phone: "+2348000000000", email: "ADA@EXAMPLE.COM", password: "Securepass1", accept_terms: true,
-  }, { redirectTo: "https://losai.onrender.com/chat", minimumAge: 13, passwordMinimum: 10 });
+  }, { redirectTo: "https://lifeosai.pages.dev/chat", minimumAge: 13, passwordMinimum: 10 });
   assert.strictEqual(signup.error, null);
   const signupPayload = calls.find(item => item[0] === "signUp")[1];
   assert.strictEqual(signupPayload.email, "ada@example.com");
-  assert.strictEqual(signupPayload.options.emailRedirectTo, "https://losai.onrender.com/chat");
+  assert.strictEqual(signupPayload.options.emailRedirectTo, "https://lifeosai.pages.dev/chat");
   assert.strictEqual(signupPayload.options.data.full_name, "Ada Okafor");
   assert.strictEqual(signupPayload.options.data.country, "Nigeria");
   assert.strictEqual(signupPayload.options.data.minimum_age_confirmed, true);
@@ -48,10 +48,10 @@ assert.strictEqual(requiredProfile.phone, null);
   await account.signIn(client, "ADA@EXAMPLE.COM", "Securepass1");
   assert.strictEqual(JSON.stringify(calls.find(item => item[0] === "signIn")[1]), JSON.stringify({ email: "ada@example.com", password: "Securepass1" }));
 
-  await account.requestPasswordReset(client, "ADA@EXAMPLE.COM", "https://losai.onrender.com/reset-password");
+  await account.requestPasswordReset(client, "ADA@EXAMPLE.COM", "https://lifeosai.pages.dev/reset-password");
   const reset = calls.find(item => item[0] === "reset");
   assert.strictEqual(reset[1], "ada@example.com");
-  assert.strictEqual(reset[2].redirectTo, "https://losai.onrender.com/reset-password");
+  assert.strictEqual(reset[2].redirectTo, "https://lifeosai.pages.dev/reset-password");
 
   await account.updatePassword(client, "Newsecure2");
   assert.strictEqual(JSON.stringify(calls.find(item => item[0] === "update")[1]), JSON.stringify({ password: "Newsecure2" }));
