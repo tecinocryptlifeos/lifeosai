@@ -81,11 +81,9 @@ async function createGeminiToken(fetchFunction, apiKey, model) {
     uses: 1,
     expireTime: new Date(now + 30 * 60 * 1000).toISOString(),
     newSessionExpireTime: new Date(now + 60 * 1000).toISOString(),
-    // A non-empty AuthToken.fieldMask must enumerate every field present in
-    // bidiGenerateContentSetup. Lock only the system instruction here so the
-    // client remains free to supply model, audio generation and resumption
-    // settings while the official Sophia identity cannot be replaced.
-    fieldMask: "system_instruction",
+    // Leave fieldMask empty so Gemini applies this complete server-generated
+    // BidiGenerateContentSetup atomically. This matches the documented
+    // AuthToken behaviour and prevents partial field-mask/schema drift.
     bidiGenerateContentSetup: {
       model: `models/${model}`,
       systemInstruction: {
