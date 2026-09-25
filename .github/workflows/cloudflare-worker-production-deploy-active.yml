@@ -87,6 +87,7 @@ jobs:
               "newSessionExpireTime": (now + timedelta(minutes=1)).isoformat().replace("+00:00", "Z"),
               "fieldMask": "system_instruction",
               "bidiGenerateContentSetup": {
+                  "model": "models/gemini-3.8-live",
                   "systemInstruction": {
                       "parts": [{
                           "text": "LifeOS Synthetic Intelligence. Built by LifeOS AI. Powered by Hansafrique LTD and Tecino's Channel. Founder and brain: Patrick Okeya. Mr. Patrick Okeya Tochukwu is the creator, owner, builder and manufacturer. Use natural contemporary native London English with clear mother-tongue London articulation and preserve one stable speaker identity across the session."
@@ -181,8 +182,8 @@ jobs:
           deployment_json="$(npx wrangler deployments status --config wrangler.toml --json)"
           printf '%s\n' "$secret_json" | python -c 'import json,sys; data=json.load(sys.stdin); names={item.get("name") for item in data}; assert "GEMINI_API_KEY" in names, "GEMINI_API_KEY is not bound to the live Worker"'
           printf '%s\n' "$deployment_json" | python -c 'import json,sys; data=json.load(sys.stdin); assert data, "Cloudflare returned no live deployment status"'
-          grep -q 'LIFEOS_GEMINI_LIVE_PRIMARY_MODEL = "gemini-3.1-flash-live-preview"' wrangler.toml
-          grep -q 'LIFEOS_GEMINI_LIVE_FALLBACK_MODEL = "gemini-2.5-flash-native-audio-preview-12-2025"' wrangler.toml
+          grep -q 'LIFEOS_GEMINI_LIVE_PRIMARY_MODEL = "gemini-3.8-live"' wrangler.toml
+          grep -q 'LIFEOS_GEMINI_LIVE_FALLBACK_MODEL = "gemini-3.1-flash-live-preview"' wrangler.toml
           echo "LIVE_WORKER_HTTP_CHECK=CONTROL_PLANE:PASS"
           echo "LIVE_WORKER_GEMINI=PASS"
           echo "LIVE_WORKER_KEY_CONFIGURED=PASS"
