@@ -62,9 +62,9 @@ class GatewayTests(unittest.TestCase):
             os.environ,
             {
                 "GEMINI_API_KEY": "test-only-key",
-                "LIFEOS_GEMINI_LIVE_PRIMARY_MODEL": "gemini-3.1-flash-live-preview",
+                "LIFEOS_GEMINI_LIVE_PRIMARY_MODEL": "gemini-3.8-live",
                 "LIFEOS_GEMINI_LIVE_FALLBACK_MODEL": (
-                    "gemini-2.5-flash-native-audio-preview-12-2025"
+                    "gemini-3.8-live"
                 ),
             },
             clear=False,
