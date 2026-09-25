@@ -16,8 +16,8 @@ function makeRequest(preference = "primary") {
 function makeEnv(fetchImpl) {
   return {
     GEMINI_API_KEY: "test-key",
-    LIFEOS_GEMINI_LIVE_PRIMARY_MODEL: "gemini-3.1-flash-live-preview",
-    LIFEOS_GEMINI_LIVE_FALLBACK_MODEL: "gemini-2.5-flash-native-audio-preview-12-2025",
+    LIFEOS_GEMINI_LIVE_PRIMARY_MODEL: "gemini-3.8-live",
+    LIFEOS_GEMINI_LIVE_FALLBACK_MODEL: "gemini-3.1-flash-live-preview",
     __TEST_FETCH__: fetchImpl,
     API_RATE_LIMITER: { limit: async () => ({ success: true }) },
     ORIGIN_STATE: {
@@ -46,12 +46,12 @@ test("Gemini Live token issuance falls back when the primary model token is reje
   );
 
   assert.equal(result.ok, true);
-  assert.equal(result.model, "gemini-2.5-flash-native-audio-preview-12-2025");
+  assert.equal(result.model, "gemini-3.1-flash-live-preview");
   assert.equal(result.model_preference, "fallback");
   assert.equal(result.fallback_used, true);
   assert.deepEqual(requestedModels, [
+    "models/gemini-3.8-live",
     "models/gemini-3.1-flash-live-preview",
-    "models/gemini-2.5-flash-native-audio-preview-12-2025",
   ]);
 });
 

@@ -25,8 +25,8 @@ LIFEOS_REGISTRATION_ENABLED = "true"
 LIFEOS_GOOGLE_AUTH_ENABLED = "true"
 LIFEOS_MINIMUM_AGE = "13"
 LIFEOS_PASSWORD_MIN_LENGTH = "10"
-LIFEOS_GEMINI_LIVE_PRIMARY_MODEL = "gemini-3.1-flash-live-preview"
-LIFEOS_GEMINI_LIVE_FALLBACK_MODEL = "gemini-2.5-flash-native-audio-preview-12-2025"
+LIFEOS_GEMINI_LIVE_PRIMARY_MODEL = "gemini-3.8-live"
+LIFEOS_GEMINI_LIVE_FALLBACK_MODEL = "gemini-3.1-flash-live-preview"
 
 [[kv_namespaces]]
 binding = "ORIGIN_STATE"

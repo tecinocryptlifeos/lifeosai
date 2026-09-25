@@ -62,9 +62,9 @@ class GatewayTests(unittest.TestCase):
             os.environ,
             {
                 "GEMINI_API_KEY": "test-only-key",
-                "LIFEOS_GEMINI_LIVE_PRIMARY_MODEL": "gemini-3.1-flash-live-preview",
+                "LIFEOS_GEMINI_LIVE_PRIMARY_MODEL": "gemini-3.8-live",
                 "LIFEOS_GEMINI_LIVE_FALLBACK_MODEL": (
-                    "gemini-2.5-flash-native-audio-preview-12-2025"
+                    "gemini-3.1-flash-live-preview"
                 ),
             },
             clear=False,
@@ -99,11 +99,11 @@ class GatewayTests(unittest.TestCase):
         primary = self.gateway.create_gemini_live_token("client", "primary")
         fallback = self.gateway.create_gemini_live_token("client", "fallback")
 
-        self.assertEqual(primary["model"], "gemini-3.1-flash-live-preview")
+        self.assertEqual(primary["model"], "gemini-3.8-live")
         self.assertEqual(primary["model_preference"], "primary")
         self.assertEqual(
             fallback["model"],
-            "gemini-2.5-flash-native-audio-preview-12-2025",
+            "gemini-3.1-flash-live-preview",
         )
         self.assertEqual(fallback["model_preference"], "fallback")
         self.assertTrue(primary["fallback_available"])
@@ -113,11 +113,11 @@ class GatewayTests(unittest.TestCase):
         fallback_config = FakeClient.captures[1]
         self.assertEqual(
             primary_config["live_connect_constraints"]["model"],
-            "gemini-3.1-flash-live-preview",
+            "gemini-3.8-live",
         )
         self.assertEqual(
             fallback_config["live_connect_constraints"]["model"],
-            "gemini-2.5-flash-native-audio-preview-12-2025",
+            "gemini-3.1-flash-live-preview",
         )
         self.assertEqual(
             primary_config["live_connect_constraints"]["config"]
@@ -140,15 +140,15 @@ class GatewayTests(unittest.TestCase):
     def test_invalid_preference_fails_closed_to_primary(self):
         result = self.gateway.create_gemini_live_token("other", "anything")
         self.assertEqual(result["model_preference"], "primary")
-        self.assertEqual(result["model"], "gemini-3.1-flash-live-preview")
+        self.assertEqual(result["model"], "gemini-3.8-live")
 
     def test_status_reports_truthful_primary_and_fallback_policy(self):
         status = self.gateway.gemini_live_status()
         self.assertEqual(status["version"], "2.0.0")
-        self.assertEqual(status["model"], "gemini-3.1-flash-live-preview")
+        self.assertEqual(status["model"], "gemini-3.8-live")
         self.assertEqual(
             status["fallback_model"],
-            "gemini-2.5-flash-native-audio-preview-12-2025",
+            "gemini-3.1-flash-live-preview",
         )
         self.assertTrue(status["fallback_enabled"])
         self.assertEqual(

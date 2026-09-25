@@ -13,8 +13,8 @@ function fetchImpl(env) {
 }
 
 function modelPolicy(env, requested) {
-  const primary = String(env.LIFEOS_GEMINI_LIVE_PRIMARY_MODEL || "gemini-3.1-flash-live-preview").trim();
-  const fallback = String(env.LIFEOS_GEMINI_LIVE_FALLBACK_MODEL || "gemini-2.5-flash-native-audio-preview-12-2025").trim();
+  const primary = String(env.LIFEOS_GEMINI_LIVE_PRIMARY_MODEL || "gemini-3.8-live").trim();
+  const fallback = String(env.LIFEOS_GEMINI_LIVE_FALLBACK_MODEL || "gemini-3.1-flash-live-preview").trim();
   const preference = String(requested || "primary").trim().toLowerCase() === "fallback" && fallback
     ? "fallback"
     : "primary";
