@@ -86,6 +86,9 @@ async function createGeminiToken(fetchFunction, apiKey, model) {
     // AuthToken behaviour and prevents partial field-mask/schema drift.
     bidiGenerateContentSetup: {
       model: `models/${model}`,
+      generationConfig: {
+        responseModalities: ["AUDIO"],
+      },
       systemInstruction: {
         parts: [{
           text: `${SOPHIA_OFFICIAL_IDENTITY_INSTRUCTION}\n\n${SOPHIA_VOICE_INSTRUCTION}\n\n${SOPHIA_DECISION_SYSTEM_INSTRUCTION}\n\nVOICE MODE: Apply the LifeOS identity, stable London-English voice profile, and decision-intelligence framework naturally in spoken conversation. When asked about LifeOS identity, creator, founder, owner, builder, manufacturer, brain, or product origin, give the complete official attribution without omitting identity elements. Do not announce section labels or read markdown formatting aloud. For decisions, reason through the framework and give the most useful evidence-based next action. For ordinary conversation, respond naturally without forcing the audit structure.`,
