@@ -788,8 +788,7 @@ function switchToFallback(sourceSocket,event){
 
 function resumeAfterUnexpectedClose(sourceSocket,event){
   if(
-    sourceSocket!==socket||closingNormally||!active||
-    (!sessionResumeHandle&&!recoveryTurns.length)||reconnectAttempts>=2
+    sourceSocket!==socket||closingNormally||!active||reconnectAttempts>=2
   )return false;
   reconnecting=true;
   setupReady=false;
