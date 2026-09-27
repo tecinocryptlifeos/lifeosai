@@ -87,6 +87,47 @@ let outputSources=new Set();
 let outputRoute="uninitialised",receivedAudioChunks=0,lastAudioChunkAt=0;
 let starting=false,active=false,setupReady=false,closingNormally=false;
 let reconnecting=false,reconnectAttempts=0,sessionResumeHandle="";
+const RECOVERY_STORAGE_KEY="lifeos_sophia_live_recovery_v1";
+const RECOVERY_MAX_TURNS=8;
+let recoveryTurns=[];
+let pendingRecoveryUser="";
+let pendingRecoveryModel="";
+
+function recoveryText(value){
+  return String(value||"").replace(/\s+/g," ").trim().slice(0,1400);
+}
+function mergeRecoveryFragment(current,fragment){
+  const next=recoveryText(fragment);
+  if(!next)return current;
+  if(!current)return next;
+  if(next===current||current.endsWith(next))return current;
+  if(next.startsWith(current))return next;
+  return recoveryText(current+" "+next);
+}
+function loadRecoveryTurns(){
+  try{
+    const stored=JSON.parse(window.sessionStorage?.getItem(RECOVERY_STORAGE_KEY)||"[]");
+    recoveryTurns=Array.isArray(stored)
+      ?stored.filter(item=>item&&["user","model"].includes(item.role)&&recoveryText(item.text)).slice(-RECOVERY_MAX_TURNS)
+      :[];
+  }catch(error){recoveryTurns=[];}
+}
+function saveRecoveryTurns(){
+  try{window.sessionStorage?.setItem(RECOVERY_STORAGE_KEY,JSON.stringify(recoveryTurns.slice(-RECOVERY_MAX_TURNS)));}catch(error){}
+}
+function commitRecoveryTurn(role,text){
+  const content=recoveryText(text);
+  if(!content)return;
+  const previous=recoveryTurns[recoveryTurns.length-1];
+  if(previous?.role===role)previous.text=mergeRecoveryFragment(previous.text,content);
+  else recoveryTurns.push({role,text:content});
+  recoveryTurns=recoveryTurns.slice(-RECOVERY_MAX_TURNS);
+  saveRecoveryTurns();
+}
+function recoveryClientContent(){
+  return recoveryTurns.map(turn=>({role:turn.role,parts:[{text:turn.text}]}));
+}
+loadRecoveryTurns();
 let openLiveConnection=null,currentModelPreference="primary",currentModel="",fallbackAttempted=false;
 const retiredSockets=new WeakSet();
 let micMuted=false,speakerEnabled=true,selectedSinkId="default",selectedSinkLabel="phone default";
@@ -628,6 +669,9 @@ async function handleMessage(event,sourceSocket,resuming){
   }
   if(message.setupComplete){
     setupReady=true;
+    if(resuming&&!sessionResumeHandle&&recoveryTurns.length){
+      try{nextRecoveryContent(sourceSocket);}catch(error){console.warn("LifeOS conversation recovery buffer could not be restored.",error);}
+    }
     try{
       if(!micStream)await startMicrophone();
     }catch(error){
@@ -677,9 +721,24 @@ async function handleMessage(event,sourceSocket,resuming){
       }
     }
   }
-  if(content.inputTranscription&&content.inputTranscription.text)setStatus("Sophia is analysing…","active");
-  if(content.outputTranscription&&content.outputTranscription.text)setStatus("Sophia is speaking…","active");
-  if(content.turnComplete)setStatus("Live conversation active — speak naturally.","active");
+  if(content.inputTranscription&&content.inputTranscription.text){
+    pendingRecoveryUser=mergeRecoveryFragment(pendingRecoveryUser,content.inputTranscription.text);
+    setStatus("Sophia is analysing…","active");
+  }
+  if(content.outputTranscription&&content.outputTranscription.text){
+    pendingRecoveryModel=mergeRecoveryFragment(pendingRecoveryModel,content.outputTranscription.text);
+    setStatus("Sophia is speaking…","active");
+  }
+  if(content.turnComplete){
+    if(pendingRecoveryUser){commitRecoveryTurn("user",pendingRecoveryUser);pendingRecoveryUser="";}
+    if(pendingRecoveryModel){commitRecoveryTurn("model",pendingRecoveryModel);pendingRecoveryModel="";}
+    setStatus("Live conversation active — speak naturally.","active");
+  }
+}
+
+function nextRecoveryContent(sourceSocket){
+  if(sourceSocket!==socket||!setupReady||!recoveryTurns.length)return;
+  sourceSocket.send(JSON.stringify({clientContent:{turns:recoveryClientContent(),turnComplete:false}}));
 }
 
 async function resumeAfterGoAway(sourceSocket,goAway){
@@ -768,6 +827,9 @@ async function startConversation(){
   currentModel="";
   fallbackAttempted=currentModelPreference==="fallback";
   openLiveConnection=null;
+  loadRecoveryTurns();
+  pendingRecoveryUser="";
+  pendingRecoveryModel="";
   setStatus("Sophia is connecting to LifeOS Synthetic Intelligence…","");
   signalLifeOSVoicePhase("connecting");
   try{
@@ -840,6 +902,10 @@ function stopAndClean(message,state,socketAlreadyClosed){
   reconnecting=false;
   reconnectAttempts=0;
   sessionResumeHandle="";
+  recoveryTurns=[];
+  pendingRecoveryUser="";
+  pendingRecoveryModel="";
+  try{window.sessionStorage?.removeItem(RECOVERY_STORAGE_KEY);}catch(error){}
   currentModelPreference="primary";
   currentModel="";
   fallbackAttempted=false;
