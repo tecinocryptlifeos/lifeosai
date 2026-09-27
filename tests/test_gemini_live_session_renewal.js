@@ -354,9 +354,9 @@ async function main() {
   recoverySource.message({ setupComplete: {} });
   await flush();
   await flush();
-  recoverySource.message({ inputTranscription: { text: "We were discussing the deployment recovery plan." } });
-  recoverySource.message({ outputTranscription: { text: "Yes, I remember the deployment recovery plan." } });
-  recoverySource.message({ turnComplete: true });
+  recoverySource.message({ serverContent: { inputTranscription: { text: "We were discussing the deployment recovery plan." } } });
+  recoverySource.message({ serverContent: { outputTranscription: { text: "Yes, I remember the deployment recovery plan." } } });
+  recoverySource.message({ serverContent: { turnComplete: true } });
   await flush();
   recoverySource.readyState = FakeWebSocket.CLOSED;
   recoverySource.emit("close", { code: 1006, reason: "network interruption" });
