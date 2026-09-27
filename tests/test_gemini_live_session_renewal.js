@@ -353,6 +353,7 @@ async function main() {
   recoverySource.open();
   recoverySource.message({ setupComplete: {} });
   await flush();
+  await flush();
   recoverySource.message({ inputTranscription: { text: "We were discussing the deployment recovery plan." } });
   recoverySource.message({ outputTranscription: { text: "Yes, I remember the deployment recovery plan." } });
   recoverySource.message({ turnComplete: true });
