@@ -347,7 +347,45 @@ async function main() {
 
   window.LifeOSGeminiLiveV1.stop();
 
-  console.log("Gemini Live primary, renewal and capacity fallback simulation passed");
+  await window.LifeOSGeminiLiveV1.start();
+  assert.equal(sockets.length, 8, "conversation recovery test should create a fresh primary connection");
+  const recoverySource = sockets[7];
+  recoverySource.open();
+  recoverySource.message({ setupComplete: {} });
+  await flush();
+  recoverySource.message({ inputTranscription: { text: "We were discussing the deployment recovery plan." } });
+  recoverySource.message({ outputTranscription: { text: "Yes, I remember the deployment recovery plan." } });
+  recoverySource.message({ turnComplete: true });
+  await flush();
+  recoverySource.readyState = FakeWebSocket.CLOSED;
+  recoverySource.emit("close", { code: 1006, reason: "network interruption" });
+  await new Promise(resolve => setTimeout(resolve, 420));
+  await flush();
+
+  assert.equal(sockets.length, 9, "an unexpected network close should create a recovery connection");
+  const recoverySocket = sockets[8];
+  recoverySocket.open();
+  assert.deepEqual(recoverySocket.sent[0].setup.sessionResumption, {});
+  recoverySocket.message({ setupComplete: {} });
+  await flush();
+  const recoveryMessage = recoverySocket.sent.find(message => message.clientContent);
+  assert.ok(recoveryMessage, "recovery connection should restore recent conversation content");
+  assert.deepEqual(
+    recoveryMessage.clientContent.turns.map(turn => turn.role),
+    ["user", "model"]
+  );
+  assert.match(
+    recoveryMessage.clientContent.turns[0].parts[0].text,
+    /deployment recovery plan/i
+  );
+  assert.match(
+    recoveryMessage.clientContent.turns[1].parts[0].text,
+    /deployment recovery plan/i
+  );
+
+  window.LifeOSGeminiLiveV1.stop();
+
+  console.log("Gemini Live primary, renewal, capacity fallback and conversation recovery simulation passed");
 }
 
 main().catch(error => {
