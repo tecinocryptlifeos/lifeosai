@@ -3,16 +3,14 @@ name: Build LifeOSAI Android APK (Pages production v3)
 on:
   workflow_dispatch:
   pull_request:
-    branches:
-      - main
+    branches: [main]
     paths:
       - ".github/workflows/android-twa-pages-production-v3.yml"
       - "apps/android-twa/**"
       - "web/lifeos_voice/.well-known/assetlinks.json"
       - "web/lifeos_voice/manifest.webmanifest"
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - ".github/workflows/android-twa-pages-production-v3.yml"
       - "apps/android-twa/**"
@@ -118,7 +116,7 @@ jobs:
           set -Eeuo pipefail
           npm install --global @bubblewrap/cli@1.24.1
           rm -rf "$BUBBLEWRAP_ANDROID_SDK" "$HOME/.bubblewrap"
-          mkdir -p "$BUBBLEWRAP_ANDROID_SDK" "$HOME/.bubblewrap"
+          mkdir -p "$BUBBLEWRAP_ANDROID_SDK"
           for entry in "$ANDROID_HOME"/*; do
             [ -e "$entry" ] || continue
             ln -s "$entry" "$BUBBLEWRAP_ANDROID_SDK/$(basename "$entry")"
@@ -126,14 +124,8 @@ jobs:
           SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager -print -quit)"
           rm -rf "$BUBBLEWRAP_ANDROID_SDK/bin"
           ln -s "$(dirname "$SDKMANAGER")" "$BUBBLEWRAP_ANDROID_SDK/bin"
-          python - <<'PY'
-          import json, os
-          from pathlib import Path
-          Path.home().joinpath(".bubblewrap", "config.json").write_text(
-              json.dumps({"jdkPath": os.environ["JAVA_HOME"], "androidSdkPath": os.environ["BUBBLEWRAP_ANDROID_SDK"]}) + "\n",
-              encoding="utf-8",
-          )
-          PY
+          bubblewrap updateConfig --jdkPath="$JAVA_HOME" --androidSdkPath="$BUBBLEWRAP_ANDROID_SDK"
+          bubblewrap doctor
           bubblewrap --version
 
       - name: Generate TWA project against Pages
