@@ -1,5 +1,7 @@
 name: Cloudflare Worker production deploy (active)
 
+# Production deployment trigger: run the merged Pages-project detection fix on main.
+
 on:
   push:
     branches: [main]
