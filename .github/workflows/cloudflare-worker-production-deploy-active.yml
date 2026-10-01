@@ -14,6 +14,8 @@ permissions:
 env:
   LIFEOS_PRODUCTION_SITE: https://lifeosai.pages.dev
   LIFEOS_PRODUCTION_API: https://losai-edge-gateway.lifeostecinoai.workers.dev
+  LIFEOS_TRADING_PAGES_PROJECT: lifeos-trading-intelligence
+  LIFEOS_TRADING_SITE: https://lifeos-trading-intelligence.pages.dev
 
 jobs:
   deploy:
@@ -174,6 +176,47 @@ jobs:
         run: |
           test -n "$GEMINI_API_KEY"
           printf '%s' "$GEMINI_API_KEY" | npx wrangler secret put GEMINI_API_KEY --config wrangler.toml
+      - name: Publish Trading Intelligence as a separate Cloudflare Pages project
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          set -euo pipefail
+          stage="${RUNNER_TEMP}/lifeos-trading-pages"
+          rm -rf "$stage"
+          mkdir -p "$stage/assets"
+          cp web/lifeos_voice/trading.html "$stage/index.html"
+          cp web/lifeos_voice/assets/lifeos-home-king-bg.webp "$stage/assets/lifeos-home-king-bg.webp"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          cfg = {
+              "supabase_url": os.environ["SUPABASE_URL"].rstrip("/"),
+              "supabase_anon_key": os.environ["SUPABASE_PUBLISHABLE_KEY"],
+          }
+          Path(os.environ["RUNNER_TEMP"] + "/lifeos-trading-pages/trading-config.js").write_text(
+              "window.LIFEOS_TRADING_CONFIG=" + json.dumps(cfg, separators=(",", ":")) + ";",
+              encoding="utf-8",
+          )
+          PY
+          projects="$(npx --prefix services/edge-gateway wrangler pages project list --json)"
+          if ! printf '%s' "$projects" | grep -q '"name"[[:space:]]*:[[:space:]]*"lifeos-trading-intelligence"'; then
+            npx --prefix services/edge-gateway wrangler pages project create lifeos-trading-intelligence --production-branch main
+          fi
+          npx --prefix services/edge-gateway wrangler pages deploy "$stage"             --project-name "$LIFEOS_TRADING_PAGES_PROJECT"             --branch main             --commit-hash "$GITHUB_SHA"             --commit-message "Deploy Trading Intelligence $GITHUB_SHA"
+          curl --fail --silent --show-error --location --max-time 30 "$LIFEOS_TRADING_SITE/" | grep -q "LifeOS Trading Intelligence"
+          curl --fail --silent --show-error --location --max-time 30 "$LIFEOS_TRADING_SITE/assets/lifeos-home-king-bg.webp" -o "$stage/verified-bg.webp"
+          test -s "$stage/verified-bg.webp"
+          curl --fail --silent --show-error --location --max-time 30 "$LIFEOS_TRADING_SITE/trading-config.js" | grep -q "LIFEOS_TRADING_CONFIG"
+          echo "TRADING_PAGES_PROJECT=$LIFEOS_TRADING_PAGES_PROJECT"
+          echo "TRADING_PAGES_SITE=$LIFEOS_TRADING_SITE"
+          echo "TRADING_PAGES_DEPLOYMENT=PASS"
+          echo "TRADING_PAGES_HTTP_CHECK=PASS"
+          echo "TRADING_PAGES_BACKGROUND_ASSET=PASS"
+          echo "TRADING_PAGES_CONFIG=PASS"
+
       - name: Verify live Worker Gemini configuration
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
