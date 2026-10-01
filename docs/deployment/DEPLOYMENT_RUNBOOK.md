@@ -16,4 +16,6 @@ No step automatically advances to the next. Record the commit SHA and evidence f
 
 Northflank assets remain in the repository for a possible future warm standby, but Northflank is not a current release dependency. If a standby provider is later enabled, configure `NORTHFLANK_ORIGIN`, validate its gateway-secret protection and `/health` endpoint, run standby-routing and failover tests, and record that evidence independently. Do not use a fake standby origin in production.
 
+NORTHFLANK_ORIGIN is optional. The production Cloudflare Worker must never depend on it being populated. A missing or empty optional standby is a valid steady-state configuration, not a deployment error. The scheduled health path must remain edge-authoritative and must not throw because a standby binding is absent.
+
 Never alter `main`, the existing Back4App branch, live Supabase schema, or production routing as an incidental deployment step. Cloudflare Pages can connect preview branches through its [Git integration](https://developers.cloudflare.com/pages/get-started/git-integration/).
