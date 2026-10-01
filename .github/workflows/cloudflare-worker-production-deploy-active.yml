@@ -202,7 +202,16 @@ jobs:
           )
           PY
           projects="$(npx --prefix services/edge-gateway wrangler pages project list --json)"
-          if ! printf '%s' "$projects" | grep -q '"name"[[:space:]]*:[[:space:]]*"lifeos-trading-intelligence"'; then
+          if ! printf '%s' "$projects" | python -c 'import json,sys; data=json.load(sys.stdin); target="lifeos-trading-intelligence"; found=False; stack=[data]
+while stack:
+  item=stack.pop()
+  if isinstance(item,dict):
+    if item.get("name")==target or item.get("project_name")==target: found=True; break
+    stack.extend(item.values())
+  elif isinstance(item,list): stack.extend(item)
+raise SystemExit(0 if found else 1)'; then
+            echo "TRADING_PAGES_PROJECT=EXISTS"
+          else
             npx --prefix services/edge-gateway wrangler pages project create lifeos-trading-intelligence --production-branch main
           fi
           npx --prefix services/edge-gateway wrangler pages deploy "$stage"             --project-name "$LIFEOS_TRADING_PAGES_PROJECT"             --branch main             --commit-hash "$GITHUB_SHA"             --commit-message "Deploy Trading Intelligence $GITHUB_SHA"
