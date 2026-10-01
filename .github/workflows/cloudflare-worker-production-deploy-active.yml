@@ -130,21 +130,6 @@ jobs:
           cfg={"supabase_url":os.environ["SUPABASE_URL"].rstrip("/"),"supabase_anon_key":os.environ["SUPABASE_PUBLISHABLE_KEY"]}
           Path(os.environ["RUNNER_TEMP"]+"/lifeos-trading-pages/trading-config.js").write_text("window.LIFEOS_TRADING_CONFIG="+json.dumps(cfg,separators=(",",":"))+";")
           PY
-          npx --prefix services/edge-gateway wrangler pages project list --json > "$RUNNER_TEMP/pages-projects.json"
-          if ! python - "$RUNNER_TEMP/pages-projects.json" <<'PY'
-          import json,sys
-          d=json.load(open(sys.argv[1])); stack=[d]
-          while stack:
-            x=stack.pop()
-            if isinstance(x,dict):
-              if x.get("name")=="lifeos-trading-intelligence" or x.get("project_name")=="lifeos-trading-intelligence": raise SystemExit(0)
-              stack.extend(x.values())
-            elif isinstance(x,list): stack.extend(x)
-          raise SystemExit(1)
-          PY
-          then
-            npx --prefix services/edge-gateway wrangler pages project create lifeos-trading-intelligence --production-branch main
-          fi
           npx --prefix services/edge-gateway wrangler pages deploy "$stage" --project-name "$LIFEOS_TRADING_PAGES_PROJECT" --branch main --commit-hash "$GITHUB_SHA" --commit-message "Deploy Trading Intelligence $GITHUB_SHA"
           curl --fail --silent --show-error --location --max-time 30 "$LIFEOS_TRADING_SITE/" | grep -q "LifeOS Trading Intelligence"
           curl --fail --silent --show-error --location --max-time 30 "$LIFEOS_TRADING_SITE/trading-config.js" | grep -q "LIFEOS_TRADING_CONFIG"
