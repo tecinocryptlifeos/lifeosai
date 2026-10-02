@@ -21,6 +21,16 @@ This package is the deterministic research core behind the LifeOS Trading Intell
 - A candidate must pass independent validation and risk review before release.
 - External providers are adapters, not authorities for the trading model.
 
-## Next engineering slice
+## Current integration state
 
-The core contracts are now in place. The next slice should add an experiment ledger and result schema, then connect a controlled LONA run using an explicitly versioned strategy definition. Real market data should be selected per experiment and never mixed silently across asset classes or timeframes.
+The experiment ledger and public result schema are now present in Supabase. A completed, versioned LONA run is persisted and surfaced by the production Trading Intelligence page through the public read-only ledger.
+
+The deployed console is intentionally read-only: it verifies research evidence and risk boundaries but does not place live orders.
+
+Provider boundary: the repository contains the deterministic LONA request adapter, but the LONA connector available to the development agent is not itself a credential/API endpoint exposed to the production web application. Alpaca is likewise available to the development environment but is not wired into the deployed page. These must not be represented as live production integrations until an application-side provider credential and server route are provisioned.
+
+## Release path
+
+Research data → causal structure → versioned strategy → risk gates → controlled LONA experiment → persisted experiment ledger → production evidence console.
+
+No production approval is inferred from a single backtest.
