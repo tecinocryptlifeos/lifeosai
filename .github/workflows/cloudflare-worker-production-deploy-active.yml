@@ -133,6 +133,8 @@ jobs:
           npx --prefix services/edge-gateway wrangler pages deploy "$stage" --project-name "$LIFEOS_TRADING_PAGES_PROJECT" --branch main --commit-hash "$GITHUB_SHA" --commit-message "Deploy Trading Intelligence $GITHUB_SHA"
           curl --fail --silent --show-error --location --max-time 30 "$LIFEOS_TRADING_SITE/" | grep -q "LifeOS Trading Intelligence"
           curl --fail --silent --show-error --location --max-time 30 "$LIFEOS_TRADING_SITE/trading-config.js" | grep -q "LIFEOS_TRADING_CONFIG"
+          curl --fail --silent --show-error --location --max-time 30 "$LIFEOS_TRADING_SITE/" | grep -q "Market Intelligence"
+          curl --fail --silent --show-error --location --max-time 30 "$LIFEOS_TRADING_SITE/" | grep -q "Validation gate workflow"
           echo "TRADING_PAGES_DEPLOYMENT=PASS"
 
       - name: Verify live Worker deployment
