@@ -12,6 +12,7 @@ import { geminiStatus, issueGeminiToken } from "./gemini.js";
 import { issueDecisionIntelligence } from "./decision-engine.js";
 import { currentOriginState } from "./health.js";
 import { publicConfig, updateProfile, verifySession } from "./supabase.js";
+import { marketData } from "./market-data.js";
 
 function preflightResponse(request, env) {
   const headers = responseHeaders(request, env, new Headers({
@@ -43,6 +44,11 @@ async function handleRequest(request, env) {
   // This is a non-sensitive deployment/readiness probe. Keep it independent
   // of browser-origin policy so CI and external monitors can verify the live
   // Worker after deployment. It exposes only boolean/model metadata.
+  if (request.method === "GET" && pathname === "/api/market-data") {
+    try { return jsonResponse(request, env, 200, await marketData(request, env)); }
+    catch (error) { throw new GatewayError(502, "MARKET_DATA_UNAVAILABLE", error.message || "Market data unavailable."); }
+  }
+
   if (request.method === "GET" && pathname === "/api/gemini-live-status") {
     return jsonResponse(request, env, 200, geminiStatus(env));
   }
