@@ -7,6 +7,7 @@ export const EDGE_NATIVE_PATHS = new Set([
   "/api/session",
   "/api/session-status",
   "/api/gemini-live-status",
+  "/api/market-data",
   "/api/gemini-live-token",
 ]);
 
