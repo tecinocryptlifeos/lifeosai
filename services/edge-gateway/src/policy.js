@@ -47,6 +47,7 @@ export const NEVER_REPLAY_PATH_FRAGMENTS = Object.freeze([
 ]);
 
 const PUBLIC_SITE_ORIGIN = "https://lifeosai.pages.dev";
+const TRADING_SYSTEM_ORIGIN = "https://lifeos-trade-system.pages.dev";
 const PAGES_PREVIEW_PATTERN = /^https:\/\/[a-z0-9-]+\.lifeosai\.pages\.dev$/i;
 
 export class GatewayError extends Error {
@@ -93,7 +94,7 @@ export function requireIdempotencyKey(request) {
 }
 
 function isTrustedPagesPreviewOrigin(origin) {
-  return origin === PUBLIC_SITE_ORIGIN || PAGES_PREVIEW_PATTERN.test(origin);
+  return origin === PUBLIC_SITE_ORIGIN || origin === TRADING_SYSTEM_ORIGIN || PAGES_PREVIEW_PATTERN.test(origin);
 }
 
 export function configuredOrigins(env) {
