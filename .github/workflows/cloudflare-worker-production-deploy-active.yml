@@ -121,7 +121,8 @@ jobs:
         run: |
           set -euo pipefail
           stage="$RUNNER_TEMP/lifeos-trading-pages"
-          rm -rf "$stage"; mkdir -p "$stage/assets"
+          verify="$RUNNER_TEMP/lifeos-trading-pages-verify"
+          rm -rf "$stage" "$verify"; mkdir -p "$stage/assets" "$verify"
           cp web/lifeos_voice/trading.html "$stage/index.html"
           cp web/lifeos_voice/assets/lifeos-home-king-bg.webp "$stage/assets/lifeos-home-king-bg.webp"
           python - <<'PY'
@@ -131,10 +132,12 @@ jobs:
           Path(os.environ["RUNNER_TEMP"]+"/lifeos-trading-pages/trading-config.js").write_text("window.LIFEOS_TRADING_CONFIG="+json.dumps(cfg,separators=(",",":"))+";")
           PY
           npx --prefix services/edge-gateway wrangler pages deploy "$stage" --project-name "$LIFEOS_TRADING_PAGES_PROJECT" --branch main --commit-hash "$GITHUB_SHA" --commit-message "Deploy LifeOS Trading System $GITHUB_SHA"
-          curl --fail --silent --show-error --location --max-time 30 "$LIFEOS_TRADING_SITE/" | grep -q "LifeOS Trading Intelligence"
-          curl --fail --silent --show-error --location --max-time 30 "$LIFEOS_TRADING_SITE/trading-config.js" | grep -q "LIFEOS_TRADING_CONFIG"
-          curl --fail --silent --show-error --location --max-time 30 "$LIFEOS_TRADING_SITE/" | grep -q "Market Intelligence"
-          curl --fail --silent --show-error --location --max-time 30 "$LIFEOS_TRADING_SITE/" | grep -q "Validation gate workflow"
+          curl --fail --silent --show-error --location --max-time 30 --output "$verify/index.html" "$LIFEOS_TRADING_SITE/"
+          curl --fail --silent --show-error --location --max-time 30 --output "$verify/trading-config.js" "$LIFEOS_TRADING_SITE/trading-config.js"
+          grep -q "LifeOS Trading Intelligence" "$verify/index.html"
+          grep -q "Market Intelligence" "$verify/index.html"
+          grep -q "Validation gate workflow" "$verify/index.html"
+          grep -q "LIFEOS_TRADING_CONFIG" "$verify/trading-config.js"
           echo "TRADING_PAGES_DEPLOYMENT=PASS"
 
       - name: Verify live Worker deployment
