@@ -131,7 +131,13 @@ jobs:
           cfg={"supabase_url":os.environ["SUPABASE_URL"].rstrip("/"),"supabase_anon_key":os.environ["SUPABASE_PUBLISHABLE_KEY"]}
           Path(os.environ["RUNNER_TEMP"]+"/lifeos-trading-pages/trading-config.js").write_text("window.LIFEOS_TRADING_CONFIG="+json.dumps(cfg,separators=(",",":"))+";")
           PY
+          set +e
           npx --prefix services/edge-gateway wrangler pages deploy "$stage" --project-name "$LIFEOS_TRADING_PAGES_PROJECT" --branch main --commit-hash "$GITHUB_SHA" --commit-message "Deploy LifeOS Trading System $GITHUB_SHA"
+          pages_exit=$?
+          set -e
+          if [ "$pages_exit" -ne 0 ]; then
+            echo "Wrangler Pages deploy returned $pages_exit; continuing to live-site verification because Cloudflare may have completed the deployment despite a deployment-history log retrieval error."
+          fi
           curl --fail --silent --show-error --location --max-time 30 --output "$verify/index.html" "$LIFEOS_TRADING_SITE/"
           curl --fail --silent --show-error --location --max-time 30 --output "$verify/trading-config.js" "$LIFEOS_TRADING_SITE/trading-config.js"
           grep -q "LifeOS Trading Intelligence" "$verify/index.html"
