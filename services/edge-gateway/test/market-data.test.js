@@ -3,21 +3,56 @@ import test from "node:test";
 import { normalizeYahooChart, resampleBars } from "../src/market-data.js";
 
 test("normalizes valid OHLC candles and rejects malformed bars", () => {
-  const payload = {chart:{result:[{
-    meta:{exchangeName:"NMS",currency:"USD",dataGranularity:"1d"},
-    timestamp:[1700000000,1700086400,1700172800],
-    indicators:{quote:[{
-      open:[10,11,12], high:[12,13,14], low:[9,10,11], close:[11,12,13], volume:[100,110,120]
-    }]}
-  }]}}
-  const many={chart:{result:[{meta:{},timestamp:Array.from({length:30},(_,i)=>1700000000+i*86400),indicators:{quote:[{open:Array(30).fill(10),high:Array(30).fill(12),low:Array(30).fill(9),close:Array(30).fill(11),volume:Array(30).fill(1)}]}}]}}
-  assert.equal(normalizeYahooChart(many,"AAPL").bars.length,30);
-  assert.throws(()=>normalizeYahooChart(payload,"AAPL"),/Insufficient/);
+  const malformed = {
+    chart: {
+      result: [{
+        meta: { exchangeName: "NMS", currency: "USD", dataGranularity: "1d" },
+        timestamp: Array.from({ length: 31 }, (_, i) => 1700000000 + i * 86400),
+        indicators: {
+          quote: [{
+            open: Array(31).fill(10),
+            high: Array(31).fill(12),
+            low: Array(31).fill(9),
+            close: Array(31).fill(11),
+            volume: Array(31).fill(1)
+          }]
+        }
+      }]
+    }
+  };
+
+  malformed.chart.result[0].indicators.quote[0].high[4] = 8;
+  const normalized = normalizeYahooChart(malformed, "AAPL");
+  assert.equal(normalized.bars.length, 30);
+  assert.equal(
+    normalized.bars.every(
+      b => b.high >= Math.max(b.open, b.close) && b.low <= Math.min(b.open, b.close)
+    ),
+    true
+  );
+
+  const many = {
+    chart: {
+      result: [{
+        meta: {},
+        timestamp: Array.from({ length: 30 }, (_, i) => 1700000000 + i * 86400),
+        indicators: {
+          quote: [{
+            open: Array(30).fill(10),
+            high: Array(30).fill(12),
+            low: Array(30).fill(9),
+            close: Array(30).fill(11),
+            volume: Array(30).fill(1)
+          }]
+        }
+      }]
+    }
+  };
+  assert.equal(normalizeYahooChart(many, "AAPL").bars.length, 30);
 });
 
-
 test("resamples base candles into requested 10-minute timeframe", () => {
-  const bars = Array.from({length:6}, (_, i) => ({
+  const bars = Array.from({ length: 6 }, (_, i) => ({
     timestamp: new Date(1700000000000 + i * 5 * 60 * 1000).toISOString(),
     open: 100 + i,
     high: 101 + i,
@@ -35,19 +70,25 @@ test("resamples base candles into requested 10-minute timeframe", () => {
 });
 
 test("normalizes a requested multi-timeframe interval", () => {
-  const many = {chart:{result:[{
-    meta:{},
-    timestamp:Array.from({length:60},(_,i)=>1700000000+i*300),
-    indicators:{quote:[{
-      open:Array.from({length:60},()=>10),
-      high:Array.from({length:60},()=>12),
-      low:Array.from({length:60},()=>9),
-      close:Array.from({length:60},()=>11),
-      volume:Array.from({length:60},()=>1)
-    }]}
-  }]}}};
-  const result = normalizeYahooChart(many,"AAPL","10m");
-  assert.equal(result.interval,"10m");
-  assert.equal(result.upstream_interval,"5m");
-  assert.equal(result.bars.length,30);
+  const many = {
+    chart: {
+      result: [{
+        meta: {},
+        timestamp: Array.from({ length: 60 }, (_, i) => 1700000000 + i * 300),
+        indicators: {
+          quote: [{
+            open: Array.from({ length: 60 }, () => 10),
+            high: Array.from({ length: 60 }, () => 12),
+            low: Array.from({ length: 60 }, () => 9),
+            close: Array.from({ length: 60 }, () => 11),
+            volume: Array.from({ length: 60 }, () => 1)
+          }]
+        }
+      }]
+    }
+  };
+  const result = normalizeYahooChart(many, "AAPL", "10m");
+  assert.equal(result.interval, "10m");
+  assert.equal(result.upstream_interval, "5m");
+  assert.equal(result.bars.length, 30);
 });
