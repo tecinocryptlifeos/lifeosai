@@ -9,12 +9,11 @@ test("normalizes valid OHLC candles and rejects malformed bars", () => {
     indicators:{quote:[{
       open:[10,11,12], high:[12,13,14], low:[9,10,11], close:[11,12,13], volume:[100,110,120]
     }]}
-  }]}}
-  const many={chart:{result:[{meta:{},timestamp:Array.from({length:30},(_,i)=>1700000000+i*86400),indicators:{quote:[{open:Array(30).fill(10),high:Array(30).fill(12),low:Array(30).fill(9),close:Array(30).fill(11),volume:Array(30).fill(1)}]}}]}}
+  }]}};
+  const many={chart:{result:[{meta:{},timestamp:Array.from({length:30},(_,i)=>1700000000+i*86400),indicators:{quote:[{open:Array(30).fill(10),high:Array(30).fill(12),low:Array(30).fill(9),close:Array(30).fill(11),volume:Array(30).fill(1)}]}}]}};
   assert.equal(normalizeYahooChart(many,"AAPL").bars.length,30);
   assert.throws(()=>normalizeYahooChart(payload,"AAPL"),/Insufficient/);
 });
-
 
 test("resamples base candles into requested 10-minute timeframe", () => {
   const bars = Array.from({length:6}, (_, i) => ({
@@ -45,7 +44,7 @@ test("normalizes a requested multi-timeframe interval", () => {
       close:Array.from({length:60},()=>11),
       volume:Array.from({length:60},()=>1)
     }]}
-  }]}}};
+  }]}};
   const result = normalizeYahooChart(many,"AAPL","10m");
   assert.equal(result.interval,"10m");
   assert.equal(result.upstream_interval,"5m");
