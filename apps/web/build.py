@@ -120,11 +120,14 @@ def build(output: Path) -> None:
     public_analytics = analytics_markup(measurement)
     public_ads = adsense_markup(publisher)
     api_meta = f'<meta name="lifeos-api-origin" content="{api_origin}">'
+    canonical = lambda route: f'<link rel="canonical" href="{site_origin}{route}">'
 
     for route, filename in ROUTES.items():
         source_file = output / filename
         markup = source_file.read_text(encoding="utf-8")
         markup = markup.replace(LEGACY_SITE_ORIGIN, site_origin)
+        canonical_path = "/" if not route else "/" + route
+        markup = inject_before_head_end(markup, canonical(canonical_path))
         markup = inject_before_head_end(markup, api_meta)
         if route not in PRIVATE_ROUTES:
             markup = inject_before_head_end(markup, public_analytics)
