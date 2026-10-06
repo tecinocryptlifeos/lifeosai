@@ -143,7 +143,7 @@ jobs:
           PY
           deploy_log="$RUNNER_TEMP/trading-pages-deploy.log"
           npx --prefix services/edge-gateway wrangler pages deploy "$stage" --project-name "$LIFEOS_TRADING_PAGES_PROJECT" --branch main --commit-hash "$GITHUB_SHA" --commit-message "Deploy LifeOS Trading System $GITHUB_SHA" 2>&1 | tee "$deploy_log"
-          deployment_url="$(grep -Eo 'https://[a-f0-9]+\\.lifeos-trade-system\\.pages\\.dev' "$deploy_log" | tail -n 1 || true)"
+          deployment_url="$(grep -Eo 'https://[a-f0-9]+\.lifeos-trade-system\.pages\.dev' "$deploy_log" | tail -n 1 || true)"
           test -n "$deployment_url"
           echo "TRADING_PAGES_DEPLOYMENT_URL=$deployment_url"
           curl --fail --silent --show-error --location --max-time 30 --output "$verify/deployment.html" "$deployment_url/"
