@@ -61,11 +61,11 @@ function normalizeProviderSymbol(symbol, type) {
 export async function marketSymbols(request, env) {
   const url = new URL(request.url), type = url.searchParams.get("type") || "stock";
   if (!TYPES.has(type)) throw new Error("Unsupported market type");
-  const query = url.searchParams.get("query") || (type === "stock" ? "AAPL" : type === "forex" ? "EUR/USD" : "BTC/USD");
-  const data = await twelveDataFetch("/symbol_search", env, {symbol:query,outputsize:"120"});
+  const path = type === "stock" ? "/stocks" : type === "forex" ? "/forex_pairs" : "/cryptocurrencies";
+  const data = await twelveDataFetch(path, env, {outputsize:"120"});
   return {ok:true,source:"Twelve Data",market_type:type,symbols:(Array.isArray(data.data)?data.data:[])
-    .filter(x => x.symbol && (type === "stock" ? !String(x.symbol).includes("/") : type === "forex" ? String(x.symbol).includes("/") : String(x.symbol).includes("/")))
-    .slice(0,5000).map(x => ({symbol:x.symbol,description:x.instrument_name||x.symbol,displaySymbol:x.symbol,type:x.instrument_type||type}))};
+    .filter(x => x.symbol)
+    .slice(0,120).map(x => ({symbol:x.symbol,description:x.name||x.instrument_name||x.symbol,displaySymbol:x.symbol,type:x.type||x.instrument_type||type}))};
 }
 export async function marketData(request, env) {
   const url = new URL(request.url), type = url.searchParams.get("type") || "stock";
