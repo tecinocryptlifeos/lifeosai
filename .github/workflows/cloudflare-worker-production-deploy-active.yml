@@ -159,6 +159,35 @@ jobs:
           grep -q "LIFEOS_TRADING_CONFIG" "$verify/trading-config.js"
           echo "TRADING_PAGES_DEPLOYMENT=PASS"
 
+      - name: Smoke test production AAPL OHLC
+        env:
+          LIFEOS_PRODUCTION_API: ${{ env.LIFEOS_PRODUCTION_API }}
+        run: |
+          set -euo pipefail
+          url="$LIFEOS_PRODUCTION_API/api/market-data?type=stock&symbol=AAPL&interval=1d"
+          curl --fail --silent --show-error --location --max-time 30 "$url" -o "$RUNNER_TEMP/aapl-market-data.json"
+          python - <<'PY'
+          import json, math, os
+          from pathlib import Path
+          p=Path(os.environ["RUNNER_TEMP"])/"aapl-market-data.json"
+          d=json.loads(p.read_text())
+          assert d.get("ok") is True, f"ok={d.get('ok')}"
+          assert d.get("source") == "Finnhub", f"source={d.get('source')}"
+          assert d.get("symbol") == "AAPL", f"symbol={d.get('symbol')}"
+          assert d.get("market_type") == "stock", f"market_type={d.get('market_type')}"
+          assert d.get("interval") == "1d", f"interval={d.get('interval')}"
+          assert d.get("resolution") == "D", f"resolution={d.get('resolution')}"
+          bars=d.get("bars")
+          assert isinstance(bars,list) and len(bars) >= 30, f"bars={len(bars) if isinstance(bars,list) else type(bars).__name__}"
+          for i,b in enumerate(bars):
+              vals=[b.get(k) for k in ("open","high","low","close")]
+              assert all(isinstance(v,(int,float)) and math.isfinite(v) for v in vals), f"bar {i} has invalid OHLC"
+              o,h,l,c=vals
+              assert h >= max(o,c) and l <= min(o,c), f"bar {i} violates OHLC invariants"
+              assert isinstance(b.get("timestamp"),str) and b["timestamp"], f"bar {i} missing timestamp"
+          print(f"AAPL_OHLC_SMOKE=PASS bars={len(bars)} source=Finnhub resolution=D")
+          PY
+
       - name: Verify live Worker deployment
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
