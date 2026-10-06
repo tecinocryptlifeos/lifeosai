@@ -132,7 +132,7 @@ jobs:
           Path(os.environ["RUNNER_TEMP"]+"/lifeos-trading-pages/trading-config.js").write_text("window.LIFEOS_TRADING_CONFIG="+json.dumps(cfg,separators=(",",":"))+";")
           PY
           set +e
-          npx --prefix services/edge-gateway wrangler pages deploy "$stage" --project-name "$LIFEOS_TRADING_PAGES_PROJECT" --branch main --commit-hash "$GITHUB_SHA" --commit-message "Deploy LifeOS Trading System $GITHUB_SHA"
+          npx --prefix services/edge-gateway wrangler pages deploy "$stage" --project-name "$LIFEOS_TRADING_PAGES_PROJECT" --commit-hash "$GITHUB_SHA" --commit-message "Deploy LifeOS Trading System $GITHUB_SHA"
           pages_exit=$?
           set -e
           if [ "$pages_exit" -ne 0 ]; then
