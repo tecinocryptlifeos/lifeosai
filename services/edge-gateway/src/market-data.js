@@ -19,8 +19,25 @@ function finiteBar(bar) {
   return [bar.open, bar.high, bar.low, bar.close].every(Number.isFinite) &&
     bar.high >= Math.max(bar.open, bar.close) && bar.low <= Math.min(bar.open, bar.close);
 }
+function normalizeTimestamp(value) {
+  const raw = String(value || "").trim();
+  if (!raw) throw new Error("Invalid Twelve Data timestamp");
+  const iso = raw.includes("T") ? raw : raw.replace(" ", "T");
+  const zoned = /(?:Z|[+-]\\d{2}:?\\d{2})$/.test(iso) ? iso : iso + "Z";
+  const date = new Date(zoned);
+  if (Number.isNaN(date.getTime())) throw new Error("Invalid Twelve Data timestamp");
+  return date.toISOString();
+}
 function minimumBars(requestedInterval) {
   return requestedInterval === "1d" ? 30 : requestedInterval === "1wk" ? 12 : requestedInterval === "1mo" ? 6 : 30;
+}
+export function normalizeProviderSymbol(symbol, type) {
+  if (type !== "crypto") return symbol;
+  if (symbol.includes(":")) symbol = symbol.split(":").pop();
+  if (symbol.includes("/")) return symbol;
+  if (symbol.endsWith("USDT")) return symbol.slice(0,-4) + "/USD";
+  if (symbol.endsWith("USDC")) return symbol.slice(0,-4) + "/USD";
+  return symbol;
 }
 export function normalizeTwelveDataSeries(payload, symbol, type, requestedInterval = "1d") {
   const target = INTERVALS[requestedInterval];
@@ -29,7 +46,7 @@ export function normalizeTwelveDataSeries(payload, symbol, type, requestedInterv
     throw new Error(payload?.message || "Twelve Data returned an invalid OHLC response");
   }
   const bars = payload.values.map((row) => ({
-    timestamp: new Date(String(row.datetime).replace(" ", "T") + (String(row.datetime).includes("T") ? "" : "Z")).toISOString(),
+    timestamp: normalizeTimestamp(row.datetime),
     open: Number(row.open), high: Number(row.high), low: Number(row.low),
     close: Number(row.close), volume: Number(row.volume || 0)
   })).filter(finiteBar).sort((a,b) => a.timestamp.localeCompare(b.timestamp));
@@ -49,14 +66,6 @@ async function twelveDataFetch(path, env, params = {}) {
     throw new Error("Twelve Data HTTP " + response.status + (data.message ? ": " + data.message : text ? ": " + text.slice(0,180) : ""));
   }
   return data;
-}
-function normalizeProviderSymbol(symbol, type) {
-  if (type !== "crypto") return symbol;
-  if (symbol.includes(":")) symbol = symbol.split(":").pop();
-  if (symbol.includes("/")) return symbol;
-  if (symbol.endsWith("USDT")) return symbol.slice(0,-4) + "/USD";
-  if (symbol.endsWith("USDC")) return symbol.slice(0,-4) + "/USD";
-  return symbol;
 }
 export async function marketSymbols(request, env) {
   const url = new URL(request.url), type = url.searchParams.get("type") || "stock";
