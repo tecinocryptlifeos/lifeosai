@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { normalizeTwelveDataSeries } from "../src/market-data.js";
+import { normalizeProviderSymbol, normalizeTwelveDataSeries } from "../src/market-data.js";
 
 function seriesPayload(count=31) {
   return { status:"ok", values:Array.from({length:count},(_,i)=>({
@@ -26,6 +26,21 @@ test("normalizes intraday Twelve Data resolution",()=>{
   },"AAPL","stock","5m");
   assert.equal(result.resolution,"5");
   assert.equal(result.bars.length,30);
+});
+
+test("normalizes provider symbols for crypto and preserves requested symbol shape",()=>{
+  assert.equal(normalizeProviderSymbol("BINANCE:BTCUSDT","crypto"),"BTC/USD");
+  assert.equal(normalizeProviderSymbol("ETH/USDT","crypto"),"ETH/USDT");
+  assert.equal(normalizeProviderSymbol("AAPL","stock"),"AAPL");
+});
+
+test("accepts UTC offsets and rejects invalid timestamps",()=>{
+  const payload=seriesPayload();
+  payload.values[0].datetime="2026-01-01 00:00:00+00:00";
+  const result=normalizeTwelveDataSeries(payload,"AAPL","stock","1d");
+  assert.equal(result.bars.length,31);
+  payload.values[1].datetime="not-a-date";
+  assert.throws(()=>normalizeTwelveDataSeries(payload,"AAPL","stock","1d"),/invalid Twelve Data timestamp/i);
 });
 
 test("rejects error responses",()=>{
