@@ -24,8 +24,8 @@ test("returns HOLD when OHLC history is insufficient", () => {
 
 test("calculates a long entry, stop and 2R take-profit from confirmed swing levels", () => {
   const bars = fixture("long");
-  bars[58] = { ...bars[58], high: 114, low: 108, close: 113 };
-  bars[59] = { ...bars[59], high: 116, low: 112, close: 115 };
+  bars[58] = { ...bars[58], high: 116, low: 108, close: 115 };
+  bars[59] = { ...bars[59], high: 114, low: 112, close: 113 };
   const result = evaluateSetup(bars);
   assert.equal(result.direction, "LONG");
   assert.ok(result.entry > result.stop);
@@ -35,7 +35,7 @@ test("calculates a long entry, stop and 2R take-profit from confirmed swing leve
 
 test("calculates a short entry, stop and 2R take-profit from confirmed swing levels", () => {
   const bars = fixture("short");
-  bars[58] = { ...bars[58], high: 112, low: 106, close: 107 };
+  bars[58] = { ...bars[58], high: 112, low: 103, close: 107 };
   bars[59] = { ...bars[59], high: 108, low: 104, close: 105 };
   const result = evaluateSetup(bars);
   assert.equal(result.direction, "SHORT");
