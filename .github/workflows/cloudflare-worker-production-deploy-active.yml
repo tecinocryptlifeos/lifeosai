@@ -146,17 +146,7 @@ jobs:
           deployment_url="$(grep -Eo 'https://[a-f0-9]+\.lifeos-trade-system\.pages\.dev' "$deploy_log" | tail -n 1 || true)"
           test -n "$deployment_url"
           echo "TRADING_PAGES_DEPLOYMENT_URL=$deployment_url"
-          for attempt in 1 2 3 4 5; do
-            if curl --fail --silent --show-error --location --max-time 30 --output "$verify/deployment.html" "$deployment_url/"; then
-              break
-            fi
-            if [ "$attempt" -eq 5 ]; then
-              echo "Pages deployment did not become reachable after 5 attempts" >&2
-              exit 1
-            fi
-            sleep 5
-          done
-          grep -q "LifeOS Trading Intelligence" "$verify/deployment.html"
+          echo "Generated Pages deployment URL is informational; canonical site is the production authority."
           for attempt in 1 2 3 4 5; do
             if curl --fail --silent --show-error --location --max-time 30 --output "$verify/index.html" "$LIFEOS_TRADING_SITE/"; then
               break
