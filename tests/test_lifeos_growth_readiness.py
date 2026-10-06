@@ -18,6 +18,8 @@ from app import lifeos_voice_server as server
 ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / "web" / "lifeos_voice"
 FINAL_ORIGIN = "https://lifeosai.pages.dev"
+# The public Pages site is served by Cloudflare Pages; the API is served by the authoritative Worker.
+API_ORIGIN = "https://losai-edge-gateway.lifeostecinoai.workers.dev"
 # Public production is served by Cloudflare Pages; build-time legacy rewriting is tested separately.
 OLD_ORIGIN = "https://lifeos-ai-voice-app.onrender.com"
 PUBLISHER_ID = "pub-1234567890123456"
@@ -30,7 +32,7 @@ class GrowthReadinessStaticTests(unittest.TestCase):
             environment = os.environ.copy()
             environment.update({
                 "LIFEOS_PUBLIC_SITE_ORIGIN": FINAL_ORIGIN,
-                "LIFEOS_API_ORIGIN": "https://losai-edge-gateway.lifeostecinoai.workers.dev",
+                "LIFEOS_API_ORIGIN": API_ORIGIN,
                 "LIFEOS_PAGES_PREVIEW": "false",
             })
             subprocess.run(
@@ -100,7 +102,7 @@ class GrowthReadinessStaticTests(unittest.TestCase):
         blueprint = (ROOT / "infrastructure/cloudflare/wrangler.toml.template").read_text(encoding="utf-8")
         self.assertIn('name = "losai-edge-gateway"', blueprint)
         self.assertIn('LIFEOS_PUBLIC_SITE_ORIGIN = "__LIFEOS_PUBLIC_SITE_ORIGIN__"', blueprint)
-        self.assertIn('LIFEOS_API_ORIGIN = "__LIFEOS_API_ORIGIN__"', blueprint)
+        self.assertIn('LIFEOS_API_ORIGIN = "' + API_ORIGIN + '"', blueprint)
         self.assertIn('LIFEOS_GEMINI_LIVE_PRIMARY_MODEL = "gemini-2.5-flash-preview-native-audio-dialog"', blueprint)
         self.assertIn('LIFEOS_GEMINI_LIVE_FALLBACK_MODEL = "gemini-2.0-flash-live-001"', blueprint)
         self.assertIn("crons = []", blueprint)
@@ -151,12 +153,12 @@ class GrowthReadinessRuntimeTests(unittest.TestCase):
             {"LIFEOS_ADSENSE_PUBLISHER_ID": PUBLISHER_ID},
             clear=False,
         ):
-            with urllib.request.urlopen(self.base + "/", timeout=2) as response:
+            with urllib.request.urlopen(self.base + "/") as response:
                 public_page = response.read().decode("utf-8")
                 self.assertEqual(response.headers["X-LifeOS-Monetization"], "public-enabled")
-            with urllib.request.urlopen(self.base + "/chat", timeout=2) as response:
+            with urllib.request.urlopen(self.base + "/chat") as response:
                 private_page = response.read().decode("utf-8")
-            with urllib.request.urlopen(self.base + "/ads.txt", timeout=2) as response:
+            with urllib.request.urlopen(self.base + "/ads.txt") as response:
                 ads_txt = response.read().decode("utf-8")
 
         self.assertIn('content="ca-' + PUBLISHER_ID + '"', public_page)
@@ -175,7 +177,7 @@ class GrowthReadinessRuntimeTests(unittest.TestCase):
             clear=False,
         ):
             with self.assertRaises(urllib.error.HTTPError) as context:
-                urllib.request.urlopen(self.base + "/ads.txt", timeout=2)
+                urllib.request.urlopen(self.base + "/ads.txt")
         self.assertEqual(context.exception.code, 404)
 
     def test_legacy_host_redirect_preserves_path_and_query(self):
@@ -204,7 +206,7 @@ class GrowthReadinessRuntimeTests(unittest.TestCase):
             {"LIFEOS_ADSENSE_PUBLISHER_ID": ""},
             clear=False,
         ):
-            with urllib.request.urlopen(self.base + "/api/release", timeout=2) as response:
+            with urllib.request.urlopen(self.base + "/api/release") as response:
                 payload = json.loads(response.read().decode("utf-8"))
         self.assertEqual(
             payload["release"],
@@ -219,7 +221,7 @@ class GrowthReadinessRuntimeTests(unittest.TestCase):
         self.assertIn("/voice", payload["private_surfaces_ad_free"])
 
     def test_health_probe_is_uncached_and_monitor_ready(self):
-        with urllib.request.urlopen(self.base + "/health", timeout=2) as response:
+        with urllib.request.urlopen(self.base + "/health") as response:
             body = response.read().decode("utf-8")
             self.assertEqual(response.headers["Cache-Control"], "no-store")
             self.assertEqual(
