@@ -101,8 +101,8 @@ class GrowthReadinessStaticTests(unittest.TestCase):
         self.assertIn('name = "losai-edge-gateway"', blueprint)
         self.assertIn('LIFEOS_PUBLIC_SITE_ORIGIN = "__LIFEOS_PUBLIC_SITE_ORIGIN__"', blueprint)
         self.assertIn('LIFEOS_API_ORIGIN = "__LIFEOS_API_ORIGIN__"', blueprint)
-        self.assertIn('LIFEOS_GEMINI_LIVE_PRIMARY_MODEL = "gemini-3.1-flash-live-preview"', blueprint)
-        self.assertIn('LIFEOS_GEMINI_LIVE_FALLBACK_MODEL = "gemini-2.5-flash-native-audio-preview-12-2025"', blueprint)
+        self.assertIn('LIFEOS_GEMINI_LIVE_PRIMARY_MODEL = "gemini-2.5-flash-preview-native-audio-dialog"', blueprint)
+        self.assertIn('LIFEOS_GEMINI_LIVE_FALLBACK_MODEL = "gemini-2.0-flash-live-001"', blueprint)
         self.assertIn("crons = []", blueprint)
 
     def test_private_interface_files_never_embed_advertising_code(self):
