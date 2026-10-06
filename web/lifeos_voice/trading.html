@@ -1,32 +1,271 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="canonical" href="https://lifeosai.pages.dev/trading.html">
-<title>LifeOS Trading Intelligence</title><meta name="description" content="LifeOS Trading Intelligence with Twelve Data market data and simulated trading.">
+<title>LifeOS Trading Intelligence</title>
+<meta name="description" content="LifeOS Trading Intelligence with Twelve Data market data and simulated trading.">
 <style>
-:root{--bg:#080808;--panel:#111;--line:#252525;--text:#f5f5f5;--muted:#8e8e8e;--gold:#e7bd55;--up:#22c55e;--down:#ef4444;--blue:#60a5fa}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:13px Inter,system-ui,sans-serif}.app{min-height:100vh;display:flex;flex-direction:column}.top{height:58px;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 18px;gap:18px;background:#0b0b0b;position:sticky;top:0;z-index:10}.logo{font-weight:900}.logo span{color:var(--gold)}.ticker{font-weight:800}.live{margin-left:auto;color:var(--up);font-size:11px}.controls{display:flex;gap:7px;padding:10px 14px;border-bottom:1px solid var(--line);overflow:auto}.controls input,.controls select,.controls button{background:#151515;color:#eee;border:1px solid #303030;border-radius:7px;padding:8px 10px;font-weight:700}.controls input{width:145px;text-transform:uppercase}.controls button{cursor:pointer}.controls button.active{border-color:var(--gold);color:var(--gold)}.body{display:grid;grid-template-columns:minmax(0,1fr) 350px;min-height:calc(100vh - 105px)}.chartbox{min-width:0;border-right:1px solid var(--line);position:relative}.charthead{height:42px;display:flex;align-items:center;padding:0 14px;gap:15px;border-bottom:1px solid var(--line)}.charthead b{font-size:14px}.price{font-size:12px;color:var(--muted)}#chart{display:block;width:100%;height:calc(100vh - 148px);min-height:480px}.error{position:absolute;top:55px;left:18px;right:18px;padding:12px;border:1px solid #4b2424;background:#1b0e0e;color:#ffb4b4;border-radius:8px;display:none}.side{background:#0d0d0d;overflow:auto}.panel{padding:15px;border-bottom:1px solid var(--line)}.panel h3{margin:0 0 12px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}.bias{font-size:20px;font-weight:900}.bias.long{color:var(--up)}.bias.short{color:var(--down)}.bias.wait{color:var(--gold)}.reason{margin-top:7px;color:#bbb;line-height:1.5}.levels,.metrics,.demo-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.level,.metric{background:#151515;border:1px solid #222;border-radius:7px;padding:10px}.level small,.metric small{display:block;color:var(--muted);font-size:9px;text-transform:uppercase}.level strong,.metric b{display:block;margin-top:5px}.entry strong{color:var(--gold)}.tp strong{color:var(--up)}.sl strong{color:var(--down)}.structure{line-height:1.8;color:#ccc}.structure i{font-style:normal;color:var(--gold);font-weight:800}.demo{display:flex;gap:7px;flex-wrap:wrap}.demo button{flex:1;min-width:70px;background:#171717;color:#eee;border:1px solid #333;border-radius:7px;padding:9px;font-weight:800;cursor:pointer}.demo button.buy{border-color:#1d6d3b;color:#8ef0ae}.demo button.sell{border-color:#7d2a2a;color:#ff9c9c}.demo button.close{border-color:#66531e;color:#f3d477}.signal{width:100%;margin-top:7px;background:#171717;color:var(--gold);border:1px solid #66531e;border-radius:7px;padding:9px;font-weight:800}.notice{font-size:11px;line-height:1.5;color:#999}.footer{padding:10px 14px;color:#666;font-size:10px}@media(max-width:850px){.body{grid-template-columns:1fr}.chartbox{border-right:0}.side{display:grid;grid-template-columns:1fr 1fr}.panel{border-right:1px solid var(--line)}#chart{height:60vh;min-height:380px}}@media(max-width:600px){.side{display:block}.top{padding:0 10px}.controls{padding:8px}.live{display:none}}
-</style></head>
-<body><div class="app">
-<header class="top"><div class="logo">LifeOS <span>Trading Intelligence</span></div><div class="ticker" id="ticker">AAPL</div><div class="live" id="live">● CONNECTING</div></header>
-<div class="controls"><select id="type"><option value="stock">Stocks</option><option value="forex">Forex</option><option value="crypto">Crypto</option></select><input id="symbol" value="AAPL" maxlength="40"><select id="catalog"></select><select id="interval"><option value="1m">1m</option><option value="5m">5m</option><option value="15m">15m</option><option value="30m">30m</option><option value="1h">1H</option><option value="1d" selected>1D</option><option value="1wk">1W</option><option value="1mo">1M</option></select><button id="load">LOAD</button></div>
-<div class="body"><section class="chartbox"><div class="charthead"><b id="name">AAPL</b><span class="price" id="price">—</span><span class="price" id="time">—</span></div><canvas id="chart"></canvas><div id="error" class="error"></div></section>
-<aside class="side"><div class="panel"><h3>AI Market Read</h3><div id="bias" class="bias wait">WAITING</div><div id="reason" class="reason">Loading market history…</div><button id="signal" class="signal">GENERATE SIGNAL</button></div>
-<div class="panel"><h3>Trade Plan</h3><div class="levels"><div class="level entry"><small>Entry</small><strong id="entry">—</strong></div><div class="level tp"><small>Take Profit</small><strong id="tp">—</strong></div><div class="level sl"><small>Stop</small><strong id="sl">—</strong></div><div class="level"><small>R:R</small><strong id="rr">—</strong></div></div></div>
-<div class="panel"><h3>Market Structure</h3><div id="structure" class="structure">Waiting for valid OHLC.</div></div>
-<div class="panel"><h3>Measurements</h3><div class="metrics"><div class="metric"><small>Last</small><b id="last">—</b></div><div class="metric"><small>SMA 20</small><b id="sma20">—</b></div><div class="metric"><small>SMA 50</small><b id="sma50">—</b></div><div class="metric"><small>Candles</small><b id="count">—</b></div></div></div>
-<div class="panel"><h3>Demo Trading</h3><div class="demo"><button class="buy" id="buy">BUY</button><button class="sell" id="sell">SELL</button><button class="close" id="close">CLOSE</button></div><div class="demo-grid" style="margin-top:7px"><div class="metric"><small>Balance</small><b id="balance">10,000.00</b></div><div class="metric"><small>Position</small><b id="position">FLAT</b></div><div class="metric"><small>Qty</small><b id="qty">0</b></div><div class="metric"><small>Demo P/L</small><b id="pnl">0.00</b></div></div><p class="notice">Simulation only. These controls never submit a real order or connect to a broker.</p></div>
-<div class="footer">Market data: Twelve Data. Chart rendered locally from raw OHLC candles. No TradingView widget or branding.</div></aside></div></div>
+:root{
+  --bg:#07090c;--surface:#0d1117;--surface2:#111720;--surface3:#151c25;--line:#222b36;
+  --text:#eef2f7;--muted:#8491a1;--gold:#d7ad57;--gold2:#f0cf7a;
+  --up:#35d07f;--down:#ff5c68;--blue:#6ea8ff;--shadow:0 18px 50px rgba(0,0,0,.28)
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:radial-gradient(circle at 20% -10%,#18202b 0,#07090c 42%);color:var(--text);font:13px Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.app{min-height:100vh;display:flex;flex-direction:column}
+.top{height:64px;display:flex;align-items:center;gap:16px;padding:0 22px;border-bottom:1px solid var(--line);background:rgba(7,9,12,.92);backdrop-filter:blur(14px);position:sticky;top:0;z-index:30}
+.logo{font-weight:900;letter-spacing:-.02em;font-size:15px;white-space:nowrap}.logo span{color:var(--gold)}
+.market-chip{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--line);border-radius:9px;background:var(--surface)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--up);box-shadow:0 0 0 4px rgba(53,208,127,.08)}
+.live{margin-left:auto;color:var(--up);font-size:11px;font-weight:800;letter-spacing:.04em;white-space:nowrap}
+.clock{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.controls{display:flex;align-items:center;gap:8px;padding:10px 22px;border-bottom:1px solid var(--line);background:rgba(13,17,23,.86);position:sticky;top:64px;z-index:20;overflow:auto}
+.control{height:36px;background:var(--surface2);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:0 11px;font-weight:750;outline:none}
+.control:focus{border-color:#566577;box-shadow:0 0 0 3px rgba(110,168,255,.08)}
+.symbol{width:150px;text-transform:uppercase}.load{background:#d7ad57;color:#101214;border-color:#d7ad57}.load:hover{background:#f0cf7a}
+.refresh{color:var(--muted);font-size:11px;margin-left:auto;white-space:nowrap}.refresh b{color:var(--text)}
+.workspace{display:grid;grid-template-columns:minmax(0,1fr) 350px;min-height:calc(100vh - 110px);padding:14px;gap:14px}
+.chartbox{min-width:0;min-height:650px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#0c1015,#090c10);box-shadow:var(--shadow);position:relative;overflow:hidden}
+.charthead{height:58px;display:flex;align-items:center;gap:12px;padding:0 16px;border-bottom:1px solid var(--line);background:rgba(13,17,23,.75)}
+.pair{font-size:15px;font-weight:900}.price{font-size:13px;font-weight:800}.change{font-size:11px;font-weight:800}.muted{color:var(--muted)}
+#chart{display:block;width:100%;height:calc(100vh - 255px);min-height:520px}
+.chart-footer{height:36px;display:flex;align-items:center;gap:16px;padding:0 14px;border-top:1px solid var(--line);color:var(--muted);font-size:10px}
+.chart-footer span{white-space:nowrap}
+.error{position:absolute;top:72px;left:16px;right:16px;padding:12px 14px;border:1px solid #6b2c33;background:#211014;color:#ffb5bc;border-radius:10px;display:none;z-index:4}
+.order-ticket{position:absolute;right:16px;bottom:48px;width:270px;padding:12px;border:1px solid #2b3440;border-radius:12px;background:rgba(13,17,23,.94);backdrop-filter:blur(12px);box-shadow:0 16px 40px rgba(0,0,0,.38);z-index:5}
+.ticket-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}.ticket-top b{font-size:11px;text-transform:uppercase;letter-spacing:.08em}.ticket-top span{color:var(--muted);font-size:10px}
+.order-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+.order-actions button{height:38px;border-radius:8px;background:var(--surface3);color:var(--text);border:1px solid var(--line);font-weight:900}
+.order-actions .buy{color:#8bf0b6;border-color:#236b45;background:#0e2118}.order-actions .sell{color:#ff9ea6;border-color:#713039;background:#230f12}.order-actions .close{color:var(--gold2);border-color:#625027}
+.order-actions button:disabled{opacity:.35;cursor:not-allowed}
+.ticket-state{margin-top:8px;color:var(--muted);font-size:10px;display:flex;justify-content:space-between}
+.side{display:flex;flex-direction:column;gap:10px;min-width:0}
+.panel{border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,var(--surface2),var(--surface));padding:14px}
+.panel h3{margin:0 0 10px;font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.bias{font-size:20px;font-weight:950;letter-spacing:-.03em}.bias.long{color:var(--up)}.bias.short{color:var(--down)}.bias.wait{color:var(--gold2)}
+.reason{margin-top:6px;color:#aab4c0;line-height:1.45;font-size:12px}
+.signal{width:100%;margin-top:11px;height:36px;background:transparent;color:var(--gold2);border:1px solid #5e4b24;border-radius:8px;font-weight:850}.signal:hover{background:#1a160d}
+.levels,.metrics,.demo-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.level,.metric{background:#0b0f14;border:1px solid #202832;border-radius:8px;padding:9px}.level small,.metric small{display:block;color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.06em}.level strong,.metric b{display:block;margin-top:4px;font-variant-numeric:tabular-nums}.entry strong{color:var(--gold2)}.tp strong{color:var(--up)}.sl strong{color:var(--down)}
+.structure{line-height:1.8;color:#b8c1cc}.structure i{font-style:normal;color:var(--gold2);font-weight:800}
+.demo{display:none}.notice{font-size:10px;line-height:1.45;color:#778391;margin:9px 0 0}
+.footer{margin-top:auto;color:#64707e;font-size:9px;line-height:1.5}
+.toast{position:fixed;right:18px;bottom:18px;z-index:60;padding:10px 13px;border:1px solid #33404d;border-radius:9px;background:#111720;color:#dce3ea;box-shadow:var(--shadow);display:none;max-width:320px}
+@media(max-width:1050px){.workspace{grid-template-columns:1fr}.side{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.footer{grid-column:1/-1}.order-ticket{bottom:48px}.chartbox{min-height:610px}}
+@media(max-width:700px){.top{height:58px;padding:0 12px;gap:9px}.clock{display:none}.controls{top:58px;padding:8px 10px}.workspace{padding:8px;gap:8px}.side{display:block}.chartbox{min-height:560px;border-radius:11px}#chart{height:58vh;min-height:410px}.order-ticket{left:10px;right:10px;bottom:46px;width:auto}.logo span{display:none}.refresh{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top">
+  <div class="logo">LifeOS <span>Trading Intelligence</span></div>
+  <div class="market-chip"><span class="dot" id="dot"></span><b id="ticker">AAPL</b></div>
+  <div class="live" id="live">CONNECTING</div>
+  <div class="clock" id="clock">—</div>
+</header>
+
+<div class="controls">
+  <select id="type" class="control"><option value="stock">Stocks</option><option value="forex">Forex</option><option value="crypto">Crypto</option></select>
+  <input id="symbol" class="control symbol" value="AAPL" maxlength="40" aria-label="Market symbol">
+  <select id="catalog" class="control" aria-label="Market catalog"><option>Loading symbols…</option></select>
+  <select id="interval" class="control" aria-label="Chart interval">
+    <option value="1m">1m</option><option value="5m">5m</option><option value="15m">15m</option><option value="30m">30m</option><option value="1h">1H</option><option value="1d" selected>1D</option><option value="1wk">1W</option><option value="1mo">1M</option>
+  </select>
+  <button id="load" class="control load">LOAD MARKET</button>
+  <div class="refresh">Next refresh <b id="countdown">—</b></div>
+</div>
+
+<main class="workspace">
+<section class="chartbox">
+  <div class="charthead">
+    <div class="pair" id="name">AAPL</div><div class="price" id="price">—</div><div class="change" id="change">—</div>
+    <div class="muted" id="time">—</div>
+  </div>
+  <canvas id="chart" aria-label="OHLC candlestick chart"></canvas>
+  <div id="error" class="error"></div>
+
+  <div class="order-ticket">
+    <div class="ticket-top"><b>Demo order ticket</b><span id="ticketPrice">Price —</span></div>
+    <div class="order-actions">
+      <button id="buy" class="buy">BUY</button><button id="sell" class="sell">SELL</button><button id="close" class="close">CLOSE</button>
+    </div>
+    <div class="ticket-state"><span id="ticketPosition">FLAT</span><span id="ticketQty">Qty 0</span></div>
+  </div>
+  <div class="chart-footer"><span>OHLC • Twelve Data</span><span id="dataStatus">Waiting for market data</span><span>WAT <b id="watFooter">—</b></span></div>
+</section>
+
+<aside class="side">
+  <div class="panel">
+    <h3>AI Market Read</h3><div id="bias" class="bias wait">WAITING</div><div id="reason" class="reason">Loading market history…</div>
+    <button id="signal" class="signal">REFRESH MARKET READ</button>
+  </div>
+  <div class="panel">
+    <h3>Trade Plan</h3>
+    <div class="levels">
+      <div class="level entry"><small>Entry</small><strong id="entry">—</strong></div>
+      <div class="level tp"><small>Take Profit</small><strong id="tp">—</strong></div>
+      <div class="level sl"><small>Stop</small><strong id="sl">—</strong></div>
+      <div class="level"><small>R:R</small><strong id="rr">—</strong></div>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>Market Structure</h3><div id="structure" class="structure">Waiting for valid OHLC.</div>
+  </div>
+  <div class="panel">
+    <h3>Measurements</h3>
+    <div class="metrics">
+      <div class="metric"><small>Last</small><b id="last">—</b></div><div class="metric"><small>SMA 20</small><b id="sma20">—</b></div>
+      <div class="metric"><small>SMA 50</small><b id="sma50">—</b></div><div class="metric"><small>Candles</small><b id="count">—</b></div>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>Demo Account</h3>
+    <div class="demo-grid">
+      <div class="metric"><small>Balance</small><b id="balance">10,000.00</b></div><div class="metric"><small>Position</small><b id="position">FLAT</b></div>
+      <div class="metric"><small>Qty</small><b id="qty">0</b></div><div class="metric"><small>Demo P/L</small><b id="pnl">0.00</b></div>
+    </div>
+    <p class="notice">Simulation only. BUY, SELL and CLOSE never submit real orders or connect to a broker.</p>
+  </div>
+  <div class="footer">Market data: Twelve Data. Candles use raw OHLC. Live mode refreshes the market feed and animates only verified data transitions; it never invents prices.</div>
+</aside>
+</main>
+</div>
+<div id="toast" class="toast"></div>
+
 <script>
-const API="https://losai-edge-gateway.lifeostecinoai.workers.dev";const $=id=>document.getElementById(id),money=v=>Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});let current=[],plan=null,chartState={};
+const API="https://losai-edge-gateway.lifeostecinoai.workers.dev";
+const REFRESH_MS=20000;
+const $=id=>document.getElementById(id);
+const money=v=>Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+let current=[],plan=null,lastFetch=0,previousBars=[],animationStart=0,animationFrom=null,animationTo=null;
+
 function sma(a,n){return a.map((_,i)=>i+1<n?null:a.slice(i-n+1,i+1).reduce((x,y)=>x+y,0)/n)}
-function evaluate(b){if(b.length<50)return{status:"WAIT",reason:"More market history is required."};const c=b.map(x=>x.close),m20=sma(c,20).at(-1),m50=sma(c,50).at(-1),p=[];for(let i=1;i<b.length-1;i++){if(b[i].high>b[i-1].high&&b[i].high>=b[i+1].high)p.push({t:"H",p:b[i].high});if(b[i].low<b[i-1].low&&b[i].low<=b[i+1].low)p.push({t:"L",p:b[i].low})}const hs=p.filter(x=>x.t==="H"),ls=p.filter(x=>x.t==="L"),res=hs.at(-1)?.p,sup=ls.at(-1)?.p;if(!Number.isFinite(res)||!Number.isFinite(sup)||res<=sup)return{status:"WAIT",reason:"No confirmed structure.",m20,m50};const direction=m20>m50?"LONG":m20<m50?"SHORT":"WAIT",entry=direction==="LONG"?res:sup,stop=direction==="LONG"?sup:res,r=Math.abs(entry-stop);if(direction==="WAIT"||r<=0)return{status:"WAIT",reason:"Directional bias is not confirmed.",m20,m50,support:sup,resistance:res};return{status:"READY",direction,reason:"Structure and moving-average bias are aligned.",entry,stop,takeProfit:direction==="LONG"?entry+2*r:entry-2*r,rewardRisk:2,m20,m50,support:sup,resistance:res}}
-function draw(b,signal){const canvas=$("chart"),d=devicePixelRatio||1,w=canvas.clientWidth,h=canvas.clientHeight;canvas.width=w*d;canvas.height=h*d;const ctx=canvas.getContext("2d");ctx.scale(d,d);ctx.fillStyle="#080808";ctx.fillRect(0,0,w,h);if(!b.length)return;const pad={l:12,r:62,t:18,b:24},cw=w-pad.l-pad.r,ch=h-pad.t-pad.b,visible=b.slice(-Math.max(40,Math.floor(cw/8))),hi=Math.max(...visible.map(x=>x.high)),lo=Math.min(...visible.map(x=>x.low)),span=hi-lo||1;const x=i=>pad.l+(i+.5)*cw/visible.length,y=v=>pad.t+(hi-v)/span*ch;ctx.font="10px system-ui";for(let i=0;i<5;i++){const yy=pad.t+i*ch/4;ctx.strokeStyle="#151515";ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(pad.l+cw,yy);ctx.stroke();ctx.fillStyle="#777";ctx.fillText(money(hi-(span*i/4)),pad.l+cw+6,yy+3)}const step=cw/visible.length,body=Math.max(2,step*.62);visible.forEach((c,i)=>{const xx=x(i),yo=y(c.open),yc=y(c.close),yh=y(c.high),yl=y(c.low),up=c.close>=c.open;ctx.strokeStyle=up?"#22c55e":"#ef4444";ctx.fillStyle=ctx.strokeStyle;ctx.beginPath();ctx.moveTo(xx,yh);ctx.lineTo(xx,yl);ctx.stroke();ctx.fillRect(xx-body/2,Math.min(yo,yc),body,Math.max(1,Math.abs(yc-yo)))});if(signal?.entry){ctx.strokeStyle="#e7bd55";ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(pad.l,y(signal.entry));ctx.lineTo(pad.l+cw,y(signal.entry));ctx.stroke();ctx.setLineDash([]);ctx.fillStyle="#e7bd55";ctx.fillText("ENTRY",pad.l+4,y(signal.entry)-5)}}
-function render(b){const c=b.map(x=>x.close),m20=sma(c,20),m50=sma(c,50),s=evaluate(b);plan=s;const last=b.at(-1);$("price").textContent=money(last.close);$("last").textContent=money(last.close);$("sma20").textContent=m20.at(-1)?money(m20.at(-1)):"—";$("sma50").textContent=m50.at(-1)?money(m50.at(-1)):"—";$("count").textContent=b.length;$("time").textContent=new Date(last.timestamp).toLocaleString();$("bias").textContent=s.direction? s.direction+" SIGNAL":s.status;$("bias").className="bias "+(s.direction==="LONG"?"long":s.direction==="SHORT"?"short":"wait");$("reason").textContent=s.reason;$("entry").textContent=s.entry?money(s.entry):"—";$("tp").textContent=s.takeProfit?money(s.takeProfit):"—";$("sl").textContent=s.stop?money(s.stop):"—";$("rr").textContent=s.rewardRisk?s.rewardRisk+"R":"—";$("structure").innerHTML=s.support?'<div>Support <i>'+money(s.support)+'</i></div><div>Resistance <i>'+money(s.resistance)+'</i></div>':'No confirmed swing levels yet.';draw(b,s)}
-async function load(){const type=$("type").value,symbol=$("symbol").value.trim().toUpperCase()||"AAPL",interval=$("interval").value;$("ticker").textContent=symbol;$("name").textContent=symbol;$("live").textContent="● LOADING";$("error").style.display="none";try{const r=await fetch(API+"/api/market-data?type="+encodeURIComponent(type)+"&symbol="+encodeURIComponent(symbol)+"&interval="+encodeURIComponent(interval)+"&_="+Date.now(),{cache:"no-store"}),d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||"Market data unavailable");current=d.bars;render(current);$("live").textContent="● LIVE DATA"}catch(e){$("live").textContent="● DATA ERROR";$("live").style.color="#ef4444";$("error").textContent=e.message||"Market data unavailable";$("error").style.display="block"}}
-async function catalog(){try{const type=$("type").value,exchange=type==="stock"?"US":type==="forex"?"oanda":"BINANCE",r=await fetch(API+"/api/market-symbols?type="+type+"&exchange="+exchange),d=await r.json();if(!d.ok)throw Error(d.error);$("catalog").innerHTML=d.symbols.slice(0,200).map(x=>'<option value="'+x.symbol.replace(/"/g,"&quot;")+'">'+(x.displaySymbol||x.symbol)+" — "+(x.description||"")+"</option>").join("")}catch(e){$("catalog").innerHTML='<option>Catalog unavailable</option>'}}
+function toast(msg){const t=$("toast");t.textContent=msg;t.style.display="block";clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.style.display="none",2600)}
+function updateClock(){
+  const now=new Date(),fmt={timeZone:"Africa/Lagos",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false};
+  const dateFmt={timeZone:"Africa/Lagos",weekday:"short",day:"2-digit",month:"short",year:"numeric"};
+  const text=now.toLocaleTimeString("en-GB",fmt)+" WAT";$("clock").textContent=text;$("watFooter").textContent=text;
+  const left=Math.max(0,REFRESH_MS-(Date.now()-lastFetch));$("countdown").textContent=lastFetch?Math.ceil(left/1000)+"s":"—";
+}
+setInterval(updateClock,250);updateClock();
+
+function evaluate(b){
+  if(b.length<50)return{status:"WAIT",reason:"More market history is required."};
+  const c=b.map(x=>x.close),m20=sma(c,20).at(-1),m50=sma(c,50).at(-1),p=[];
+  for(let i=1;i<b.length-1;i++){if(b[i].high>b[i-1].high&&b[i].high>=b[i+1].high)p.push({t:"H",p:b[i].high});if(b[i].low<b[i-1].low&&b[i].low<=b[i+1].low)p.push({t:"L",p:b[i].low})}
+  const hs=p.filter(x=>x.t==="H"),ls=p.filter(x=>x.t==="L"),res=hs.at(-1)?.p,sup=ls.at(-1)?.p;
+  if(!Number.isFinite(res)||!Number.isFinite(sup)||res<=sup)return{status:"WAIT",reason:"No confirmed structure.",m20,m50};
+  const direction=m20>m50?"LONG":m20<m50?"SHORT":"WAIT",entry=direction==="LONG"?res:sup,stop=direction==="LONG"?sup:res,r=Math.abs(entry-stop);
+  if(direction==="WAIT"||r<=0)return{status:"WAIT",reason:"Directional bias is not confirmed.",m20,m50,support:sup,resistance:res};
+  return{status:"READY",direction,reason:"Structure and moving-average bias are aligned.",entry,stop,takeProfit:direction==="LONG"?entry+2*r:entry-2*r,rewardRisk:2,m20,m50,support:sup,resistance:res};
+}
+
+function draw(b,signal,progress=1){
+  const canvas=$("chart"),d=devicePixelRatio||1,w=canvas.clientWidth,h=canvas.clientHeight;
+  canvas.width=Math.max(1,w*d);canvas.height=Math.max(1,h*d);
+  const ctx=canvas.getContext("2d");ctx.setTransform(d,0,0,d,0,0);ctx.fillStyle="#090c10";ctx.fillRect(0,0,w,h);
+  if(!b.length)return;
+  const pad={l:12,r:68,t:18,b:22},cw=w-pad.l-pad.r,ch=h-pad.t-pad.b,visible=b.slice(-Math.max(45,Math.floor(cw/8)));
+  const hi=Math.max(...visible.map(x=>x.high)),lo=Math.min(...visible.map(x=>x.low)),span=hi-lo||1;
+  const x=i=>pad.l+(i+.5)*cw/visible.length,y=v=>pad.t+(hi-v)/span*ch,step=cw/visible.length,body=Math.max(2,step*.62);
+  ctx.font="10px system-ui";
+  for(let i=0;i<5;i++){const yy=pad.t+i*ch/4;ctx.strokeStyle="#151b22";ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(pad.l+cw,yy);ctx.stroke();ctx.fillStyle="#687381";ctx.fillText(money(hi-span*i/4),pad.l+cw+6,yy+3)}
+  visible.forEach((c,i)=>{
+    let o=c.open,hv=c.high,l=c.low,cl=c.close;
+    if(i===visible.length-1&&animationFrom&&animationTo&&progress<1){
+      const q=progress;const lerp=(a,z)=>a+(z-a)*q;o=lerp(animationFrom.open,animationTo.open);hv=lerp(animationFrom.high,animationTo.high);l=lerp(animationFrom.low,animationTo.low);cl=lerp(animationFrom.close,animationTo.close);
+    }
+    const xx=x(i),yo=y(o),yc=y(cl),yh=y(hv),yl=y(l),up=cl>=o;
+    ctx.strokeStyle=up?"#35d07f":"#ff5c68";ctx.fillStyle=ctx.strokeStyle;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(xx,yh);ctx.lineTo(xx,yl);ctx.stroke();ctx.fillRect(xx-body/2,Math.min(yo,yc),body,Math.max(1,Math.abs(yc-yo)));
+  });
+  if(signal?.entry){ctx.strokeStyle="#d7ad57";ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(pad.l,y(signal.entry));ctx.lineTo(pad.l+cw,y(signal.entry));ctx.stroke();ctx.setLineDash([]);ctx.fillStyle="#d7ad57";ctx.fillText("ENTRY",pad.l+4,y(signal.entry)-5)}
+  if(animationFrom&&animationTo&&progress<1){requestAnimationFrame(()=>draw(b,signal,Math.min(1,progress+.08)))}
+}
+
+function animateTransition(oldBars,newBars){
+  animationFrom=oldBars.at(-1)||newBars.at(-1);animationTo=newBars.at(-1);animationStart=performance.now();
+  const tick=now=>{const p=Math.min(1,(now-animationStart)/700);draw(newBars,plan,p);if(p<1)requestAnimationFrame(tick);else{animationFrom=null;animationTo=null}};
+  requestAnimationFrame(tick);
+}
+
+function render(b){
+  const c=b.map(x=>x.close),m20=sma(c,20),m50=sma(c,50),s=evaluate(b),last=b.at(-1),prev=b.at(-2);
+  plan=s;current=b;
+  $("price").textContent=money(last.close);$("last").textContent=money(last.close);
+  const delta=prev?last.close-prev.close:0,pct=prev&&prev.close?delta/prev.close*100:0;
+  $("change").textContent=(delta>=0?"+":"")+money(delta)+" ("+(pct>=0?"+":"")+pct.toFixed(2)+"%)";
+  $("change").style.color=delta>=0?"var(--up)":"var(--down)";
+  const stamp=new Date(last.timestamp);
+  $("time").textContent=Number.isNaN(stamp.getTime())?"—":stamp.toISOString().replace(".000Z"," UTC");
+  $("sma20").textContent=m20.at(-1)?money(m20.at(-1)):"—";$("sma50").textContent=m50.at(-1)?money(m50.at(-1)):"—";$("count").textContent=b.length;
+  $("bias").textContent=s.direction?s.direction+" SIGNAL":s.status;$("bias").className="bias "+(s.direction==="LONG"?"long":s.direction==="SHORT"?"short":"wait");
+  $("reason").textContent=s.reason;$("entry").textContent=s.entry?money(s.entry):"—";$("tp").textContent=s.takeProfit?money(s.takeProfit):"—";$("sl").textContent=s.stop?money(s.stop):"—";$("rr").textContent=s.rewardRisk?s.rewardRisk+"R":"—";
+  $("structure").innerHTML=s.support?'<div>Support <i>'+money(s.support)+'</i></div><div>Resistance <i>'+money(s.resistance)+'</i></div>':'No confirmed swing levels yet.';
+  $("ticketPrice").textContent="Price "+money(last.close);$("dataStatus").textContent="Updated "+new Date().toLocaleTimeString("en-GB",{timeZone:"Africa/Lagos",hour12:false})+" WAT";
+  draw(b,s);
+  updateDemo();
+}
+
+async function load(showToast=false){
+  const type=$("type").value,symbol=$("symbol").value.trim().toUpperCase()||"AAPL",interval=$("interval").value;
+  $("ticker").textContent=symbol;$("name").textContent=symbol;$("live").textContent="REFRESHING";$("dot").style.background="var(--gold)";$("error").style.display="none";
+  try{
+    const r=await fetch(API+"/api/market-data?type="+encodeURIComponent(type)+"&symbol="+encodeURIComponent(symbol)+"&interval="+encodeURIComponent(interval)+"&_="+Date.now(),{cache:"no-store"});
+    const d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||"Market data unavailable");
+    previousBars=current;lastFetch=Date.now();render(d.bars);
+    if(previousBars.length)animateTransition(previousBars,d.bars);
+    $("live").textContent="LIVE • "+interval.toUpperCase();$("live").style.color="var(--up)";$("dot").style.background="var(--up)";
+    if(showToast)toast("Market data refreshed");
+  }catch(e){
+    $("live").textContent="DATA ERROR";$("live").style.color="var(--down)";$("dot").style.background="var(--down)";
+    $("error").textContent=e.message||"Market data unavailable";$("error").style.display="block";toast("Market data could not be refreshed");
+  }
+}
+
+async function catalog(){
+  try{
+    const type=$("type").value,exchange=type==="stock"?"US":type==="forex"?"oanda":"BINANCE";
+    const r=await fetch(API+"/api/market-symbols?type="+type+"&exchange="+exchange,{cache:"no-store"}),d=await r.json();
+    if(!d.ok)throw Error(d.error||"Catalog unavailable");
+    $("catalog").innerHTML=d.symbols.slice(0,200).map(x=>'<option value="'+String(x.symbol).replace(/"/g,"&quot;")+'">'+(x.displaySymbol||x.symbol)+" — "+(x.description||"")+"</option>").join("");
+  }catch(e){$("catalog").innerHTML='<option>Catalog unavailable</option>'}
+}
+
 function demoState(){return JSON.parse(localStorage.getItem("lifeosDemoTrading")||'{"balance":10000,"position":"FLAT","qty":0,"entry":0}')}
-function saveDemo(s){localStorage.setItem("lifeosDemoTrading",JSON.stringify(s));$("balance").textContent=money(s.balance);$("position").textContent=s.position;$("qty").textContent=s.qty;$("pnl").textContent=money(s.position==="LONG"?(current.at(-1)?.close-s.entry)*s.qty:s.position==="SHORT"?(s.entry-current.at(-1)?.close)*s.qty:0)}
-function trade(side){if(!current.length)return;const s=demoState(),price=current.at(-1).close;if(s.position!=="FLAT")return alert("Demo position already open. Close it before opening another.");const qty=Math.max(1,Math.floor(s.balance/price/10));saveDemo({...s,position:side,qty,entry:price})}
-function closeDemo(){const s=demoState();if(s.position==="FLAT")return;const price=current.at(-1).close,pnl=(s.position==="LONG"?price-s.entry:s.entry-price)*s.qty;saveDemo({balance:s.balance+pnl,position:"FLAT",qty:0,entry:0})}
-$("load").onclick=load;$("buy").onclick=()=>trade("LONG");$("sell").onclick=()=>trade("SHORT");$("close").onclick=closeDemo;$("signal").onclick=()=>{if(current.length)render(current)};$("catalog").onchange=e=>{if(e.target.value&&e.target.value!=="Catalog unavailable"){$("symbol").value=e.target.value;load()}};$("type").onchange=()=>{catalog();$("symbol").value=$("type").value==="stock"?"AAPL":$("type").value==="forex"?"OANDA:1":"BINANCE:BTCUSDT";load()};$("interval").onchange=load;addEventListener("resize",()=>draw(current,plan));saveDemo(demoState());catalog();load();setInterval(load,30000);
-</script></body></html>
+function saveDemo(s){
+  localStorage.setItem("lifeosDemoTrading",JSON.stringify(s));$("balance").textContent=money(s.balance);$("position").textContent=s.position;$("qty").textContent=s.qty;
+  const last=current.at(-1)?.close||0,pnl=s.position==="LONG"?(last-s.entry)*s.qty:s.position==="SHORT"?(s.entry-last)*s.qty:0;
+  $("pnl").textContent=money(pnl);$("ticketPosition").textContent=s.position;$("ticketQty").textContent="Qty "+s.qty;
+  $("buy").disabled=s.position!=="FLAT";$("sell").disabled=s.position!=="FLAT";$("close").disabled=s.position==="FLAT";
+}
+function updateDemo(){saveDemo(demoState())}
+function trade(side){
+  if(!current.length)return toast("Load market data first");
+  const s=demoState(),price=current.at(-1).close;
+  if(s.position!=="FLAT")return toast("Close the existing demo position first");
+  const qty=Math.max(1,Math.floor(s.balance/price/10));
+  saveDemo({...s,position:side,qty,entry:price});toast(side==="LONG"?"Demo BUY opened":"Demo SELL opened");
+}
+function closeDemo(){
+  const s=demoState();if(s.position==="FLAT")return toast("No demo position is open");
+  const price=current.at(-1)?.close||s.entry,pnl=(s.position==="LONG"?price-s.entry:s.entry-price)*s.qty;
+  saveDemo({balance:s.balance+pnl,position:"FLAT",qty:0,entry:0});toast("Demo position closed");
+}
+
+$("load").onclick=()=>load(true);$("buy").onclick=()=>trade("LONG");$("sell").onclick=()=>trade("SHORT");$("close").onclick=closeDemo;
+$("signal").onclick=()=>{if(current.length){render(current);toast("Market read recalculated")}else toast("Load market data first")};
+$("catalog").onchange=e=>{if(e.target.value&&e.target.value!=="Catalog unavailable"){$("symbol").value=e.target.value;load(true)}};
+$("type").onchange=()=>{catalog();$("symbol").value=$("type").value==="stock"?"AAPL":$("type").value==="forex"?"OANDA:1":"BINANCE:BTCUSDT";load(true)};
+$("interval").onchange=()=>load(true);
+$("symbol").addEventListener("keydown",e=>{if(e.key==="Enter")load(true)});
+addEventListener("resize",()=>draw(current,plan));
+setInterval(()=>{if(document.visibilityState==="visible")load(false)},REFRESH_MS);
+saveDemo(demoState());catalog();load(false);
+</script>
+</body>
+</html>
