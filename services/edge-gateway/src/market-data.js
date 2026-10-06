@@ -34,13 +34,67 @@ export function normalizeFinnhubCandle(payload, symbol, type, requestedInterval 
   if (bars.length < minimum) throw new Error("Insufficient OHLC history");
   return { ok:true, source:"Finnhub", symbol, market_type:type, interval:requestedInterval, resolution:target.resolution, fetched_at:new Date().toISOString(), bars };
 }
+const FINNHUB_FREE_TIER_ALLOWED = new Set([
+  "/quote",
+  "/stock/profile",
+  "/stock/profile2",
+  "/company-news",
+  "/news",
+  "/stock/peers",
+  "/stock/recommendation",
+  "/stock/earnings",
+  "/country",
+  "/exchange",
+  "/search",
+]);
+
+const FINNHUB_PAID_ONLY = new Set([
+  "/stock/candle",
+  "/stock/option-chain",
+  "/stock/insider-transactions",
+  "/mutual-fund/profile",
+  "/mutual-fund/holdings",
+  "/stock/market-status",
+  "/stock/market-holiday",
+]);
+
 async function finnhubFetch(path, env, params = {}) {
-  if (!env.FINNHUB_API_KEY) throw new Error("Finnhub API key is not configured");
-  const url = new URL("https://api.finnhub.io/api/v1" + path);
-  for (const [key,value] of Object.entries(params)) url.searchParams.set(key,value);
+  if (!env.FINNHUB_API_KEY) throw new Error("FINNHUB_API_KEY is not set");
+
+  if (FINNHUB_PAID_ONLY.has(path)) {
+    throw new Error(
+      path + " requires a paid Finnhub plan. Free-tier keys commonly return HTTP 403 for this endpoint.",
+    );
+  }
+
+  const url = new URL("https://finnhub.io/api/v1" + path);
+  for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
   url.searchParams.set("token", env.FINNHUB_API_KEY);
-  const response = await fetch(url.toString(), {headers:{Accept:"application/json","X-Finnhub-Token":env.FINNHUB_API_KEY}});
-  if (!response.ok) { const detail = await response.text().catch(() => ""); throw new Error("Finnhub HTTP " + response.status + (detail ? ": " + detail.slice(0, 180) : "")); }
+
+  const response = await fetch(url.toString(), {
+    headers: {
+      Accept: "application/json",
+      "X-Finnhub-Token": env.FINNHUB_API_KEY,
+    },
+  });
+
+  if (response.status === 403) {
+    let body = "";
+    try { body = await response.text(); } catch {}
+    throw new Error(
+      "Finnhub denied access to " + path +
+      ". Check that: 1) the API key is valid and active, " +
+      "2) you have the correct plan for this endpoint, " +
+      "3) the token is passed correctly." +
+      (body ? " Response: " + body.slice(0, 180) : ""),
+    );
+  }
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error("Finnhub HTTP " + response.status + (detail ? ": " + detail.slice(0, 180) : ""));
+  }
+
   return response.json();
 }
 export async function marketSymbols(request, env) {
