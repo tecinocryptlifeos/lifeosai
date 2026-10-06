@@ -141,8 +141,9 @@ jobs:
           curl --fail --silent --show-error --location --max-time 30 --output "$verify/index.html" "$LIFEOS_TRADING_SITE/"
           curl --fail --silent --show-error --location --max-time 30 --output "$verify/trading-config.js" "$LIFEOS_TRADING_SITE/trading-config.js"
           grep -q "LifeOS Trading Intelligence" "$verify/index.html"
-          grep -q "Market Intelligence" "$verify/index.html"
-          grep -q "Validation gate workflow" "$verify/index.html"
+          grep -q "AI Market Read" "$verify/index.html"
+          grep -q "Trade Plan" "$verify/index.html"
+          grep -q "Market Structure" "$verify/index.html"
           grep -q "LIFEOS_TRADING_CONFIG" "$verify/trading-config.js"
           echo "TRADING_PAGES_DEPLOYMENT=PASS"
 
