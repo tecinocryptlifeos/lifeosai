@@ -184,7 +184,6 @@ function draw(b,signal,progress=1){
     ctx.beginPath();ctx.moveTo(xx,yh);ctx.lineTo(xx,yl);ctx.stroke();ctx.fillRect(xx-body/2,Math.min(yo,yc),body,Math.max(1,Math.abs(yc-yo)));
   });
   if(signal?.entry){ctx.strokeStyle="#d7ad57";ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(pad.l,y(signal.entry));ctx.lineTo(pad.l+cw,y(signal.entry));ctx.stroke();ctx.setLineDash([]);ctx.fillStyle="#d7ad57";ctx.fillText("ENTRY",pad.l+4,y(signal.entry)-5)}
-  if(animationFrom&&animationTo&&progress<1){requestAnimationFrame(()=>draw(b,signal,Math.min(1,progress+.08)))}
 }
 
 function animateTransition(oldBars,newBars){
