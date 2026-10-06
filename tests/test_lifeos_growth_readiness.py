@@ -18,7 +18,7 @@ from app import lifeos_voice_server as server
 ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / "web" / "lifeos_voice"
 FINAL_ORIGIN = "https://lifeosai.pages.dev"
-# The public Pages site is served by Cloudflare Pages; the API is served by the authoritative Worker.
+# Public production is served by Cloudflare Pages; the API is served by the authoritative Worker.
 API_ORIGIN = "https://losai-edge-gateway.lifeostecinoai.workers.dev"
 # Public production is served by Cloudflare Pages; build-time legacy rewriting is tested separately.
 OLD_ORIGIN = "https://lifeos-ai-voice-app.onrender.com"
@@ -177,7 +177,7 @@ class GrowthReadinessRuntimeTests(unittest.TestCase):
             clear=False,
         ):
             with self.assertRaises(urllib.error.HTTPError) as context:
-                urllib.request.urlopen(self.base + "/ads.txt")
+                urllib.request.urlopen(self.base + "/ads.txt", timeout=2)
         self.assertEqual(context.exception.code, 404)
 
     def test_legacy_host_redirect_preserves_path_and_query(self):
@@ -206,7 +206,7 @@ class GrowthReadinessRuntimeTests(unittest.TestCase):
             {"LIFEOS_ADSENSE_PUBLISHER_ID": ""},
             clear=False,
         ):
-            with urllib.request.urlopen(self.base + "/api/release") as response:
+            with urllib.request.urlopen(self.base + "/api/release", timeout=2) as response:
                 payload = json.loads(response.read().decode("utf-8"))
         self.assertEqual(
             payload["release"],
@@ -221,7 +221,7 @@ class GrowthReadinessRuntimeTests(unittest.TestCase):
         self.assertIn("/voice", payload["private_surfaces_ad_free"])
 
     def test_health_probe_is_uncached_and_monitor_ready(self):
-        with urllib.request.urlopen(self.base + "/health") as response:
+        with urllib.request.urlopen(self.base + "/health", timeout=2) as response:
             body = response.read().decode("utf-8")
             self.assertEqual(response.headers["Cache-Control"], "no-store")
             self.assertEqual(
