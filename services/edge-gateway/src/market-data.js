@@ -38,6 +38,7 @@ async function finnhubFetch(path, env, params = {}) {
   if (!env.FINNHUB_API_KEY) throw new Error("Finnhub API key is not configured");
   const url = new URL("https://api.finnhub.io/api/v1" + path);
   for (const [key,value] of Object.entries(params)) url.searchParams.set(key,value);
+  url.searchParams.set("token", env.FINNHUB_API_KEY);
   const response = await fetch(url.toString(), {headers:{Accept:"application/json","X-Finnhub-Token":env.FINNHUB_API_KEY}});
   if (!response.ok) { const detail = await response.text().catch(() => ""); throw new Error("Finnhub HTTP " + response.status + (detail ? ": " + detail.slice(0, 180) : "")); }
   return response.json();
