@@ -1,6 +1,7 @@
 name: Cloudflare Worker production deploy (active)
 
 # Production deployment trigger: run the merged Pages-project detection fix on main.
+# Deployment verification retrigger: this commit intentionally causes a fresh main push run.
 
 on:
   push:
