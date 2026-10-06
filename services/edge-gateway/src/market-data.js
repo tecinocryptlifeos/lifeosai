@@ -23,7 +23,7 @@ function normalizeTimestamp(value) {
   const raw = String(value || "").trim();
   if (!raw) throw new Error("Invalid Twelve Data timestamp");
   const iso = raw.includes("T") ? raw : raw.replace(" ", "T");
-  const zoned = /(?:Z|[+-]\\d{2}:?\\d{2})$/.test(iso) ? iso : iso + "Z";
+  const zoned = /(?:Z|[+-]\d{2}:?\d{2})$/.test(iso) ? iso : iso + "Z";
   const date = new Date(zoned);
   if (Number.isNaN(date.getTime())) throw new Error("Invalid Twelve Data timestamp");
   return date.toISOString();
