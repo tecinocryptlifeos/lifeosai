@@ -184,6 +184,10 @@ jobs:
           cat > "$stage/_worker.js" <<'EOF'
           export default {
             async fetch(request, env) {
+              const url = new URL(request.url);
+              if (url.pathname === "/terminal" || url.pathname === "/terminal/") {
+                return env.ASSETS.fetch(new Request(new URL("/terminal.html", request.url), request));
+              }
               return env.ASSETS.fetch(request);
             },
           };
