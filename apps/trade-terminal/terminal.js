@@ -8,7 +8,7 @@ const UP='#16c784',DN='#ea3943',MUT='#8a94a6',GRID='rgba(255,255,255,.06)';
 const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch{return d}},sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
 const S={tab:'crypto',type:'crypto',sym:'BTC/USD',tf:'5m',bars:[],n:80,off:0,live:true,disp:null,from:0,t0:0,raf:0,cross:null,err:0,req:0,timer:0,nextAt:0,stale:false,s20:[],s50:[],sig:null};
 let A=ld('losai_demo_v1',{bal:10000,pos:{},ord:[]}),H=ld('losai_sigs_v1',[]);const LP={};
-const TZ=new Intl.DateTimeFormat([],{timeZoneName:'short'}).formatToParts(new Date()).find(p=>p.type==='timeZoneName')?.value||'';
+const WAT='Africa/Lagos';
 const intr=()=>TF[S.tf][1]<1440,last=()=>S.bars[S.bars.length-1];
 const dp=p=>p>=100?2:p>=10?3:p>=1?4:6,f=v=>Number(v).toFixed(dp(Math.abs(v))),usd=v=>(v<0?'-':'')+'$'+Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
 const ft=(ts,full)=>{const d=new Date(ts);return intr()?d.toLocaleString([],full?{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}:{hour:'2-digit',minute:'2-digit'}):d.toLocaleDateString([],{timeZone:'UTC',year:'numeric',month:'short',day:'numeric'})};
@@ -160,7 +160,7 @@ $('use').onclick=()=>{if(!S.sig||S.sig.dir==='WAIT')return toast('No trade plan 
 $('rst').onclick=()=>{if(confirm('Reset the demo account to $10,000 and clear all positions and orders?')){A={bal:10000,pos:{},ord:[]};save();acct();draw();toast('Demo account reset.')}};
 $('sl').oninput=$('qty').oninput=acct;
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S.live)pull();else clearTimeout(S.timer)});
-const tick=()=>{const d=new Date();$('clock').textContent=d.toLocaleTimeString([],{hour12:false})+' '+TZ+'  ·  '+d.toISOString().slice(11,16)+' UTC';
+const tick=()=>{const d=new Date(),wat=d.toLocaleTimeString('en-NG',{timeZone:WAT,hour12:false}),utc=d.toISOString().slice(11,16);$('clock').textContent=wat+' WAT  ·  '+utc+' UTC';
   let t=S.live?(S.nextAt?'Next refresh in '+Math.max(0,Math.round((S.nextAt-Date.now())/1000))+'s':''):'Live updates paused';
   if(intr()&&S.bars.length&&!S.stale){const ms=TF[S.tf][1]*60000,r=Math.floor((ms-Date.now()%ms)/1000);t+=(t?'  ·  ':'')+'Candle closes in '+Math.floor(r/60)+':'+String(r%60).padStart(2,'0')}
   $('next').textContent=t};tick();setInterval(tick,1000);
