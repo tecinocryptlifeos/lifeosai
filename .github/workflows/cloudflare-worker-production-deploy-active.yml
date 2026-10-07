@@ -180,7 +180,7 @@ jobs:
           cp apps/trade-terminal/terminal.css "$stage/terminal.css"
           cp apps/trade-terminal/terminal.js "$stage/terminal.js"
           cp apps/trade-terminal/_headers "$stage/_headers"
-          printf '%s\n' '/terminal /terminal.html 302' '/terminal/ /terminal.html 302' > "$stage/_redirects"
+          rm -f "$stage/_redirects"
           test -s "$stage/index.html"
           test -s "$stage/terminal/index.html"
           test -s "$stage/terminal/terminal.js"
@@ -270,15 +270,11 @@ jobs:
           grep -q "Market Structure" "$RUNNER_TEMP/trading-pages-canonical.html"
           grep -q "Demo Account" "$RUNNER_TEMP/trading-pages-canonical.html"
           grep -q "Twelve Data" "$RUNNER_TEMP/trading-pages-canonical.html"
-          terminal_http="$(curl --silent --show-error --location --max-time 30 --output "$RUNNER_TEMP/trading-terminal.html" --write-out '%{http_code}' "$canonical_url/terminal.html" || true)"
-          echo "TRADING_TERMINAL_HTML_HTTP=$terminal_http"
-          head -c 1000 "$RUNNER_TEMP/trading-terminal.html" || true
-          echo
+          terminal_http="$(curl --silent --show-error --location --max-time 30 --retry 6 --retry-delay 5 --retry-all-errors --output "$RUNNER_TEMP/trading-terminal.html" --write-out '%{http_code}' "$TRADING_PAGES_DEPLOYMENT_URL/terminal/" || true)"
+          echo "TRADING_TERMINAL_HTTP=$terminal_http"
           test "$terminal_http" = "200"
-          terminal_js_http="$(curl --silent --show-error --location --max-time 30 --output "$RUNNER_TEMP/trading-terminal.js" --write-out '%{http_code}' "$canonical_url/terminal.js" || true)"
+          terminal_js_http="$(curl --silent --show-error --location --max-time 30 --retry 6 --retry-delay 5 --retry-all-errors --output "$RUNNER_TEMP/trading-terminal.js" --write-out '%{http_code}' "$TRADING_PAGES_DEPLOYMENT_URL/terminal/terminal.js" || true)"
           echo "TRADING_TERMINAL_JS_HTTP=$terminal_js_http"
-          head -c 1000 "$RUNNER_TEMP/trading-terminal.js" || true
-          echo
           test "$terminal_js_http" = "200"
           grep -q "Losai Trade AI" "$RUNNER_TEMP/trading-terminal.html"
           grep -q "Simulation only" "$RUNNER_TEMP/trading-terminal.html"
