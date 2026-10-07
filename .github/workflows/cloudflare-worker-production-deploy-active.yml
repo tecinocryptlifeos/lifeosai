@@ -185,6 +185,25 @@ jobs:
           test -n "$deployment_url"
           echo "TRADING_PAGES_DEPLOYMENT_URL=$deployment_url"
           echo "Generated Pages deployment URL is informational; canonical site is the production authority."
+          curl --fail --silent --show-error --location --max-time 30 \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments?per_page=1" \
+            -o "$RUNNER_TEMP/trading-pages-latest.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-latest.json").read_text())
+          assert d.get("success") is True, d
+          rows=d.get("result",[])
+          assert rows, "No Trading Pages deployments returned"
+          latest=rows[0]
+          print("PAGES_LATEST_ENVIRONMENT="+str(latest.get("environment")))
+          print("PAGES_LATEST_STAGE="+str(latest.get("latest_stage",{}).get("status")))
+          assert latest.get("environment") == "production", latest
+          assert latest.get("latest_stage",{}).get("status") == "success", latest
+          PY
+          echo "TRADING_PAGES_LATEST_DEPLOYMENT=PASS"
           curl --fail --silent --show-error --location --max-time 30 --retry 12 --retry-delay 5 --retry-all-errors --output "$verify/index.html" "$LIFEOS_TRADING_SITE/"
           test -s "$verify/index.html"
           echo "TRADING_CANONICAL_HTTP=200"
