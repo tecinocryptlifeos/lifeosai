@@ -250,7 +250,7 @@ jobs:
           grep -q "AI Market Read" "$RUNNER_TEMP/trading-pages-canonical.html"
           grep -q "Trade Plan" "$RUNNER_TEMP/trading-pages-canonical.html"
           grep -q "Market Structure" "$RUNNER_TEMP/trading-pages-canonical.html"
-          grep -q "Demo Trading" "$RUNNER_TEMP/trading-pages-canonical.html"
+          grep -q "Demo Account" "$RUNNER_TEMP/trading-pages-canonical.html"
           grep -q "Twelve Data" "$RUNNER_TEMP/trading-pages-canonical.html"
           curl --fail --silent --show-error --location --max-time 30 --retry 6 --retry-delay 5 --retry-all-errors --output "$RUNNER_TEMP/trading-terminal.html" "$canonical_url/terminal.html"
           curl --fail --silent --show-error --location --max-time 30 --retry 6 --retry-delay 5 --retry-all-errors --output "$RUNNER_TEMP/trading-terminal.js" "$canonical_url/terminal.js"
