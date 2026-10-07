@@ -139,7 +139,7 @@ jobs:
           print("PAGES_PRODUCTION_BRANCH="+str(r.get("production_branch")))
           print("PAGES_PRODUCTION_DEPLOYMENTS_ENABLED="+str(r.get("source",{}).get("config",{}).get("production_deployments_enabled")))
           PY
-          python - <<'PY'
+          if python - <<'PY'
           import json, os
           from pathlib import Path
           d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-project.json").read_text())
@@ -150,7 +150,9 @@ jobs:
               print("PAGES_PRODUCTION_ENVIRONMENT_REPAIR_REQUIRED")
               raise SystemExit(2)
           PY
-          if [ "$?" -eq 2 ]; then
+          then
+            echo "Trading Pages production environment already correct."
+          else
             curl --fail --silent --show-error --location --max-time 30               -X PATCH               -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN"               -H "Content-Type: application/json"               --data '{"production_branch":"main","production_deployments_enabled":true}'               "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT"               -o "$RUNNER_TEMP/trading-pages-project-repaired.json"
           fi
           echo "TRADING_PAGES_PRODUCTION_ENVIRONMENT=PASS"
