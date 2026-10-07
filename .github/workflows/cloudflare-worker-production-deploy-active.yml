@@ -189,7 +189,7 @@ jobs:
           curl --fail --silent --show-error --location --max-time 30 \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             -H "Content-Type: application/json" \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments?per_page=1" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments?env=production&per_page=100" \
             -o "$RUNNER_TEMP/trading-pages-latest.json"
           python - <<'PY'
           import json, os
@@ -210,11 +210,16 @@ jobs:
           import json, os
           from pathlib import Path
           d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-latest.json").read_text())
-          latest=d["result"][0]
-          aliases=latest.get("aliases") or []
-          if os.environ["DEPLOYMENT_URL"] not in aliases:
-              raise SystemExit("Latest Pages deployment does not match the deployment just created")
-          print(latest["id"])
+          target=None
+          for row in d.get("result",[]):
+              if os.environ["DEPLOYMENT_URL"] in (row.get("aliases") or []):
+                  target=row
+                  break
+          if target is None:
+              raise SystemExit("The production deployment list does not contain the deployment just created")
+          if target.get("latest_stage",{}).get("status") != "success":
+              raise SystemExit("The deployment just created is not successful")
+          print(target["id"])
           PY
           )"
           export DEPLOYMENT_ID="$deployment_id"
