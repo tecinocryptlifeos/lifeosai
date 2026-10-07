@@ -170,14 +170,17 @@ jobs:
         run: |
           set -euo pipefail
           create_json="$RUNNER_TEMP/trading-pages-create.json"
-          curl --fail --silent --show-error --location --max-time 30 \
+          create_http="$(curl --silent --show-error --location --max-time 30 \
             -X POST \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             -F "branch=main" \
             -F "commit_hash=$GITHUB_SHA" \
             -F "commit_message=LifeOS Trading System $GITHUB_SHA" \
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments" \
-            -o "$create_json"
+            -o "$create_json" -w '%{http_code}' || true)"
+          echo "TRADING_PAGES_API_CREATE_HTTP=$create_http"
+          cat "$create_json" || true
+          test "$create_http" = "200"
           python - <<'PY'
           import json, os
           from pathlib import Path
