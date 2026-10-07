@@ -163,7 +163,7 @@ jobs:
           echo "TRADING_PAGES_GIT_DEPLOYMENT=AUTHORITATIVE"
           echo "TRADING_PAGES_PRODUCTION_ENVIRONMENT=PASS"
 
-           - name: Verify Trading Pages production deployment
+      - name: Verify Trading Pages production deployment
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -225,7 +225,7 @@ jobs:
           echo "TRADING_PAGES_DEPLOYMENT=PASS"
           echo "TRADING_TERMINAL_DEPLOYMENT=PASS"
 
- - name: Smoke test production AAPL OHLC
+      - name: Smoke test production AAPL OHLC
         env:
           LIFEOS_PRODUCTION_API: ${{ env.LIFEOS_PRODUCTION_API }}
         run: |
