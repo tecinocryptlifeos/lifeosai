@@ -143,6 +143,13 @@ jobs:
           if r.get("production_branch") != "main":
               raise SystemExit("Trading Pages production branch is not main: "+repr(r.get("production_branch")))
           print("PAGES_PRODUCTION_BRANCH=main")
+          print("PAGES_SUBDOMAIN="+str(r.get("subdomain")))
+          print("PAGES_PRODUCTION_SCRIPT="+str(r.get("production_script_name")))
+          print("PAGES_PREVIEW_SCRIPT="+str(r.get("preview_script_name")))
+          print("PAGES_USES_FUNCTIONS="+str(r.get("uses_functions")))
+          print("PAGES_FRAMEWORK="+str(r.get("framework")))
+          print("PAGES_CANONICAL_DEPLOYMENT="+str((r.get("canonical_deployment") or {}).get("url")))
+          print("PAGES_LATEST_DEPLOYMENT="+str((r.get("latest_deployment") or {}).get("url")))
           PY
           curl --fail --silent --show-error --location --max-time 30 \
             -X PATCH \
