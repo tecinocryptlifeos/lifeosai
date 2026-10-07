@@ -211,11 +211,19 @@ jobs:
           if [ -z "$deployment_id" ]; then
             deployments_json="$RUNNER_TEMP/trading-pages-deployments.json"
             for attempt in $(seq 1 36); do
-              curl --fail --silent --show-error --location --max-time 30 \
+              curl --silent --show-error --location --max-time 30 \
                 -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
                 -H "Cache-Control: no-cache" \
-                "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments?env=production&per_page=100&page=1" \
-                -o "$deployments_json"
+                -w '%{http_code}' \
+                -o "$deployments_json" \
+                "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments" > "$RUNNER_TEMP/trading-pages-deployments-http.txt"
+              deployments_http="$(cat "$RUNNER_TEMP/trading-pages-deployments-http.txt")"
+              if [ "$deployments_http" != "200" ]; then
+                echo "TRADING_PAGES_DEPLOYMENTS_LIST_HTTP=$deployments_http"
+                cat "$deployments_json" || true
+                exit 1
+              fi
+              echo "TRADING_PAGES_DEPLOYMENTS_LIST_HTTP=200"
               result="$(python - <<'PY'
           import json, os
           from pathlib import Path
