@@ -9,6 +9,7 @@ const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch{return 
 const S={tab:'crypto',type:'crypto',sym:'BTC/USD',tf:'5m',bars:[],n:80,off:0,live:true,disp:null,from:0,t0:0,raf:0,cross:null,err:0,req:0,timer:0,nextAt:0,stale:false,s20:[],s50:[],sig:null};
 let A=ld('losai_demo_v1',{bal:10000,pos:{},ord:[]}),H=ld('losai_sigs_v1',[]);const LP={};
 const WAT='Africa/Lagos';
+const EXCHANGE_TZ='America/New_York';
 const intr=()=>TF[S.tf][1]<1440,last=()=>S.bars[S.bars.length-1];
 const dp=p=>p>=100?2:p>=10?3:p>=1?4:6,f=v=>Number(v).toFixed(dp(Math.abs(v))),usd=v=>(v<0?'-':'')+'$'+Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
 const ft=(ts,full)=>{const d=new Date(ts);return intr()?d.toLocaleString([],full?{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}:{hour:'2-digit',minute:'2-digit'}):d.toLocaleDateString([],{timeZone:'UTC',year:'numeric',month:'short',day:'numeric'})};
@@ -23,7 +24,7 @@ async function pull(){
     const r=await fetch(`${API}/api/market-data?type=${S.type}&symbol=${encodeURIComponent(S.sym)}&interval=${TF[S.tf][0]}&outputsize=300`,{cache:'no-store'});
     const j=await r.json().catch(()=>({}));if(id!==S.req)return;
     if(!r.ok||!j.ok||!j.bars||!j.bars.length)throw new Error(j.error||('HTTP '+r.status));
-    S.err=0;S.bars=j.bars;const L=last(),c=S.bars.map(b=>b.close);S.s20=sma(c,20);S.s50=sma(c,50);
+    S.err=0;S.bars=j.bars.slice().sort((a,b)=>Date.parse(a.timestamp)-Date.parse(b.timestamp));const L=last(),c=S.bars.map(b=>b.close);S.s20=sma(c,20);S.s50=sma(c,50);
     S.from=S.disp==null?L.close:S.disp;S.t0=performance.now();if(S.disp==null)S.disp=L.close;
     const prev=LP[S.sym];LP[S.sym]=L.close;
     const age=Date.now()-Date.parse(L.timestamp);S.stale=intr()&&age>Math.max(TF[S.tf][1]*2.5,15)*60000;
@@ -31,7 +32,7 @@ async function pull(){
     guard();head(prev);acct();runSig();if(!S.raf){S.raf=1;requestAnimationFrame(loop)}else draw();
   }catch(e){if(id!==S.req)return;S.err++;msg(S.bars.length?'Update failed ('+e.message+'). Retrying…':'Cannot load '+S.sym+': '+e.message+'. Retrying…');stat()}
   if(id!==S.req)return;stat();
-  if(S.live&&!document.hidden){const d=S.err?Math.min(30*2**S.err,300):S.stale?300:30;S.nextAt=Date.now()+d*1000;S.timer=setTimeout(pull,d*1000)}else S.nextAt=0;
+  if(S.live&&!document.hidden){const d=S.err?Math.min(30*2**S.err,300):S.stale?300:refreshSeconds();S.nextAt=Date.now()+d*1000;S.timer=setTimeout(pull,d*1000)}else S.nextAt=0;
 }
 function loop(){const L=last();if(!L){S.raf=0;return}const t=Math.min(1,(performance.now()-S.t0)/700);S.disp=S.from+(L.close-S.from)*(1-Math.pow(1-t,3));draw();if(t<1)requestAnimationFrame(loop);else S.raf=0}
 function stat(){const e=$('stat');let c='stat',t='PAUSED';if(S.err&&!S.bars.length){t='OFFLINE';c+=' shut'}else if(!S.bars.length)t='CONNECTING';else if(S.stale){t=S.type==='crypto'?'DELAYED':'MARKET CLOSED';c+=' shut'}else if(S.live){t='LIVE';c+=' live'}e.className=c;e.textContent=t}
@@ -162,6 +163,6 @@ $('sl').oninput=$('qty').oninput=acct;
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S.live)pull();else clearTimeout(S.timer)});
 const tick=()=>{const d=new Date(),wat=d.toLocaleTimeString('en-NG',{timeZone:WAT,hour12:false}),utc=d.toISOString().slice(11,16);$('clock').textContent=wat+' WAT  ·  '+utc+' UTC';
   let t=S.live?(S.nextAt?'Next refresh in '+Math.max(0,Math.round((S.nextAt-Date.now())/1000))+'s':''):'Live updates paused';
-  if(intr()&&S.bars.length&&!S.stale){const ms=TF[S.tf][1]*60000,r=Math.floor((ms-Date.now()%ms)/1000);t+=(t?'  ·  ':'')+'Candle closes in '+Math.floor(r/60)+':'+String(r%60).padStart(2,'0')}
+  if(intr()&&S.bars.length&&!S.stale){const closeAt=candleCloseAt(),r=Math.max(0,Math.ceil((closeAt-Date.now())/1000));t+=(t?'  ·  ':'')+'Candle closes in '+Math.floor(r/60)+':'+String(r%60).padStart(2,'0');if(r===0&&S.live){t+='  ·  Updating';}}
   $('next').textContent=t};tick();setInterval(tick,1000);
 renderList();rSig();acct();stat();pull();
