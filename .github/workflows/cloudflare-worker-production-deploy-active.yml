@@ -156,11 +156,11 @@ jobs:
             -X PATCH \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             -H "Content-Type: application/json" \
-            --data '{"production_branch":"main","production_deployments_enabled":true}' \
+            --data '{"production_branch":"main","production_deployments_enabled":false}' \
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT" \
             -o "$RUNNER_TEMP/trading-pages-project-updated.json"
-          echo "TRADING_PAGES_PRODUCTION_AUTODEPLOY=ENABLED"
-          echo "TRADING_PAGES_GIT_DEPLOYMENT=AUTHORITATIVE"
+          echo "TRADING_PAGES_PRODUCTION_AUTODEPLOY=DISABLED"
+          echo "TRADING_PAGES_GIT_API_DEPLOYMENT=AUTHORITATIVE"
           echo "TRADING_PAGES_PRODUCTION_ENVIRONMENT=PASS"
 
       - name: Verify Trading Pages production deployment
@@ -169,10 +169,68 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
-          deployment_json="$RUNNER_TEMP/trading-pages-deployments.json"
-          found=""
-          deployment_url=""
+          create_json="$RUNNER_TEMP/trading-pages-create.json"
+          curl --fail --silent --show-error --location --max-time 30 \
+            -X POST \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: multipart/form-data" \
+            -F "branch=main" \
+            -F "commit_hash=$GITHUB_SHA" \
+            -F "commit_message=LifeOS Trading System $GITHUB_SHA" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments" \
+            -o "$create_json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-create.json").read_text())
+          assert d.get("success") is True, d
+          r=d["result"]
+          assert r.get("environment") == "production", r
+          assert r.get("latest_stage",{}).get("status") in {"queued","active","success"}, r
+          print("TRADING_PAGES_API_DEPLOYMENT_ID="+str(r.get("id")))
+          print("TRADING_PAGES_API_DEPLOYMENT_URL="+str(r.get("url")))
+          PY
+          deployment_id="$(python - <<'PY'
+          import json, os
+          from pathlib import Path
+          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-create.json").read_text())
+          print(d["result"]["id"])
+          PY
+          )"
+          deployment_url="$(python - <<'PY'
+          import json, os
+          from pathlib import Path
+          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-create.json").read_text())
+          print(d["result"].get("url",""))
+          PY
+          )"
+          test -n "$deployment_id"
+          test -n "$deployment_url"
           for attempt in $(seq 1 36); do
+            curl --fail --silent --show-error --location --max-time 30 \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              -H "Content-Type: application/json" \
+              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments/$deployment_id" \
+              -o "$RUNNER_TEMP/trading-pages-deployment.json"
+            status="$(python - <<'PY'
+          import json, os
+          from pathlib import Path
+          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-deployment.json").read_text())
+          print(d.get("result",{}).get("latest_stage",{}).get("status",""))
+          PY
+            )"
+            if [ "$status" = "success" ]; then break; fi
+            if [ "$status" = "failure" ] || [ "$status" = "canceled" ]; then
+              cat "$RUNNER_TEMP/trading-pages-deployment.json"
+              exit 1
+            fi
+            echo "Waiting for explicit Git Pages deployment $deployment_id (attempt $attempt/36); status=$status; waiting 5s."
+            sleep 5
+          done
+          test "$status" = "success"
+          echo "TRADING_PAGES_DEPLOYMENT_ID=$deployment_id"
+          echo "TRADING_PAGES_DEPLOYMENT_URL=$deployment_url"
+          echo "TRADING_PAGES_GIT_API_DEPLOYMENT=PASS"
             curl --fail --silent --show-error --location --max-time 30 \
               -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
               -H "Content-Type: application/json" \
