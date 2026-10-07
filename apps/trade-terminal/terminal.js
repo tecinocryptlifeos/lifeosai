@@ -24,7 +24,7 @@ async function pull(){
     const r=await fetch(`${API}/api/market-data?type=${S.type}&symbol=${encodeURIComponent(S.sym)}&interval=${TF[S.tf][0]}&outputsize=300`,{cache:'no-store'});
     const j=await r.json().catch(()=>({}));if(id!==S.req)return;
     if(!r.ok||!j.ok||!j.bars||!j.bars.length)throw new Error(j.error||('HTTP '+r.status));
-    S.err=0;S.bars=j.bars.slice().sort((a,b)=>Date.parse(a.timestamp)-Date.parse(b.timestamp));const L=last(),c=S.bars.map(b=>b.close);S.s20=sma(c,20);S.s50=sma(c,50);
+    S.err=0;if($('feed'))$('feed').textContent=(j.source||'MARKET DATA').toUpperCase();S.bars=j.bars.slice().sort((a,b)=>Date.parse(a.timestamp)-Date.parse(b.timestamp));const L=last(),c=S.bars.map(b=>b.close);S.s20=sma(c,20);S.s50=sma(c,50);
     S.from=S.disp==null?L.close:S.disp;S.t0=performance.now();if(S.disp==null)S.disp=L.close;
     const prev=LP[S.sym];LP[S.sym]=L.close;
     const age=Date.now()-Date.parse(L.timestamp);S.stale=intr()&&age>Math.max(TF[S.tf][1]*2.5,15)*60000;
