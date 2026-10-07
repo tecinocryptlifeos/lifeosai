@@ -209,21 +209,23 @@ jobs:
             exit 1
           fi
           if [ -z "$deployment_id" ]; then
-            project_json="$RUNNER_TEMP/trading-pages-project-after-create.json"
+            deployments_json="$RUNNER_TEMP/trading-pages-deployments.json"
             for attempt in $(seq 1 36); do
               curl --fail --silent --show-error --location --max-time 30 \
                 -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
                 -H "Cache-Control: no-cache" \
-                "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT" \
-                -o "$project_json"
+                "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments?env=production&per_page=100&page=1" \
+                -o "$deployments_json"
               result="$(python - <<'PY'
           import json, os
           from pathlib import Path
-          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-project-after-create.json").read_text())
-          c=d.get("result",{}).get("canonical_deployment") or {}
-          metadata=((c.get("deployment_trigger") or {}).get("metadata") or {})
-          if metadata.get("commit_hash") == os.environ["GITHUB_SHA"] and c.get("environment") == "production" and c.get("latest_stage",{}).get("status") == "success":
-              print(c.get("id","")+"|"+c.get("url",""))
+          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-deployments.json").read_text())
+          assert d.get("success") is True, d
+          for c in d.get("result", []):
+              metadata=((c.get("deployment_trigger") or {}).get("metadata") or {})
+              if metadata.get("commit_hash") == os.environ["GITHUB_SHA"] and c.get("environment") == "production" and c.get("latest_stage",{}).get("status") == "success":
+                  print(c.get("id","")+"|"+c.get("url",""))
+                  break
           PY
               )"
               if [ -n "$result" ]; then
@@ -231,7 +233,7 @@ jobs:
                 deployment_url="${result#*|}"
                 break
               fi
-              echo "Waiting for canonical Pages deployment for $GITHUB_SHA after 304 (attempt $attempt/36); waiting 5s."
+              echo "Waiting for successful production Pages deployment for $GITHUB_SHA after 304 (attempt $attempt/36); waiting 5s."
               sleep 5
             done
           fi
