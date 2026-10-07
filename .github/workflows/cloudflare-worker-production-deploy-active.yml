@@ -181,7 +181,7 @@ jobs:
           cp apps/trade-terminal/terminal.js "$stage/terminal/terminal.js"
           cp apps/trade-terminal/_headers "$stage/_headers"
           deploy_log="$RUNNER_TEMP/trading-pages-deploy.log"
-          npx --prefix services/edge-gateway wrangler pages deploy "$stage" --project-name "$LIFEOS_TRADING_PAGES_PROJECT" --branch main --commit-hash "$GITHUB_SHA" --commit-message "Deploy LifeOS Trading System $GITHUB_SHA" 2>&1 | tee "$deploy_log"
+          npx --prefix services/edge-gateway wrangler pages deploy "$stage" --project-name "$LIFEOS_TRADING_PAGES_PROJECT" --commit-hash "$GITHUB_SHA" --commit-message "Deploy LifeOS Trading System $GITHUB_SHA" 2>&1 | tee "$deploy_log"
           deployment_url="$(grep -Eo 'https://[a-f0-9]+\.lifeos-trade-system\.pages\.dev' "$deploy_log" | tail -n 1 || true)"
           test -n "$deployment_url"
           echo "TRADING_PAGES_DEPLOYMENT_URL=$deployment_url"
@@ -206,48 +206,22 @@ jobs:
           PY
           echo "TRADING_PAGES_LATEST_DEPLOYMENT=PASS"
           export DEPLOYMENT_URL="$deployment_url"
-          deployment_id="$(python - <<'PY'
+          curl --fail --silent --show-error --location --max-time 30 \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT" \
+            -o "$RUNNER_TEMP/trading-pages-project-after-deploy.json"
+          python - <<'PY'
           import json, os
           from pathlib import Path
-          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-latest.json").read_text())
-          target=None
-          for row in d.get("result",[]):
-              if os.environ["DEPLOYMENT_URL"] in (row.get("aliases") or []):
-                  target=row
-                  break
-          if target is None:
-              raise SystemExit("The production deployment list does not contain the deployment just created")
-          if target.get("latest_stage",{}).get("status") != "success":
-              raise SystemExit("The deployment just created is not successful")
-          print(target["id"])
-          PY
-          )"
-          export DEPLOYMENT_ID="$deployment_id"
-          python - <<'PY'
-          import json, os, urllib.error, urllib.request
-          from pathlib import Path
-          account=os.environ["CLOUDFLARE_ACCOUNT_ID"]
-          token=os.environ["CLOUDFLARE_API_TOKEN"]
-          project=os.environ["LIFEOS_TRADING_PAGES_PROJECT"]
-          deployment_id=os.environ["DEPLOYMENT_ID"]
-          url=f"https://api.cloudflare.com/client/v4/accounts/{account}/pages/projects/{project}/deployments/{deployment_id}/rollback"
-          req=urllib.request.Request(url,method="POST",headers={"Authorization":f"Bearer {token}","Content-Type":"application/json"})
-          try:
-              with urllib.request.urlopen(req,timeout=30) as r:
-                  body=r.read()
-                  Path(os.environ["RUNNER_TEMP"]+"/trading-pages-promoted.json").write_bytes(body)
-                  print("TRADING_PAGES_ROLLBACK_HTTP="+str(r.status))
-          except urllib.error.HTTPError as e:
-              body=e.read()
-              Path(os.environ["RUNNER_TEMP"]+"/trading-pages-promoted.json").write_bytes(body)
-              print("TRADING_PAGES_ROLLBACK_HTTP="+str(e.code))
-              print(body.decode("utf-8","replace"))
-              raise
-          d=json.loads(body)
+          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-project-after-deploy.json").read_text())
           assert d.get("success") is True, d
-          print("TRADING_PAGES_PRODUCTION_TARGET="+str(d["result"].get("url")))
+          canonical=(d["result"].get("canonical_deployment") or {})
+          aliases=canonical.get("aliases") or []
+          if os.environ["DEPLOYMENT_URL"] not in aliases:
+              raise SystemExit("New Pages deployment is not the canonical production deployment")
+          print("TRADING_PAGES_CANONICAL_DEPLOYMENT=PASS")
           PY
-          echo "TRADING_PAGES_PRODUCTION_PROMOTION=PASS"
           curl --fail --silent --show-error --location --max-time 30 --retry 12 --retry-delay 5 --retry-all-errors --output "$verify/index.html" "$deployment_url/?v=$GITHUB_SHA"
           test -s "$verify/index.html"
           echo "TRADING_CANONICAL_HTTP=200"
