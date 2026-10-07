@@ -40,8 +40,6 @@ jobs:
           LIFEOS_ALLOWED_ORIGINS: ${{ secrets.LIFEOS_ALLOWED_ORIGINS }}
           LIFEOS_PUBLIC_SITE_ORIGIN: ${{ secrets.LIFEOS_PUBLIC_SITE_ORIGIN }}
           LIFEOS_API_ORIGIN: ${{ secrets.LIFEOS_API_ORIGIN }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           ORIGIN_STATE_KV_ID: ${{ secrets.ORIGIN_STATE_KV_ID }}
           RATE_LIMIT_NAMESPACE_ID: ${{ secrets.RATE_LIMIT_NAMESPACE_ID }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -173,12 +171,6 @@ jobs:
           cp apps/trade-terminal/terminal.css "$stage/terminal/terminal.css"
           cp apps/trade-terminal/terminal.js "$stage/terminal/terminal.js"
           cp apps/trade-terminal/_headers "$stage/_headers"
-          python - <<'PY'
-          import json, os
-          from pathlib import Path
-          cfg={"supabase_url":os.environ["SUPABASE_URL"].rstrip("/"),"supabase_anon_key":os.environ["SUPABASE_PUBLISHABLE_KEY"]}
-          Path(os.environ["RUNNER_TEMP"]+"/lifeos-trading-pages/trading-config.js").write_text("window.LIFEOS_TRADING_CONFIG="+json.dumps(cfg,separators=(",",":"))+";")
-          PY
           deploy_log="$RUNNER_TEMP/trading-pages-deploy.log"
           npx --prefix services/edge-gateway wrangler pages deploy "$stage" --project-name "$LIFEOS_TRADING_PAGES_PROJECT" --branch main --commit-hash "$GITHUB_SHA" --commit-message "Deploy LifeOS Trading System $GITHUB_SHA" 2>&1 | tee "$deploy_log"
           deployment_url="$(grep -Eo 'https://[a-f0-9]+\.lifeos-trade-system\.pages\.dev' "$deploy_log" | tail -n 1 || true)"
@@ -207,14 +199,12 @@ jobs:
           curl --fail --silent --show-error --location --max-time 30 --retry 12 --retry-delay 5 --retry-all-errors --output "$verify/index.html" "$LIFEOS_TRADING_SITE/?v=$GITHUB_SHA"
           test -s "$verify/index.html"
           echo "TRADING_CANONICAL_HTTP=200"
-          curl --fail --silent --show-error --location --max-time 30 --output "$verify/trading-config.js" "$LIFEOS_TRADING_SITE/trading-config.js?v=$GITHUB_SHA"
           grep -q "LifeOS Trading Intelligence" "$verify/index.html"
           grep -q "AI Market Read" "$verify/index.html"
           grep -q "Trade Plan" "$verify/index.html"
           grep -q "Market Structure" "$verify/index.html"
           grep -q "Demo Trading" "$verify/index.html"
           grep -q "Twelve Data" "$verify/index.html"
-          grep -q "LIFEOS_TRADING_CONFIG" "$verify/trading-config.js"
           curl --fail --silent --show-error --location --max-time 30 --output "$verify/terminal.html" "$LIFEOS_TRADING_SITE/terminal/?v=$GITHUB_SHA"
           curl --fail --silent --show-error --location --max-time 30 --output "$verify/terminal.js" "$LIFEOS_TRADING_SITE/terminal/terminal.js?v=$GITHUB_SHA"
           grep -q "Losai Trade AI" "$verify/terminal.html"
