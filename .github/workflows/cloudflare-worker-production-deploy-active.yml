@@ -222,7 +222,7 @@ jobs:
               raise SystemExit("New Pages deployment is not the canonical production deployment")
           print("TRADING_PAGES_CANONICAL_DEPLOYMENT=PASS")
           PY
-          curl --fail --silent --show-error --location --max-time 30 --retry 12 --retry-delay 5 --retry-all-errors --output "$verify/index.html" "$deployment_url/?v=$GITHUB_SHA"
+          curl --fail --silent --show-error --location --max-time 30 --retry 12 --retry-delay 5 --retry-all-errors --output "$verify/index.html" "$LIFEOS_TRADING_SITE/?v=$GITHUB_SHA"
           test -s "$verify/index.html"
           echo "TRADING_CANONICAL_HTTP=200"
           grep -q "LifeOS Trading Intelligence" "$verify/index.html"
@@ -231,8 +231,8 @@ jobs:
           grep -q "Market Structure" "$verify/index.html"
           grep -q "Demo Trading" "$verify/index.html"
           grep -q "Twelve Data" "$verify/index.html"
-          curl --fail --silent --show-error --location --max-time 30 --output "$verify/terminal.html" "$deployment_url/terminal/?v=$GITHUB_SHA"
-          curl --fail --silent --show-error --location --max-time 30 --output "$verify/terminal.js" "$deployment_url/terminal/terminal.js?v=$GITHUB_SHA"
+          curl --fail --silent --show-error --location --max-time 30 --output "$verify/terminal.html" "$LIFEOS_TRADING_SITE/terminal/?v=$GITHUB_SHA"
+          curl --fail --silent --show-error --location --max-time 30 --output "$verify/terminal.js" "$LIFEOS_TRADING_SITE/terminal/terminal.js?v=$GITHUB_SHA"
           grep -q "Losai Trade AI" "$verify/terminal.html"
           grep -q "Simulation only" "$verify/terminal.html"
           grep -q "losai-edge-gateway.lifeostecinoai.workers.dev" "$verify/terminal.js"
