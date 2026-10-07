@@ -1,7 +1,7 @@
 name: Cloudflare Worker production deploy (active)
 
 # Production deployment trigger: final end-to-end verification of the merged Trading Pages release.
-# Deployment verification retrigger: this commit intentionally causes a fresh main push run.
+# Deployment verification retrigger: fresh main push after the Alpaca history-window fix.
 
 on:
   push:
