@@ -129,59 +129,31 @@ jobs:
         run: |
           set -euo pipefail
           project_json="$RUNNER_TEMP/trading-pages-project.json"
-          curl --fail --silent --show-error --location --max-time 30             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN"             -H "Content-Type: application/json"             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT"             -o "$project_json"
-          python - <<'PY'
-          import json, os
-          from pathlib import Path
-          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-project.json").read_text())
-          assert d.get("success") is True, d
-          r=d["result"]
-          print("PAGES_PRODUCTION_BRANCH="+str(r.get("production_branch")))
-          print("PAGES_PRODUCTION_DEPLOYMENTS_ENABLED="+str(r.get("source",{}).get("config",{}).get("production_deployments_enabled")))
-          PY
-          if python - <<'PY'
-          import json, os
-          from pathlib import Path
-          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-project.json").read_text())
-          r=d["result"]
-          branch=r.get("production_branch")
-          enabled=r.get("source",{}).get("config",{}).get("production_deployments_enabled")
-          if branch != "main" or enabled is False:
-              print("PAGES_PRODUCTION_ENVIRONMENT_REPAIR_REQUIRED")
-              raise SystemExit(2)
-          PY
-          then
-            echo "Trading Pages production environment already correct."
-          else
-            curl --fail --silent --show-error --location --max-time 30               -X PATCH               -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN"               -H "Content-Type: application/json"               --data '{"production_branch":"main","production_deployments_enabled":true}'               "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT"               -o "$RUNNER_TEMP/trading-pages-project-repaired.json"
-          fi
-          echo "TRADING_PAGES_PRODUCTION_ENVIRONMENT=PASS"
-
-      - name: Verify latest Trading Pages deployment environment
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          set -euo pipefail
           curl --fail --silent --show-error --location --max-time 30 \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             -H "Content-Type: application/json" \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments?per_page=1" \
-            -o "$RUNNER_TEMP/trading-pages-deployments.json"
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT" \
+            -o "$project_json"
           python - <<'PY'
           import json, os
           from pathlib import Path
-          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-deployments.json").read_text())
+          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-project.json").read_text())
           assert d.get("success") is True, d
-          rows=d.get("result",[])
-          assert rows, "No Trading Pages deployments returned"
-          latest=rows[0]
-          print("PAGES_LATEST_ENVIRONMENT="+str(latest.get("environment")))
-          print("PAGES_LATEST_STAGE="+str(latest.get("latest_stage",{}).get("status")))
-          assert latest.get("environment") == "production", latest
-          assert latest.get("latest_stage",{}).get("status") == "success", latest
+          r=d["result"]
+          if r.get("production_branch") != "main":
+              raise SystemExit("Trading Pages production branch is not main: "+repr(r.get("production_branch")))
+          print("PAGES_PRODUCTION_BRANCH=main")
           PY
-          echo "TRADING_PAGES_LATEST_DEPLOYMENT=PASS"
+          curl --fail --silent --show-error --location --max-time 30 \
+            -X PATCH \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data '{"production_branch":"main","production_deployments_enabled":false}' \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT" \
+            -o "$RUNNER_TEMP/trading-pages-project-updated.json"
+          echo "TRADING_PAGES_PRODUCTION_AUTODEPLOY=DISABLED"
+          echo "TRADING_PAGES_MANUAL_DEPLOYMENT=AUTHORITATIVE"
+          echo "TRADING_PAGES_PRODUCTION_ENVIRONMENT=PASS"
 
       - name: Publish Trading System Pages
         env:
@@ -213,6 +185,25 @@ jobs:
           test -n "$deployment_url"
           echo "TRADING_PAGES_DEPLOYMENT_URL=$deployment_url"
           echo "Generated Pages deployment URL is informational; canonical site is the production authority."
+          curl --fail --silent --show-error --location --max-time 30 \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments?per_page=1" \
+            -o "$RUNNER_TEMP/trading-pages-latest.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-latest.json").read_text())
+          assert d.get("success") is True, d
+          rows=d.get("result",[])
+          assert rows, "No Trading Pages deployments returned"
+          latest=rows[0]
+          print("PAGES_LATEST_ENVIRONMENT="+str(latest.get("environment")))
+          print("PAGES_LATEST_STAGE="+str(latest.get("latest_stage",{}).get("status")))
+          assert latest.get("environment") == "production", latest
+          assert latest.get("latest_stage",{}).get("status") == "success", latest
+          PY
+          echo "TRADING_PAGES_LATEST_DEPLOYMENT=PASS"
           curl --fail --silent --show-error --location --max-time 30 --retry 12 --retry-delay 5 --retry-all-errors --output "$verify/index.html" "$LIFEOS_TRADING_SITE/"
           test -s "$verify/index.html"
           echo "TRADING_CANONICAL_HTTP=200"
