@@ -77,7 +77,20 @@ jobs:
             'https://data.alpaca.markets/v2/stocks/AAPL/bars?timeframe=1Day&limit=1&feed=iex' \
             -o "$RUNNER_TEMP/alpaca-credential-check.json" -w '%{http_code}')"
           echo "ALPACA_CREDENTIALS_HTTP=$http"
-          test "$http" = "200"
+          if [ "$http" != "200" ]; then
+            python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p=Path(os.environ["RUNNER_TEMP"])/"alpaca-credential-check.json"
+          try:
+              d=json.loads(p.read_text())
+              detail=d.get("message") or d.get("error") or d.get("code") or repr(d)
+          except Exception:
+              detail=p.read_text()[:500]
+          print("ALPACA_CREDENTIALS_ERROR="+str(detail).replace("\n"," ")[:500])
+          PY
+            exit 1
+          fi
           python - <<'PY'
           import json, os
           from pathlib import Path
