@@ -12,7 +12,10 @@ const WAT='Africa/Lagos';
 const EXCHANGE_TZ='America/New_York';
 const intr=()=>TF[S.tf][1]<1440,last=()=>S.bars[S.bars.length-1];
 const dp=p=>p>=100?2:p>=10?3:p>=1?4:6,f=v=>Number(v).toFixed(dp(Math.abs(v))),usd=v=>(v<0?'-':'')+'$'+Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-const ft=(ts,full)=>{const d=new Date(ts);return intr()?d.toLocaleString([],full?{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}:{hour:'2-digit',minute:'2-digit'}):d.toLocaleDateString([],{timeZone:'UTC',year:'numeric',month:'short',day:'numeric'})};
+const ft=(ts,full)=>{const d=new Date(ts);const opts=intr()?(full?{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}:{hour:'2-digit',minute:'2-digit'}):{year:'numeric',month:'short',day:'numeric'};opts.timeZone=intr()?WAT:'UTC';return d.toLocaleString('en-NG',opts);};
+const candleMs=()=>TF[S.tf][1]*60000;
+const candleCloseAt=()=>{const L=last();if(!L||!intr())return 0;return Date.parse(L.timestamp)+candleMs();};
+const refreshSeconds=()=>Math.max(5,Math.min(30,Math.round(TF[S.tf][1]/2)));
 const fx=(s,px)=>{const[b,q]=s.split('/');return !q||q==='USD'?1:b==='USD'?1/px:1};
 let tt=0;function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('on'),3200)}
 const msg=t=>{$('msg').textContent=t||''};
