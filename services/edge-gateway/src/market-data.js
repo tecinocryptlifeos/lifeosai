@@ -48,10 +48,14 @@ async function alpacaFetchBars(env,symbol,type,interval,limit) {
   const response=await fetch(url.toString(),{headers:alpacaHeaders(env)}),text=await response.text().catch(()=>{});
   let data={}; try{data=text?JSON.parse(text):{}}catch{}
   if(!response.ok) throw new Error("Alpaca HTTP "+response.status+(data.message?": "+data.message:""));
-  const raw=type==="crypto"?(data.bars?.[symbol]||[]):(data.bars||[]);
+  const result=normalizeAlpacaBars(data,symbol,type,interval);
+  if(result.bars.length<minimumBars(interval)) throw new Error("Alpaca returned insufficient OHLC history");
+  return {...result,fetched_at:new Date().toISOString()};
+}
+export function normalizeAlpacaBars(payload,symbol,type,interval){
+  const raw=type==="crypto"?(payload?.bars?.[symbol]||[]):(payload?.bars||[]);
   const bars=raw.map(row=>({timestamp:new Date(row.t||row.timestamp).toISOString(),open:Number(row.o??row.open),high:Number(row.h??row.high),low:Number(row.l??row.low),close:Number(row.c??row.close),volume:Number(row.v??row.volume??0)})).filter(finiteBar).sort((a,b)=>a.timestamp.localeCompare(b.timestamp));
-  if(bars.length<minimumBars(interval)) throw new Error("Alpaca returned insufficient OHLC history");
-  return {ok:true,source:"Alpaca",symbol,market_type:type,interval,resolution:targetResolution(interval),fetched_at:new Date().toISOString(),bars};
+  return {ok:true,source:"Alpaca",symbol,market_type:type,interval,resolution:targetResolution(interval),bars};
 }
 function targetResolution(interval){return interval==="1d"?"D":interval==="1wk"?"W":interval==="1mo"?"M":String(parseInt(interval,10));}
 
