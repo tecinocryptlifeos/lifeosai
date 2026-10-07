@@ -173,7 +173,6 @@ jobs:
           curl --fail --silent --show-error --location --max-time 30 \
             -X POST \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -H "Content-Type: multipart/form-data" \
             -F "branch=main" \
             -F "commit_hash=$GITHUB_SHA" \
             -F "commit_message=LifeOS Trading System $GITHUB_SHA" \
