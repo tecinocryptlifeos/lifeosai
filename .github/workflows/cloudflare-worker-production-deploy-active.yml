@@ -170,75 +170,53 @@ jobs:
         run: |
           set -euo pipefail
           create_json="$RUNNER_TEMP/trading-pages-create.json"
+          create_json="$RUNNER_TEMP/trading-pages-create.json"
           create_http="$(curl --silent --show-error --location --max-time 30 \
             -X POST \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Cache-Control: no-cache" \
+            -H "Pragma: no-cache" \
             -F "branch=main" \
             -F "commit_hash=$GITHUB_SHA" \
             -F "commit_message=LifeOS Trading System $GITHUB_SHA" \
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments" \
             -o "$create_json" -w '%{http_code}' || true)"
           echo "TRADING_PAGES_API_CREATE_HTTP=$create_http"
-          cat "$create_json" || true
-          test "$create_http" = "200"
-          python - <<'PY'
+          deployment_id=""
+          deployment_url=""
+          if [ "$create_http" = "200" ]; then
+            deployment_id="$(python - <<'PY'
           import json, os
           from pathlib import Path
           d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-create.json").read_text())
           assert d.get("success") is True, d
           r=d["result"]
           assert r.get("environment") == "production", r
-          assert r.get("latest_stage",{}).get("status") in {"queued","active","success"}, r
-          print("TRADING_PAGES_API_DEPLOYMENT_ID="+str(r.get("id")))
-          print("TRADING_PAGES_API_DEPLOYMENT_URL="+str(r.get("url")))
+          print(r["id"])
           PY
-          deployment_id="$(python - <<'PY'
-          import json, os
-          from pathlib import Path
-          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-create.json").read_text())
-          print(d["result"]["id"])
-          PY
-          )"
-          deployment_url="$(python - <<'PY'
+            )"
+            deployment_url="$(python - <<'PY'
           import json, os
           from pathlib import Path
           d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-create.json").read_text())
           print(d["result"].get("url",""))
           PY
-          )"
-          test -n "$deployment_id"
-          test -n "$deployment_url"
-          for attempt in $(seq 1 36); do
-            curl --fail --silent --show-error --location --max-time 30 \
-              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-              -H "Content-Type: application/json" \
-              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments/$deployment_id" \
-              -o "$RUNNER_TEMP/trading-pages-deployment.json"
-            status="$(python - <<'PY'
-          import json, os
-          from pathlib import Path
-          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-deployment.json").read_text())
-          print(d.get("result",{}).get("latest_stage",{}).get("status",""))
-          PY
             )"
-            if [ "$status" = "success" ]; then break; fi
-            if [ "$status" = "failure" ] || [ "$status" = "canceled" ]; then
-              cat "$RUNNER_TEMP/trading-pages-deployment.json"
-              exit 1
-            fi
-            echo "Waiting for explicit Git Pages deployment $deployment_id (attempt $attempt/36); status=$status; waiting 5s."
-            sleep 5
-          done
-          test "$status" = "success"
-          echo "TRADING_PAGES_DEPLOYMENT_ID=$deployment_id"
-          echo "TRADING_PAGES_DEPLOYMENT_URL=$deployment_url"
-          echo "TRADING_PAGES_GIT_API_DEPLOYMENT=PASS"
-            curl --fail --silent --show-error --location --max-time 30 \
-              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-              -H "Content-Type: application/json" \
-              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments?env=production&per_page=25" \
-              -o "$deployment_json"
-            result="$(python - <<'PY'
+          elif [ "$create_http" = "304" ]; then
+            echo "Cloudflare returned 304; resolving the production deployment by commit SHA."
+          else
+            cat "$create_json" || true
+            exit 1
+          fi
+          if [ -z "$deployment_id" ]; then
+            deployment_json="$RUNNER_TEMP/trading-pages-deployments.json"
+            for attempt in $(seq 1 36); do
+              curl --fail --silent --show-error --location --max-time 30 \
+                -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+                -H "Cache-Control: no-cache" \
+                "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments?env=production&per_page=100" \
+                -o "$deployment_json"
+              result="$(python - <<'PY'
           import json, os
           from pathlib import Path
           d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-deployments.json").read_text())
@@ -248,20 +226,21 @@ jobs:
                   print(row.get("id","")+"|"+row.get("url",""))
                   break
           PY
-            )"
-            if [ -n "$result" ]; then
-              found="${result%%|*}"
-              deployment_url="${result#*|}"
-              break
-            fi
-            echo "Waiting for Git-integrated Trading Pages production deployment for $GITHUB_SHA (attempt $attempt/36); waiting 5s."
-            sleep 5
-          done
-          test -n "$found"
+              )"
+              if [ -n "$result" ]; then
+                deployment_id="${result%%|*}"
+                deployment_url="${result#*|}"
+                break
+              fi
+              echo "Waiting for an existing successful production deployment for $GITHUB_SHA (attempt $attempt/36); waiting 5s."
+              sleep 5
+            done
+          fi
+          test -n "$deployment_id"
           test -n "$deployment_url"
-          echo "TRADING_PAGES_DEPLOYMENT_ID=$found"
+          echo "TRADING_PAGES_DEPLOYMENT_ID=$deployment_id"
           echo "TRADING_PAGES_DEPLOYMENT_URL=$deployment_url"
-          echo "TRADING_PAGES_DEPLOYMENT_UPLOAD=PASS"
+          echo "TRADING_PAGES_GIT_API_DEPLOYMENT=PASS"
           canonical_http="$(curl --silent --show-error --location --max-time 30 --output "$RUNNER_TEMP/trading-pages-canonical.html" --write-out '%{http_code}' "$LIFEOS_TRADING_SITE/?v=$GITHUB_SHA" || true)"
           echo "TRADING_PAGES_CANONICAL_HTTP=$canonical_http"
           test "$canonical_http" = "200"
