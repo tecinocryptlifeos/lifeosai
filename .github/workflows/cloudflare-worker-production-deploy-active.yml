@@ -155,105 +155,85 @@ jobs:
             -X PATCH \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             -H "Content-Type: application/json" \
-            --data '{"production_branch":"main","production_deployments_enabled":false}' \
+            --data '{"production_branch":"main","production_deployments_enabled":true}' \
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT" \
             -o "$RUNNER_TEMP/trading-pages-project-updated.json"
-          echo "TRADING_PAGES_PRODUCTION_AUTODEPLOY=DISABLED"
-          echo "TRADING_PAGES_MANUAL_DEPLOYMENT=AUTHORITATIVE"
+          echo "TRADING_PAGES_PRODUCTION_AUTODEPLOY=ENABLED"
+          echo "TRADING_PAGES_GIT_DEPLOYMENT=AUTHORITATIVE"
           echo "TRADING_PAGES_PRODUCTION_ENVIRONMENT=PASS"
 
-      - name: Publish Trading System Pages
+      - name: Verify Trading Pages production deployment
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
         run: |
           set -euo pipefail
-          stage="$RUNNER_TEMP/lifeos-trading-pages"
-          verify="$RUNNER_TEMP/lifeos-trading-pages-verify"
-          rm -rf "$stage" "$verify"; mkdir -p "$stage/assets" "$verify"
-          cp web/lifeos_voice/trading.html "$stage/index.html"
-          cp web/lifeos_voice/assets/lifeos-home-king-bg.webp "$stage/assets/lifeos-home-king-bg.webp"
-          mkdir -p "$stage/terminal"
-          cp apps/trade-terminal/index.html "$stage/terminal/index.html"
-          cp apps/trade-terminal/terminal.css "$stage/terminal/terminal.css"
-          cp apps/trade-terminal/terminal.js "$stage/terminal/terminal.js"
-          cp apps/trade-terminal/_headers "$stage/_headers"
-          deploy_log="$RUNNER_TEMP/trading-pages-deploy.log"
-          npx --prefix services/edge-gateway wrangler pages deploy "$stage" --project-name "$LIFEOS_TRADING_PAGES_PROJECT" --branch main --commit-hash "$GITHUB_SHA" --commit-message "Deploy LifeOS Trading System $GITHUB_SHA" 2>&1 | tee "$deploy_log"
-          deployment_url="$(grep -Eo 'https://[a-f0-9]+\.lifeos-trade-system\.pages\.dev' "$deploy_log" | tail -n 1 || true)"
-          test -n "$deployment_url"
-          echo "TRADING_PAGES_DEPLOYMENT_URL=$deployment_url"
-          echo "Generated Pages deployment URL is the production target for this deployment."
+          deployment_json="$RUNNER_TEMP/trading-pages-deployments.json"
+          found=""
+          for attempt in $(seq 1 24); do
+            curl --fail --silent --show-error --location --max-time 30 \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              -H "Content-Type: application/json" \
+              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments?env=production&per_page=100" \
+              -o "$deployment_json"
+            found="$(python - <<'PY'
+          import json, os
+          from pathlib import Path
+          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-deployments.json").read_text())
+          target=None
+          for row in d.get("result",[]):
+              trigger=row.get("deployment_trigger") or {}
+              metadata=row.get("metadata") or {}
+              commit_hash=trigger.get("metadata",{}).get("commit_hash") or metadata.get("commit_hash")
+              if commit_hash == os.environ["GITHUB_SHA"] and row.get("environment") == "production" and row.get("latest_stage",{}).get("status") == "success":
+                  target=row
+                  break
+          if target:
+              print(target.get("id",""))
+          PY
+            )"
+            if [ -n "$found" ]; then break; fi
+            echo "Waiting for Git-integrated Trading Pages deployment for $GITHUB_SHA (attempt $attempt/24); waiting 5s."
+            sleep 5
+          done
+          test -n "$found"
+          echo "TRADING_PAGES_DEPLOYMENT_ID=$found"
           curl --fail --silent --show-error --location --max-time 30 \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             -H "Content-Type: application/json" \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments?env=production&per_page=100" \
-            -o "$RUNNER_TEMP/trading-pages-latest.json"
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT" \
+            -o "$RUNNER_TEMP/trading-pages-project-after-deploy.json"
           python - <<'PY'
           import json, os
           from pathlib import Path
-          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-latest.json").read_text())
+          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-project-after-deploy.json").read_text())
           assert d.get("success") is True, d
-          rows=d.get("result",[])
-          assert rows, "No Trading Pages deployments returned"
-          latest=rows[0]
-          print("PAGES_LATEST_ENVIRONMENT="+str(latest.get("environment")))
-          print("PAGES_LATEST_STAGE="+str(latest.get("latest_stage",{}).get("status")))
-          assert latest.get("environment") == "production", latest
-          assert latest.get("latest_stage",{}).get("status") == "success", latest
+          canonical=d["result"].get("canonical_deployment") or {}
+          if canonical.get("id") != os.environ["TRADING_PAGES_DEPLOYMENT_ID"]:
+              raise SystemExit("Canonical Pages deployment does not match the verified production deployment")
+          print("TRADING_PAGES_CANONICAL_DEPLOYMENT=PASS")
+          print("TRADING_PAGES_CANONICAL_URL="+str(canonical.get("url")))
           PY
-          echo "TRADING_PAGES_LATEST_DEPLOYMENT=PASS"
-          export DEPLOYMENT_URL="$deployment_url"
-          deployment_id="$(python - <<'PY'
+          canonical_url="$(python - <<'PY'
           import json, os
           from pathlib import Path
-          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-latest.json").read_text())
-          target=None
-          for row in d.get("result",[]):
-              if os.environ["DEPLOYMENT_URL"] in (row.get("aliases") or []):
-                  target=row
-                  break
-          if target is None:
-              raise SystemExit("The production deployment list does not contain the deployment just created")
-          if target.get("latest_stage",{}).get("status") != "success":
-              raise SystemExit("The deployment just created is not successful")
-          print(target["id"])
+          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-project-after-deploy.json").read_text())
+          print((d["result"].get("canonical_deployment") or {}).get("url",""))
           PY
           )"
-          export DEPLOYMENT_ID="$deployment_id"
-          rollback_http="$(curl --silent --show-error --location --max-time 30 \
-            -X POST \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -H "Content-Type: application/json" \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments/$deployment_id/rollback" \
-            -o "$RUNNER_TEMP/trading-pages-promoted.json" -w '%{http_code}' || true)"
-          echo "TRADING_PAGES_ROLLBACK_HTTP=$rollback_http"
-          cat "$RUNNER_TEMP/trading-pages-promoted.json"
-          test "$rollback_http" = "200"
-          python - <<'PY'
-          import json, os
-          from pathlib import Path
-          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-promoted.json").read_text())
-          assert d.get("success") is True, d
-          print("TRADING_PAGES_PRODUCTION_TARGET="+str(d["result"].get("url")))
-          PY
-          echo "TRADING_PAGES_PRODUCTION_PROMOTION=PASS"
-          curl --fail --silent --show-error --location --max-time 30 --retry 12 --retry-delay 5 --retry-all-errors --output "$verify/index.html" "$deployment_url/?v=$GITHUB_SHA"
-          test -s "$verify/index.html"
-          echo "TRADING_CANONICAL_HTTP=200"
-          grep -q "LifeOS Trading Intelligence" "$verify/index.html"
-          grep -q "AI Market Read" "$verify/index.html"
-          grep -q "Trade Plan" "$verify/index.html"
-          grep -q "Market Structure" "$verify/index.html"
-          grep -q "Demo Trading" "$verify/index.html"
-          grep -q "Twelve Data" "$verify/index.html"
-          curl --fail --silent --show-error --location --max-time 30 --output "$verify/terminal.html" "$deployment_url/terminal/?v=$GITHUB_SHA"
-          curl --fail --silent --show-error --location --max-time 30 --output "$verify/terminal.js" "$deployment_url/terminal/terminal.js?v=$GITHUB_SHA"
-          grep -q "Losai Trade AI" "$verify/terminal.html"
-          grep -q "Simulation only" "$verify/terminal.html"
-          grep -q "losai-edge-gateway.lifeostecinoai.workers.dev" "$verify/terminal.js"
+          test -n "$canonical_url"
+          curl --fail --silent --show-error --location --max-time 30 --retry 12 --retry-delay 5 --retry-all-errors --output "$RUNNER_TEMP/trading-pages-index.html" "$canonical_url/?v=$GITHUB_SHA"
+          grep -q "LifeOS Trading Intelligence" "$RUNNER_TEMP/trading-pages-index.html"
+          grep -q "AI Market Read" "$RUNNER_TEMP/trading-pages-index.html"
+          grep -q "Trade Plan" "$RUNNER_TEMP/trading-pages-index.html"
+          grep -q "Market Structure" "$RUNNER_TEMP/trading-pages-index.html"
+          grep -q "Demo Trading" "$RUNNER_TEMP/trading-pages-index.html"
+          grep -q "Twelve Data" "$RUNNER_TEMP/trading-pages-index.html"
+          curl --fail --silent --show-error --location --max-time 30 --output "$RUNNER_TEMP/trading-terminal.html" "$canonical_url/terminal/?v=$GITHUB_SHA"
+          curl --fail --silent --show-error --location --max-time 30 --output "$RUNNER_TEMP/trading-terminal.js" "$canonical_url/terminal/terminal.js?v=$GITHUB_SHA"
+          grep -q "Losai Trade AI" "$RUNNER_TEMP/trading-terminal.html"
+          grep -q "Simulation only" "$RUNNER_TEMP/trading-terminal.html"
+          grep -q "losai-edge-gateway.lifeostecinoai.workers.dev" "$RUNNER_TEMP/trading-terminal.js"
           echo "TRADING_PAGES_DEPLOYMENT=PASS"
           echo "TRADING_TERMINAL_DEPLOYMENT=PASS"
 
