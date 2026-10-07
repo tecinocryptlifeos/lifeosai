@@ -144,11 +144,15 @@ jobs:
           from pathlib import Path
           d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-project.json").read_text())
           r=d["result"]
-          if r.get("production_branch") != "main":
-              raise SystemExit("Trading Pages production branch is not main: "+repr(r.get("production_branch")))
-          if r.get("source",{}).get("config",{}).get("production_deployments_enabled") is False:
-              raise SystemExit("Trading Pages production deployments are disabled")
+          branch=r.get("production_branch")
+          enabled=r.get("source",{}).get("config",{}).get("production_deployments_enabled")
+          if branch != "main" or enabled is False:
+              print("PAGES_PRODUCTION_ENVIRONMENT_REPAIR_REQUIRED")
+              raise SystemExit(2)
           PY
+          if [ "$?" -eq 2 ]; then
+            curl --fail --silent --show-error --location --max-time 30               -X PATCH               -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN"               -H "Content-Type: application/json"               --data '{"production_branch":"main","production_deployments_enabled":true}'               "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT"               -o "$RUNNER_TEMP/trading-pages-project-repaired.json"
+          fi
           echo "TRADING_PAGES_PRODUCTION_ENVIRONMENT=PASS"
 
       - name: Publish Trading System Pages
