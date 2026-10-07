@@ -171,7 +171,7 @@ jobs:
           set -euo pipefail
           deployment_json="$RUNNER_TEMP/trading-pages-deployments.json"
           found=""
-          for attempt in $(seq 1 24); do
+          for attempt in $(seq 1 36); do
             curl --fail --silent --show-error --location --max-time 30 \
               -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
               -H "Content-Type: application/json" \
@@ -194,7 +194,7 @@ jobs:
           PY
             )"
             if [ -n "$found" ]; then break; fi
-            echo "Waiting for Git-integrated Trading Pages deployment for $GITHUB_SHA (attempt $attempt/24); waiting 5s."
+            echo "Waiting for Git-integrated Trading Pages deployment for $GITHUB_SHA (attempt $attempt/36); waiting 5s."
             sleep 5
           done
           test -n "$found"
