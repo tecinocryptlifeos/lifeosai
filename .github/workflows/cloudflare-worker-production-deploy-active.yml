@@ -299,7 +299,12 @@ jobs:
         run: |
           set -euo pipefail
           url="$LIFEOS_PRODUCTION_API/api/market-data?type=stock&symbol=AAPL&interval=1d"
-          curl --fail --silent --show-error --location --max-time 30 "$url" -o "$RUNNER_TEMP/aapl-market-data.json"
+          http="$(curl --silent --show-error --location --max-time 30 "$url" -o "$RUNNER_TEMP/aapl-market-data.json" -w '%{http_code}' || true)"
+          echo "AAPL_OHLC_HTTP=$http"
+          if [ "$http" != "200" ]; then
+            echo "AAPL_OHLC_RESPONSE=$(cat "$RUNNER_TEMP/aapl-market-data.json")"
+            exit 1
+          fi
           python - <<'PY'
           import json, math, os
           from pathlib import Path
