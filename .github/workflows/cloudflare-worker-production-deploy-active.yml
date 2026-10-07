@@ -235,7 +235,6 @@ jobs:
               sleep 5
             done
           fi
-          fi
           test -n "$deployment_id"
           test -n "$deployment_url"
           echo "TRADING_PAGES_DEPLOYMENT_ID=$deployment_id"
