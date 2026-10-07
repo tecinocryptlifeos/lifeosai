@@ -156,7 +156,7 @@ jobs:
             -X PATCH \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             -H "Content-Type: application/json" \
-            --data '{"production_branch":"main","production_deployments_enabled":false}' \
+            --data '{"production_branch":"main","production_deployments_enabled":false,"build_config":{"build_command":"","destination_dir":".","root_dir":"/"}}' \
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT" \
             -o "$RUNNER_TEMP/trading-pages-project-updated.json"
           echo "TRADING_PAGES_PRODUCTION_AUTODEPLOY=DISABLED"
