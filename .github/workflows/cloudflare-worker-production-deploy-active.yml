@@ -223,12 +223,15 @@ jobs:
           PY
           )"
           export DEPLOYMENT_ID="$deployment_id"
-          curl --fail --silent --show-error --location --max-time 30 \
+          rollback_http="$(curl --silent --show-error --location --max-time 30 \
             -X POST \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             -H "Content-Type: application/json" \
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments/$deployment_id/rollback" \
-            -o "$RUNNER_TEMP/trading-pages-promoted.json"
+            -o "$RUNNER_TEMP/trading-pages-promoted.json" -w '%{http_code}' || true)"
+          echo "TRADING_PAGES_ROLLBACK_HTTP=$rollback_http"
+          cat "$RUNNER_TEMP/trading-pages-promoted.json"
+          test "$rollback_http" = "200"
           python - <<'PY'
           import json, os
           from pathlib import Path
