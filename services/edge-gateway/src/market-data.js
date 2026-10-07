@@ -39,11 +39,21 @@ function alpacaConfigured(env) {
 function alpacaHeaders(env) {
   return {Accept:"application/json","APCA-API-KEY-ID":String(env.ALPACA_API_KEY||"").trim(),"APCA-API-SECRET-KEY":String(env.ALPACA_SECRET_KEY||"").trim()};
 }
+export function alpacaDateRange(requestedInterval, now = new Date()) {
+  const target = INTERVALS[requestedInterval];
+  if (!target) throw new Error("Unsupported interval");
+  const end = new Date(now);
+  if (Number.isNaN(end.getTime())) throw new Error("Invalid date");
+  const start = new Date(end.getTime() - target.lookbackSeconds * 1000);
+  return {start: start.toISOString(), end: end.toISOString()};
+}
 async function alpacaFetchBars(env,symbol,type,interval,limit) {
   if (!alpacaConfigured(env)) throw new Error("Alpaca credentials are not configured");
   const url=new URL(type==="crypto"?ALPACA_CRYPTO_BASE:ALPACA_STOCK_BASE+"/"+encodeURIComponent(symbol)+"/bars");
   if(type==="crypto") url.searchParams.set("symbols",symbol);
   url.searchParams.set("timeframe",ALPACA_TIMEFRAMES[interval]); url.searchParams.set("limit",String(limit)); url.searchParams.set("sort","asc");
+  const range = alpacaDateRange(interval);
+  url.searchParams.set("start",range.start); url.searchParams.set("end",range.end);
   if(type==="stock") url.searchParams.set("feed",String(env.ALPACA_DATA_FEED||ALPACA_FEED));
   const response=await fetch(url.toString(),{headers:alpacaHeaders(env)}),text=await response.text().catch(()=>{});
   let data={}; try{data=text?JSON.parse(text):{}}catch{}
