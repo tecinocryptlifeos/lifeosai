@@ -81,18 +81,18 @@ function draw(){
     if(c.y<CH){const p=lo+(CH-c.y)/CH*(hi-lo);cx.fillStyle='#2a3558';cx.fillRect(PW,c.y-9,72,18);cx.fillStyle='#fff';cx.textBaseline='middle';cx.fillText(p.toFixed(dp(p)),PW+5,c.y)}}
   $('ohlc').textContent=`${ft(sel.timestamp,true)}  O ${f(sel.open)}  H ${f(sel.high)}  L ${f(sel.low)}  C ${f(sel.close)}  Vol ${Math.round(sel.volume||0).toLocaleString()}`;
 }
-const zoom=k=>{S.n=Math.round(Math.max(15,Math.min(300,S.n*k)));draw()};
+const zoom=(k,anchorX)=>{const oldN=Math.min(S.n,S.bars.length||1),oldOff=S.off,oldEnd=S.bars.length-oldOff,ratio=anchorX==null?.5:Math.max(0,Math.min(1,anchorX)),anchorIndex=Math.max(0,Math.min(S.bars.length-1,Math.floor((oldEnd-oldN)+ratio*oldN)));S.n=Math.round(Math.max(15,Math.min(300,S.n*k)));const newN=Math.min(S.n,S.bars.length||1),targetEnd=anchorIndex+Math.round((1-ratio)*newN);S.off=Math.max(0,Math.min(S.bars.length-newN,S.bars.length-targetEnd));draw()};
 const P=new Map();let lx=0,pdist=0;
 cv.onpointerdown=e=>{cv.setPointerCapture(e.pointerId);P.set(e.pointerId,e);lx=e.clientX;pdist=0};
 cv.onpointermove=e=>{const r=cv.getBoundingClientRect();S.cross={x:e.clientX-r.left,y:e.clientY-r.top};
   if(P.has(e.pointerId)){P.set(e.pointerId,e);
-    if(P.size===2){const[a,b]=[...P.values()],d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);if(pdist)zoom(pdist/d);pdist=d}
+    if(P.size===2){const[a,b]=[...P.values()],d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);if(pdist){const r=cv.getBoundingClientRect(),ax=((a.clientX+b.clientX)/2-r.left)/r.width;zoom(pdist/d,ax)}pdist=d}
     else{const bw=(cv.clientWidth-72)/Math.min(S.n,S.bars.length||1),k=Math.trunc((e.clientX-lx)/bw);if(k){S.off+=k;lx+=k*bw}}}
   draw()};
 cv.onpointerup=cv.onpointercancel=e=>{P.delete(e.pointerId);pdist=0;if(e.pointerType==='touch')S.cross=null;draw()};
 cv.onpointerleave=()=>{S.cross=null;draw()};
 cv.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY>0?1.15:1/1.15)},{passive:false});
-$('zi').onclick=()=>zoom(1/1.25);$('zo').onclick=()=>zoom(1.25);$('zr').onclick=()=>{S.off=0;S.n=80;draw()};
+$('zi').onclick=()=>zoom(1/1.25,.5);$('zo').onclick=()=>zoom(1.25,.5);$('zr').onclick=()=>{S.off=0;S.n=80;draw()};
 addEventListener('resize',draw);
 /* ---------- demo account ---------- */
 const save=()=>sv('losai_demo_v1',A);
