@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { normalizeProviderSymbol, normalizeTwelveDataSeries } from "../src/market-data.js";
+import { normalizeAlpacaBars, normalizeProviderSymbol, normalizeTwelveDataSeries } from "../src/market-data.js";
 
 function seriesPayload(count=31) {
   return { status:"ok", values:Array.from({length:count},(_,i)=>({
@@ -45,4 +45,11 @@ test("accepts UTC offsets and rejects invalid timestamps",()=>{
 
 test("rejects error responses",()=>{
   assert.throws(()=>normalizeTwelveDataSeries({status:"error",message:"symbol not found"},"BAD","stock","1d"),/symbol not found/i);
+});
+
+test("normalizes Alpaca stock and crypto OHLC bars without changing timestamps",()=>{
+  const stock=normalizeAlpacaBars({bars:[{t:"2026-10-07T14:15:00Z",o:100,h:105,l:99,c:103,v:25}]},"AAPL","stock","5m");
+  assert.equal(stock.source,"Alpaca"); assert.equal(stock.bars[0].close,103); assert.equal(stock.bars[0].timestamp,"2026-10-07T14:15:00.000Z");
+  const crypto=normalizeAlpacaBars({bars:{"BTC/USD":[{t:"2026-10-07T14:15:00Z",o:83000,h:83100,l:82900,c:83050,v:1.2}]}}, "BTC/USD","crypto","5m");
+  assert.equal(crypto.bars.length,1); assert.equal(crypto.resolution,"5");
 });

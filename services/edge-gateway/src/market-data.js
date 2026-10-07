@@ -9,6 +9,10 @@ const INTERVALS = {
   "1mo": { interval: "1month", resolution: "M", lookbackSeconds: 20 * 365 * 86400 }
 };
 const TYPES = new Set(["stock", "forex", "crypto"]);
+const ALPACA_STOCK_BASE = "https://data.alpaca.markets/v2/stocks";
+const ALPACA_CRYPTO_BASE = "https://data.alpaca.markets/v1beta3/crypto/us/bars";
+const ALPACA_FEED = "iex";
+const ALPACA_TIMEFRAMES = {"1m":"1Min","5m":"5Min","15m":"15Min","30m":"30Min","1h":"1Hour","1d":"1Day","1wk":"1Week","1mo":"1Month"};
 function validateSymbol(value, type = "stock") {
   const symbol = String(value || "").trim().toUpperCase();
   if (!TYPES.has(type)) throw new Error("Unsupported market type");
@@ -28,6 +32,33 @@ function normalizeTimestamp(value) {
   if (Number.isNaN(date.getTime())) throw new Error("Invalid Twelve Data timestamp");
   return date.toISOString();
 }
+
+function alpacaConfigured(env) {
+  return Boolean(String(env.ALPACA_API_KEY || "").trim() && String(env.ALPACA_SECRET_KEY || "").trim());
+}
+function alpacaHeaders(env) {
+  return {Accept:"application/json","APCA-API-KEY-ID":String(env.ALPACA_API_KEY||"").trim(),"APCA-API-SECRET-KEY":String(env.ALPACA_SECRET_KEY||"").trim()};
+}
+async function alpacaFetchBars(env,symbol,type,interval,limit) {
+  if (!alpacaConfigured(env)) throw new Error("Alpaca credentials are not configured");
+  const url=new URL(type==="crypto"?ALPACA_CRYPTO_BASE:ALPACA_STOCK_BASE+"/"+encodeURIComponent(symbol)+"/bars");
+  if(type==="crypto") url.searchParams.set("symbols",symbol);
+  url.searchParams.set("timeframe",ALPACA_TIMEFRAMES[interval]); url.searchParams.set("limit",String(limit)); url.searchParams.set("sort","asc");
+  if(type==="stock") url.searchParams.set("feed",String(env.ALPACA_DATA_FEED||ALPACA_FEED));
+  const response=await fetch(url.toString(),{headers:alpacaHeaders(env)}),text=await response.text().catch(()=>{});
+  let data={}; try{data=text?JSON.parse(text):{}}catch{}
+  if(!response.ok) throw new Error("Alpaca HTTP "+response.status+(data.message?": "+data.message:""));
+  const result=normalizeAlpacaBars(data,symbol,type,interval);
+  if(result.bars.length<minimumBars(interval)) throw new Error("Alpaca returned insufficient OHLC history");
+  return {...result,fetched_at:new Date().toISOString()};
+}
+export function normalizeAlpacaBars(payload,symbol,type,interval){
+  const raw=type==="crypto"?(payload?.bars?.[symbol]||[]):(payload?.bars||[]);
+  const bars=raw.map(row=>({timestamp:new Date(row.t||row.timestamp).toISOString(),open:Number(row.o??row.open),high:Number(row.h??row.high),low:Number(row.l??row.low),close:Number(row.c??row.close),volume:Number(row.v??row.volume??0)})).filter(finiteBar).sort((a,b)=>a.timestamp.localeCompare(b.timestamp));
+  return {ok:true,source:"Alpaca",symbol,market_type:type,interval,resolution:targetResolution(interval),bars};
+}
+function targetResolution(interval){return interval==="1d"?"D":interval==="1wk"?"W":interval==="1mo"?"M":String(parseInt(interval,10));}
+
 function minimumBars(requestedInterval) {
   return requestedInterval === "1d" ? 30 : requestedInterval === "1wk" ? 12 : requestedInterval === "1mo" ? 6 : 30;
 }
@@ -83,8 +114,14 @@ export async function marketData(request, env) {
   const interval = url.searchParams.get("interval") || "1d", target = INTERVALS[interval];
   if (!target) throw new Error("Unsupported interval");
   const outputsize = Math.min(Math.max(Number(url.searchParams.get("outputsize") || 60), minimumBars(interval)), 5000);
-  const payload = await twelveDataFetch("/time_series",env,{symbol,interval:target.interval,outputsize:String(outputsize),timezone:"UTC"});
-  const result = normalizeTwelveDataSeries(payload,requestedSymbol,type,interval);
-  result.provider_symbol = symbol;
+  if ((type === "stock" || type === "crypto") && alpacaConfigured(env)) {
+    const result = await alpacaFetchBars(env,symbol,type,interval,outputsize);
+    result.provider_symbol=symbol;
+    result.data_feed=type==="stock"?String(env.ALPACA_DATA_FEED||ALPACA_FEED):"us";
+    return result;
+  }
+  const payload=await twelveDataFetch("/time_series",env,{symbol,interval:target.interval,outputsize:String(outputsize),timezone:"UTC"});
+  const result=normalizeTwelveDataSeries(payload,requestedSymbol,type,interval);
+  result.provider_symbol=symbol;
   return result;
 }
