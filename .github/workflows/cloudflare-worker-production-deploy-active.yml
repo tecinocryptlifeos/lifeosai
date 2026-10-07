@@ -189,7 +189,7 @@ jobs:
           curl --fail --silent --show-error --location --max-time 30 \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             -H "Content-Type: application/json" \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments?env=production&per_page=100" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments?per_page=100" \
             -o "$RUNNER_TEMP/trading-pages-latest.json"
           python - <<'PY'
           import json, os
