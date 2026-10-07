@@ -12,7 +12,7 @@ import { geminiStatus, issueGeminiToken } from "./gemini.js";
 import { issueDecisionIntelligence } from "./decision-engine.js";
 import { currentOriginState } from "./health.js";
 import { publicConfig, updateProfile, verifySession } from "./supabase.js";
-import { marketData, marketSymbols } from "./market-data.js";
+import { marketData, marketQuote, marketSymbols } from "./market-data.js";
 
 function preflightResponse(request, env) {
   const headers = responseHeaders(request, env, new Headers({
@@ -47,6 +47,14 @@ async function handleRequest(request, env) {
       return jsonResponse(request, env, 200, await marketData(request, env));
     } catch (error) {
       throw new GatewayError(502, "MARKET_DATA_UNAVAILABLE", error.message || "Market data unavailable.");
+    }
+  }
+
+  if (request.method === "GET" && pathname === "/api/market-quote") {
+    try {
+      return jsonResponse(request, env, 200, await marketQuote(request, env));
+    } catch (error) {
+      throw new GatewayError(502, "MARKET_QUOTE_UNAVAILABLE", error.message || "Latest market quote unavailable.");
     }
   }
 
