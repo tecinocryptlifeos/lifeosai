@@ -31,14 +31,21 @@ async function pull(){
     S.from=S.disp==null?L.close:S.disp;S.t0=performance.now();if(S.disp==null)S.disp=L.close;
     const prev=LP[S.sym];LP[S.sym]=L.close;
     const age=Date.now()-Date.parse(L.timestamp);S.stale=intr()&&age>Math.max(TF[S.tf][1]*2.5,15)*60000;
-    msg(S.stale?`Market closed. Showing the latest available candles (last candle ${ft(L.timestamp,true)}).`:'');
+    syncMarketState(L,age);
+    msg(S.stale?`Latest candle is delayed (${ft(L.timestamp,true)}).`:'');
     guard();head(prev);acct();runSig();if(!S.raf){S.raf=1;requestAnimationFrame(loop)}else draw();
   }catch(e){if(id!==S.req)return;S.err++;msg(S.bars.length?'Update failed ('+e.message+'). Retrying…':'Cannot load '+S.sym+': '+e.message+'. Retrying…');stat()}
   if(id!==S.req)return;stat();
   if(S.live&&!document.hidden){const d=S.err?Math.min(30*2**S.err,300):S.stale?300:refreshSeconds();S.nextAt=Date.now()+d*1000;S.timer=setTimeout(pull,d*1000)}else S.nextAt=0;
 }
 function loop(){const L=last();if(!L){S.raf=0;return}const t=Math.min(1,(performance.now()-S.t0)/700);S.disp=S.from+(L.close-S.from)*(1-Math.pow(1-t,3));draw();if(t<1)requestAnimationFrame(loop);else S.raf=0}
-function stat(){const e=$('stat');let c='stat',t='PAUSED';if(S.err&&!S.bars.length){t='OFFLINE';c+=' shut'}else if(!S.bars.length)t='CONNECTING';else if(S.stale){t=S.type==='crypto'?'DELAYED':'MARKET CLOSED';c+=' shut'}else if(S.live){t='LIVE';c+=' live'}e.className=c;e.textContent=t}
+function syncMarketState(L,age){
+  const name=$('marketName'),qa=$('quoteAge'),ms=$('marketState');
+  if(name)name.textContent=S.sym;
+  if(qa)qa.textContent=!L?'Waiting for candle':S.stale?'Delayed · last candle '+ft(L.timestamp,true):'Latest candle · '+ft(L.timestamp,true);
+  if(ms)ms.textContent=!L?'Market data connecting':S.stale?'Delayed market data · latest candle '+ft(L.timestamp,true):'Market data live · candle age '+Math.max(0,Math.round(age/1000))+'s';
+}
+function stat(){const e=$('stat');let c='stat',t='PAUSED';if(S.err&&!S.bars.length){t='OFFLINE';c+=' shut'}else if(!S.bars.length)t='CONNECTING';else if(S.stale){t='DELAYED';c+=' shut'}else if(S.live){t='LIVE';c+=' live'}e.className=c;e.textContent=t;const L=last(),age=L?Date.now()-Date.parse(L.timestamp):0;syncMarketState(L,age)}
 function head(prev){
   const B=S.bars,L=last();let ref;if(intr()){const d=L.timestamp.slice(0,10);ref=(B.find(b=>b.timestamp.slice(0,10)===d)||B[0]).open}else ref=(B[B.length-2]||L).close;
   $('hs').textContent=S.sym;const p=$('px');p.textContent=f(L.close);p.className='hp'+(prev==null||prev===L.close?'':L.close>prev?' u':' d');
@@ -124,16 +131,27 @@ function acct(){
   $('ord').innerHTML='';for(const o of A.ord.slice(0,8)){const li=document.createElement('li');li.textContent=`${new Date(o.t).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} ${o.why} ${o.sym} ${f(o.px)}`+(o.pnl?` · P/L ${usd(o.pnl)}`:'');$('ord').append(li)}
 }
 /* ---------- signal ---------- */
+function structureRead(B){
+  const n=B.length;if(n<12)return {trend:'UNKNOWN',break:'NONE'};
+  const highs=[],lows=[];
+  for(let i=2;i<n-2;i++){if(B[i].high>=B[i-1].high&&B[i].high>=B[i+1].high)highs.push({i,p:B[i].high});if(B[i].low<=B[i-1].low&&B[i].low<=B[i+1].low)lows.push({i,p:B[i].low})}
+  const H=highs.slice(-3),L=lows.slice(-3),lh=H.at(-1)?.p,ph=H.at(-2)?.p,ll=L.at(-1)?.p,pl=L.at(-2)?.p;
+  const trend=lh>ph&&ll>pl?'BULLISH':lh<ph&&ll<pl?'BEARISH':'MIXED';
+  const px=B.at(-1).close,brk=lh&&px>lh?'BULLISH BREAK':ll&&px<ll?'BEARISH BREAK':'NONE';
+  return {trend,break:brk};
+}
 function runSig(){
   const B=S.bars;if(B.length<55){S.sig=null;return rSig()}
-  const c=B.map(b=>b.close),L=c.length-1,s20=S.s20[L],s50=S.s50[L];let g=0,l=0,atr=0;
+  const c=B.map(b=>b.close),L=c.length-1,s20=S.s20[L],s50=S.s50[L],st=structureRead(B);let g=0,l=0,atr=0;
   for(let i=L-13;i<=L;i++){const d=c[i]-c[i-1];d>0?g+=d:l-=d;atr+=Math.max(B[i].high-B[i].low,Math.abs(B[i].high-c[i-1]),Math.abs(B[i].low-c[i-1]))}
   atr/=14;const rsi=l===0?100:100-100/(1+g/l),why=[];let s=0;
+  if(st.trend==='BULLISH'){s++;why.push('Market structure: higher highs / higher lows')}else if(st.trend==='BEARISH'){s--;why.push('Market structure: lower highs / lower lows')}else why.push('Market structure: mixed');
+  if(st.break==='BULLISH BREAK'){s++;why.push('Bullish structure break')}else if(st.break==='BEARISH BREAK'){s--;why.push('Bearish structure break')}
   c[L]>s20?(s++,why.push('Price above SMA 20')):(s--,why.push('Price below SMA 20'));
-  s20>s50?(s++,why.push('SMA 20 above SMA 50: uptrend')):(s--,why.push('SMA 20 below SMA 50: downtrend'));
+  s20>s50?(s++,why.push('SMA 20 above SMA 50')):(s--,why.push('SMA 20 below SMA 50'));
   if(rsi>55){s++;why.push('RSI '+rsi.toFixed(0)+': bullish momentum')}else if(rsi<45){s--;why.push('RSI '+rsi.toFixed(0)+': bearish momentum')}else why.push('RSI '+rsi.toFixed(0)+': neutral');
-  const dir=s>=2?'BUY':s<=-2?'SELL':'WAIT',k=dir==='SELL'?-1:1,px=c[L];
-  S.sig={dir,why,px,sl:px-k*1.5*atr,tp:px+k*3*atr};
+  const dir=s>=3?'BUY':s<=-3?'SELL':'WAIT',k=dir==='SELL'?-1:1,px=c[L];
+  S.sig={dir,why,px,sl:px-k*1.5*atr,tp:px+k*3*atr,structure:st.trend,break:st.break};
   const h=H.find(x=>x.sym===S.sym&&x.tf===S.tf);if(!h||h.dir!==dir){H.unshift({t:Date.now(),sym:S.sym,tf:S.tf,dir,px});H.length=Math.min(H.length,10);sv('losai_sigs_v1',H)}
   rSig();
 }
