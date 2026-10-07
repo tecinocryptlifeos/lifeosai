@@ -135,7 +135,10 @@ jobs:
           import json, os
           from pathlib import Path
           d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/worker-deployments.json").read_text())
-          deployments=d.get("deployments", d.get("result", {}).get("deployments", []))
+          if isinstance(d, list):
+              deployments=d
+          else:
+              deployments=d.get("deployments", d.get("result", {}).get("deployments", []))
           if not deployments:
               raise SystemExit("No Worker deployments returned after deploy")
           active=deployments[0]
