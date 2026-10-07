@@ -205,6 +205,7 @@ jobs:
           assert latest.get("latest_stage",{}).get("status") == "success", latest
           PY
           echo "TRADING_PAGES_LATEST_DEPLOYMENT=PASS"
+          export DEPLOYMENT_URL="$deployment_url"
           deployment_id="$(python - <<'PY'
           import json, os
           from pathlib import Path
@@ -215,9 +216,8 @@ jobs:
               raise SystemExit("Latest Pages deployment does not match the deployment just created")
           print(latest["id"])
           PY
-          )" 
+          )"
           export DEPLOYMENT_ID="$deployment_id"
-          export DEPLOYMENT_URL="$deployment_url"
           curl --fail --silent --show-error --location --max-time 30 \
             -X POST \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
