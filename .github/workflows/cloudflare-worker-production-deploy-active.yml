@@ -122,6 +122,35 @@ jobs:
         working-directory: services/edge-gateway
         run: echo "$TWELVE_DATA_API_KEY" | npx wrangler secret put TWELVE_DATA_API_KEY --config wrangler.toml
 
+      - name: Verify Trading Pages production environment
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          project_json="$RUNNER_TEMP/trading-pages-project.json"
+          curl --fail --silent --show-error --location --max-time 30             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN"             -H "Content-Type: application/json"             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT"             -o "$project_json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-project.json").read_text())
+          assert d.get("success") is True, d
+          r=d["result"]
+          print("PAGES_PRODUCTION_BRANCH="+str(r.get("production_branch")))
+          print("PAGES_PRODUCTION_DEPLOYMENTS_ENABLED="+str(r.get("source",{}).get("config",{}).get("production_deployments_enabled")))
+          PY
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-project.json").read_text())
+          r=d["result"]
+          if r.get("production_branch") != "main":
+              raise SystemExit("Trading Pages production branch is not main: "+repr(r.get("production_branch")))
+          if r.get("source",{}).get("config",{}).get("production_deployments_enabled") is False:
+              raise SystemExit("Trading Pages production deployments are disabled")
+          PY
+          echo "TRADING_PAGES_PRODUCTION_ENVIRONMENT=PASS"
+
       - name: Publish Trading System Pages
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -152,16 +181,19 @@ jobs:
           test -n "$deployment_url"
           echo "TRADING_PAGES_DEPLOYMENT_URL=$deployment_url"
           echo "Generated Pages deployment URL is informational; canonical site is the production authority."
-          for attempt in 1 2 3 4 5; do
-            if curl --fail --silent --show-error --location --max-time 30 --output "$verify/index.html" "$LIFEOS_TRADING_SITE/"; then
+          status=""
+          for attempt in $(seq 1 12); do
+            status="$(curl --silent --show-error --location --max-time 30 --output "$verify/index.html" --write-out '%{http_code}' "$LIFEOS_TRADING_SITE/" || true)"
+            if [ "$status" = "200" ]; then
               break
             fi
-            if [ "$attempt" -eq 5 ]; then
-              echo "Canonical trading site did not become reachable after 5 attempts" >&2
-              exit 1
-            fi
+            echo "Canonical trading site returned HTTP $status (attempt $attempt/12); waiting 5s."
             sleep 5
           done
+          if [ "$status" != "200" ]; then
+            echo "Canonical trading site did not return HTTP 200 after 12 attempts" >&2
+            exit 1
+          fi
           curl --fail --silent --show-error --location --max-time 30 --output "$verify/trading-config.js" "$LIFEOS_TRADING_SITE/trading-config.js"
           grep -q "LifeOS Trading Intelligence" "$verify/index.html"
           grep -q "AI Market Read" "$verify/index.html"
