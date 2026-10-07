@@ -199,6 +199,24 @@ jobs:
         run: |
           set -euo pipefail
           deployment_json="$RUNNER_TEMP/trading-pages-deployments.json"
+          all_deployments_json="$RUNNER_TEMP/trading-pages-all-deployments.json"
+          curl --fail --silent --show-error --location --max-time 30 \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments?per_page=25" \
+            -o "$all_deployments_json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-all-deployments.json").read_text())
+          target=os.environ["TRADING_PAGES_DEPLOYMENT_URL"]
+          for row in d.get("result",[]):
+              if target in (row.get("aliases") or []):
+                  print("PAGES_TARGET_ENVIRONMENT="+str(row.get("environment")))
+                  print("PAGES_TARGET_STAGE="+str((row.get("latest_stage") or {}).get("status")))
+                  print("PAGES_TARGET_TRIGGER="+str((row.get("deployment_trigger") or {}).get("type")))
+                  break
+          PY
           curl --fail --silent --show-error --location --max-time 30 \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             -H "Content-Type: application/json" \
