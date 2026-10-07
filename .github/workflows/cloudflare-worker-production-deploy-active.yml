@@ -157,6 +157,32 @@ jobs:
           fi
           echo "TRADING_PAGES_PRODUCTION_ENVIRONMENT=PASS"
 
+      - name: Verify latest Trading Pages deployment environment
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location --max-time 30 \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments?per_page=1" \
+            -o "$RUNNER_TEMP/trading-pages-deployments.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-deployments.json").read_text())
+          assert d.get("success") is True, d
+          rows=d.get("result",[])
+          assert rows, "No Trading Pages deployments returned"
+          latest=rows[0]
+          print("PAGES_LATEST_ENVIRONMENT="+str(latest.get("environment")))
+          print("PAGES_LATEST_STAGE="+str(latest.get("latest_stage",{}).get("status")))
+          assert latest.get("environment") == "production", latest
+          assert latest.get("latest_stage",{}).get("status") == "success", latest
+          PY
+          echo "TRADING_PAGES_LATEST_DEPLOYMENT=PASS"
+
       - name: Publish Trading System Pages
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -187,19 +213,9 @@ jobs:
           test -n "$deployment_url"
           echo "TRADING_PAGES_DEPLOYMENT_URL=$deployment_url"
           echo "Generated Pages deployment URL is informational; canonical site is the production authority."
-          status=""
-          for attempt in $(seq 1 12); do
-            status="$(curl --silent --show-error --location --max-time 30 --output "$verify/index.html" --write-out '%{http_code}' "$LIFEOS_TRADING_SITE/" || true)"
-            if [ "$status" = "200" ]; then
-              break
-            fi
-            echo "Canonical trading site returned HTTP $status (attempt $attempt/12); waiting 5s."
-            sleep 5
-          done
-          if [ "$status" != "200" ]; then
-            echo "Canonical trading site did not return HTTP 200 after 12 attempts" >&2
-            exit 1
-          fi
+          curl --fail --silent --show-error --location --max-time 30 --retry 12 --retry-delay 5 --retry-all-errors --output "$verify/index.html" "$LIFEOS_TRADING_SITE/"
+          test -s "$verify/index.html"
+          echo "TRADING_CANONICAL_HTTP=200"
           curl --fail --silent --show-error --location --max-time 30 --output "$verify/trading-config.js" "$LIFEOS_TRADING_SITE/trading-config.js"
           grep -q "LifeOS Trading Intelligence" "$verify/index.html"
           grep -q "AI Market Read" "$verify/index.html"
