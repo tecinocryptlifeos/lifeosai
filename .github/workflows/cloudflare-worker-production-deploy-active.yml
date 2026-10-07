@@ -170,7 +170,6 @@ jobs:
         run: |
           set -euo pipefail
           deployment_json="$RUNNER_TEMP/trading-pages-deployments.json"
-          export DEPLOYMENT_URL="$deployment_url"
           found=""
           for attempt in $(seq 1 36); do
             curl --fail --silent --show-error --location --max-time 30 \
