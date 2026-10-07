@@ -71,10 +71,10 @@ jobs:
           ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
         run: |
           set -euo pipefail
-          http="$(curl --silent --show-error --location --max-time 30 \\
-            -H "APCA-API-KEY-ID: $ALPACA_API_KEY" \\
-            -H "APCA-API-SECRET-KEY: $ALPACA_SECRET_KEY" \\
-            'https://data.alpaca.markets/v2/stocks/AAPL/bars?timeframe=1Day&limit=1&feed=iex' \\
+          http="$(curl --silent --show-error --location --max-time 30 \
+            -H "APCA-API-KEY-ID: $ALPACA_API_KEY" \
+            -H "APCA-API-SECRET-KEY: $ALPACA_SECRET_KEY" \
+            'https://data.alpaca.markets/v2/stocks/AAPL/bars?timeframe=1Day&limit=1&feed=iex' \
             -o "$RUNNER_TEMP/alpaca-credential-check.json" -w '%{http_code}')"
           echo "ALPACA_CREDENTIALS_HTTP=$http"
           test "$http" = "200"
