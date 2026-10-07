@@ -210,8 +210,10 @@ jobs:
           PY
           )"
           test -n "$deployment_url"
-          curl --fail --silent --show-error --location --max-time 30 --retry 6 --retry-delay 3 --retry-all-errors \
-            --output "$RUNNER_TEMP/trading-pages-index.html" "$deployment_url/?v=$GITHUB_SHA"
+          deployment_http="$(curl --silent --show-error --location --max-time 30 --output "$RUNNER_TEMP/trading-pages-index.html" --write-out '%{http_code}' "$deployment_url/" || true)"
+          echo "TRADING_PAGES_DEPLOYMENT_HTTP=$deployment_http"
+          head -c 300 "$RUNNER_TEMP/trading-pages-index.html" || true
+          test "$deployment_http" = "200"
           grep -q "LifeOS Trading Intelligence" "$RUNNER_TEMP/trading-pages-index.html"
           grep -q "AI Market Read" "$RUNNER_TEMP/trading-pages-index.html"
           grep -q "Trade Plan" "$RUNNER_TEMP/trading-pages-index.html"
@@ -219,6 +221,8 @@ jobs:
           grep -q "Demo Trading" "$RUNNER_TEMP/trading-pages-index.html"
           grep -q "Twelve Data" "$RUNNER_TEMP/trading-pages-index.html"
           canonical_http="$(curl --silent --show-error --location --max-time 30 --output "$RUNNER_TEMP/trading-pages-canonical.html" --write-out '%{http_code}' "$LIFEOS_TRADING_SITE/" || true)"
+          echo "TRADING_PAGES_CANONICAL_HTTP=$canonical_http"
+          head -c 300 "$RUNNER_TEMP/trading-pages-canonical.html" || true
           echo "TRADING_PAGES_CANONICAL_HTTP=$canonical_http"
           test "$canonical_http" = "200"
           grep -q "LifeOS Trading Intelligence" "$RUNNER_TEMP/trading-pages-canonical.html"
