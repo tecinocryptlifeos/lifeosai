@@ -11,6 +11,8 @@ const INTERVALS = {
 const TYPES = new Set(["stock", "forex", "crypto"]);
 const ALPACA_STOCK_BASE = "https://data.alpaca.markets/v2/stocks";
 const ALPACA_CRYPTO_BASE = "https://data.alpaca.markets/v1beta3/crypto/us/bars";
+const ALPACA_CRYPTO_QUOTES = "https://data.alpaca.markets/v1beta3/crypto/us/latest/quotes";
+const ALPACA_STOCK_QUOTES = "https://data.alpaca.markets/v2/stocks";
 const ALPACA_FEED = "iex";
 const ALPACA_TIMEFRAMES = {"1m":"1Min","5m":"5Min","15m":"15Min","30m":"30Min","1h":"1Hour","1d":"1Day","1wk":"1Week","1mo":"1Month"};
 function validateSymbol(value, type = "stock") {
@@ -134,4 +136,36 @@ export async function marketData(request, env) {
   const result=normalizeTwelveDataSeries(payload,requestedSymbol,type,interval);
   result.provider_symbol=symbol;
   return result;
+}
+
+export async function marketQuote(request, env) {
+  const url = new URL(request.url), type = url.searchParams.get("type") || "stock";
+  const requestedSymbol = validateSymbol(url.searchParams.get("symbol") || "AAPL", type);
+  const symbol = normalizeProviderSymbol(requestedSymbol, type);
+  if ((type === "stock" || type === "crypto") && alpacaConfigured(env)) {
+    let endpoint;
+    if (type === "crypto") {
+      endpoint = new URL(ALPACA_CRYPTO_QUOTES);
+      endpoint.searchParams.set("symbols", symbol);
+    } else {
+      endpoint = new URL(ALPACA_STOCK_QUOTES + "/" + encodeURIComponent(symbol) + "/quotes/latest");
+      endpoint.searchParams.set("feed", String(env.ALPACA_DATA_FEED || ALPACA_FEED));
+    }
+    const response = await fetch(endpoint.toString(), {headers: alpacaHeaders(env)});
+    const text = await response.text().catch(() => "");
+    let data = {}; try { data = text ? JSON.parse(text) : {}; } catch {}
+    if (!response.ok) throw new Error("Alpaca HTTP " + response.status + (data.message ? ": " + data.message : ""));
+    const q = type === "crypto" ? data?.quotes?.[symbol] : data?.quote;
+    if (!q) throw new Error("Alpaca returned no latest quote for " + symbol);
+    const bid = Number(q.bp ?? q.bid_price), ask = Number(q.ap ?? q.ask_price);
+    const price = Number.isFinite(bid) && Number.isFinite(ask) && bid > 0 && ask > 0 ? (bid + ask) / 2 : Number(q.p ?? q.price);
+    if (!Number.isFinite(price) || price <= 0) throw new Error("Latest quote has no usable price");
+    const timestamp = new Date(q.t ?? q.timestamp ?? Date.now()).toISOString();
+    return {ok:true,source:"Alpaca",provider_symbol:symbol,market_type:type,price,bid:Number.isFinite(bid)?bid:null,ask:Number.isFinite(ask)?ask:null,timestamp,fetched_at:new Date().toISOString(),data_feed:type==="stock"?String(env.ALPACA_DATA_FEED||ALPACA_FEED):"us"};
+  }
+  const data = await twelveDataFetch("/quote", env, {symbol: requestedSymbol});
+  const price = Number(data.close ?? data.price);
+  if (!Number.isFinite(price) || price <= 0) throw new Error("Latest quote has no usable price");
+  const timestamp = data.datetime ? normalizeTimestamp(data.datetime) : new Date().toISOString();
+  return {ok:true,source:"Twelve Data",provider_symbol:symbol,market_type:type,price,bid:Number(data.bid ?? NaN),ask:Number(data.ask ?? NaN),timestamp,fetched_at:new Date().toISOString()};
 }
