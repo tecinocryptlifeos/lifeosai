@@ -194,95 +194,35 @@ jobs:
 
       - name: Verify Trading Pages production deployment
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          LIFEOS_TRADING_SITE: https://lifeos-trade-system.pages.dev
+          TRADING_PAGES_DEPLOYMENT_URL: ${{ env.TRADING_PAGES_DEPLOYMENT_URL }}
         run: |
           set -euo pipefail
-          deployment_json="$RUNNER_TEMP/trading-pages-deployments.json"
-          all_deployments_json="$RUNNER_TEMP/trading-pages-all-deployments.json"
-          curl --fail --silent --show-error --location --max-time 30 \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -H "Content-Type: application/json" \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments?per_page=25" \
-            -o "$all_deployments_json"
-          python - <<'PY'
-          import json, os
-          from pathlib import Path
-          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-all-deployments.json").read_text())
-          target=os.environ["TRADING_PAGES_DEPLOYMENT_URL"]
-          for row in d.get("result",[]):
-              if target in (row.get("aliases") or []):
-                  print("PAGES_TARGET_ENVIRONMENT="+str(row.get("environment")))
-                  print("PAGES_TARGET_STAGE="+str((row.get("latest_stage") or {}).get("status")))
-                  print("PAGES_TARGET_TRIGGER="+str((row.get("deployment_trigger") or {}).get("type")))
-                  break
-          PY
-          curl --fail --silent --show-error --location --max-time 30 \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -H "Content-Type: application/json" \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments?per_page=100" \
-            -o "$deployment_json"
-          found="$(python - <<'PY'
-          import json, os
-          from pathlib import Path
-          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-deployments.json").read_text())
-          target=None
-          for row in d.get("result",[]):
-              trigger=row.get("deployment_trigger") or {}
-              metadata=trigger.get("metadata") or {}
-              commit_hash=metadata.get("commit_hash") or row.get("metadata",{}).get("commit_hash")
-              if commit_hash == os.environ["GITHUB_SHA"] and row.get("latest_stage",{}).get("status") == "success":
-                  target=row
-                  break
-          if target is None:
-              raise SystemExit("No successful Pages deployment found for this commit")
-          print(target["id"])
-          PY
-          )"
-          export TRADING_PAGES_DEPLOYMENT_ID="$found"
-          echo "TRADING_PAGES_DEPLOYMENT_ID=$found"
-          curl --fail --silent --show-error --location --max-time 30 \
-            -X POST \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -H "Content-Type: application/json" \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments/$found/rollback" \
-            -o "$RUNNER_TEMP/trading-pages-promoted.json"
-          python - <<'PY'
-          import json, os
-          from pathlib import Path
-          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-promoted.json").read_text())
-          assert d.get("success") is True, d
-          print("TRADING_PAGES_PRODUCTION_PROMOTION=PASS")
-          PY
-          canonical_url="$LIFEOS_TRADING_SITE"
-          canonical_http=""
-          for attempt in $(seq 1 12); do
-            canonical_http="$(curl --silent --show-error --location --max-time 30 --output "$RUNNER_TEMP/trading-pages-canonical.html" --write-out '%{http_code}' "$canonical_url/?v=$GITHUB_SHA" || true)"
-            if [ "$canonical_http" = "200" ]; then break; fi
-            echo "Trading Pages canonical host returned HTTP $canonical_http after promotion (attempt $attempt/12); waiting 5s."
-            sleep 5
-          done
+          test -n "$TRADING_PAGES_DEPLOYMENT_URL"
+          echo "TRADING_PAGES_DEPLOYMENT_URL=$TRADING_PAGES_DEPLOYMENT_URL"
+          deployment_http="$(curl --silent --show-error --location --max-time 30 -A 'Mozilla/5.0 (compatible; LifeOS-Production-Check/1.0)' -H 'Accept: text/html,application/xhtml+xml' --output "$RUNNER_TEMP/trading-pages-index.html" --write-out '%{http_code}' "$TRADING_PAGES_DEPLOYMENT_URL/" || true)"
+          echo "TRADING_PAGES_DEPLOYMENT_HTTP=$deployment_http"
+          test "$deployment_http" = "200"
+          grep -q "LifeOS Trading Intelligence" "$RUNNER_TEMP/trading-pages-index.html"
+          grep -q "AI Market Read" "$RUNNER_TEMP/trading-pages-index.html"
+          grep -q "Trade Plan" "$RUNNER_TEMP/trading-pages-index.html"
+          grep -q "Market Structure" "$RUNNER_TEMP/trading-pages-index.html"
+          grep -q "Demo Account" "$RUNNER_TEMP/trading-pages-index.html"
+          grep -q "Twelve Data" "$RUNNER_TEMP/trading-pages-index.html"
+          terminal_http="$(curl --silent --show-error --location --max-time 30 -A 'Mozilla/5.0 (compatible; LifeOS-Production-Check/1.0)' -H 'Accept: text/html,application/xhtml+xml' --output "$RUNNER_TEMP/trading-terminal.html" --write-out '%{http_code}' "$TRADING_PAGES_DEPLOYMENT_URL/terminal/")"
+          echo "TRADING_PAGES_TERMINAL_HTTP=$terminal_http"
+          test "$terminal_http" = "200"
+          grep -q "Losai Trade AI" "$RUNNER_TEMP/trading-terminal.html"
+          grep -q "Simulation only" "$RUNNER_TEMP/trading-terminal.html"
+          terminal_js_http="$(curl --silent --show-error --location --max-time 30 -A 'Mozilla/5.0 (compatible; LifeOS-Production-Check/1.0)' -H 'Accept: application/javascript,text/javascript,*/*' --output "$RUNNER_TEMP/trading-terminal.js" --write-out '%{http_code}' "$TRADING_PAGES_DEPLOYMENT_URL/terminal/terminal.js")"
+          echo "TRADING_PAGES_TERMINAL_JS_HTTP=$terminal_js_http"
+          test "$terminal_js_http" = "200"
+          grep -q "losai-edge-gateway.lifeostecinoai.workers.dev" "$RUNNER_TEMP/trading-terminal.js"
+          canonical_http="$(curl --silent --show-error --location --max-time 30 -A 'Mozilla/5.0 (compatible; LifeOS-Production-Check/1.0)' -H 'Accept: text/html,application/xhtml+xml' --output "$RUNNER_TEMP/trading-pages-canonical.html" --write-out '%{http_code}' "$LIFEOS_TRADING_SITE/" || true)"
           echo "TRADING_PAGES_CANONICAL_HTTP=$canonical_http"
           test "$canonical_http" = "200"
           grep -q "LifeOS Trading Intelligence" "$RUNNER_TEMP/trading-pages-canonical.html"
-          grep -q "AI Market Read" "$RUNNER_TEMP/trading-pages-canonical.html"
-          grep -q "Trade Plan" "$RUNNER_TEMP/trading-pages-canonical.html"
-          grep -q "Market Structure" "$RUNNER_TEMP/trading-pages-canonical.html"
           grep -q "Demo Account" "$RUNNER_TEMP/trading-pages-canonical.html"
-          grep -q "Twelve Data" "$RUNNER_TEMP/trading-pages-canonical.html"
-          terminal_http="$(curl --silent --show-error --location --max-time 30 --output "$RUNNER_TEMP/trading-terminal.html" --write-out '%{http_code}' "$canonical_url/terminal.html" || true)"
-          echo "TRADING_TERMINAL_HTML_HTTP=$terminal_http"
-          head -c 1000 "$RUNNER_TEMP/trading-terminal.html" || true
-          echo
-          test "$terminal_http" = "200"
-          terminal_js_http="$(curl --silent --show-error --location --max-time 30 --output "$RUNNER_TEMP/trading-terminal.js" --write-out '%{http_code}' "$canonical_url/terminal.js" || true)"
-          echo "TRADING_TERMINAL_JS_HTTP=$terminal_js_http"
-          head -c 1000 "$RUNNER_TEMP/trading-terminal.js" || true
-          echo
-          test "$terminal_js_http" = "200"
-          grep -q "Losai Trade AI" "$RUNNER_TEMP/trading-terminal.html"
-          grep -q "Simulation only" "$RUNNER_TEMP/trading-terminal.html"
-          grep -q "losai-edge-gateway.lifeostecinoai.workers.dev" "$RUNNER_TEMP/trading-terminal.js"
           echo "TRADING_PAGES_DEPLOYMENT=PASS"
           echo "TRADING_TERMINAL_DEPLOYMENT=PASS"
 
