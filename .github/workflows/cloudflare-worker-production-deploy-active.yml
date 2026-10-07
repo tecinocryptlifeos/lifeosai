@@ -215,7 +215,15 @@ jobs:
           PY
           canonical_url="$LIFEOS_TRADING_SITE"
           echo "PAGES_CANONICAL_URL=$canonical_url"
-          canonical_http="$(curl --silent --show-error --location --max-time 30 --output "$RUNNER_TEMP/trading-pages-index.html" --write-out '%{http_code}' "$canonical_url/?v=$GITHUB_SHA" || true)"
+          canonical_http=""
+          for attempt in $(seq 1 12); do
+            canonical_http="$(curl --silent --show-error --location --max-time 30 --output "$RUNNER_TEMP/trading-pages-index.html" --write-out '%{http_code}' "$canonical_url/?v=$GITHUB_SHA" || true)"
+            if [ "$canonical_http" = "200" ]; then
+              break
+            fi
+            echo "Trading Pages canonical host returned HTTP $canonical_http after promotion (attempt $attempt/12); waiting 5s."
+            sleep 5
+          done
           echo "PAGES_CANONICAL_HTTP=$canonical_http"
           test "$canonical_http" = "200"
           grep -q "LifeOS Trading Intelligence" "$RUNNER_TEMP/trading-pages-index.html"
@@ -224,8 +232,8 @@ jobs:
           grep -q "Market Structure" "$RUNNER_TEMP/trading-pages-index.html"
           grep -q "Demo Trading" "$RUNNER_TEMP/trading-pages-index.html"
           grep -q "Twelve Data" "$RUNNER_TEMP/trading-pages-index.html"
-          curl --fail --silent --show-error --location --max-time 30 --output "$RUNNER_TEMP/trading-terminal.html" "$canonical_url/terminal/?v=$GITHUB_SHA"
-          curl --fail --silent --show-error --location --max-time 30 --output "$RUNNER_TEMP/trading-terminal.js" "$canonical_url/terminal/terminal.js?v=$GITHUB_SHA"
+          curl --fail --silent --show-error --location --max-time 30 --retry 6 --retry-delay 5 --retry-all-errors --output "$RUNNER_TEMP/trading-terminal.html" "$canonical_url/terminal/?v=$GITHUB_SHA"
+          curl --fail --silent --show-error --location --max-time 30 --retry 6 --retry-delay 5 --retry-all-errors --output "$RUNNER_TEMP/trading-terminal.js" "$canonical_url/terminal/terminal.js?v=$GITHUB_SHA"
           grep -q "Losai Trade AI" "$RUNNER_TEMP/trading-terminal.html"
           grep -q "Simulation only" "$RUNNER_TEMP/trading-terminal.html"
           grep -q "losai-edge-gateway.lifeostecinoai.workers.dev" "$RUNNER_TEMP/trading-terminal.js"
