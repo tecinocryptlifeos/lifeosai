@@ -135,6 +135,11 @@ jobs:
           rm -rf "$stage" "$verify"; mkdir -p "$stage/assets" "$verify"
           cp web/lifeos_voice/trading.html "$stage/index.html"
           cp web/lifeos_voice/assets/lifeos-home-king-bg.webp "$stage/assets/lifeos-home-king-bg.webp"
+          mkdir -p "$stage/terminal"
+          cp apps/trade-terminal/index.html "$stage/terminal/index.html"
+          cp apps/trade-terminal/terminal.css "$stage/terminal/terminal.css"
+          cp apps/trade-terminal/terminal.js "$stage/terminal/terminal.js"
+          cp apps/trade-terminal/_headers "$stage/_headers"
           python - <<'PY'
           import json, os
           from pathlib import Path
@@ -165,7 +170,13 @@ jobs:
           grep -q "Demo Trading" "$verify/index.html"
           grep -q "Twelve Data" "$verify/index.html"
           grep -q "LIFEOS_TRADING_CONFIG" "$verify/trading-config.js"
+          curl --fail --silent --show-error --location --max-time 30 --output "$verify/terminal.html" "$LIFEOS_TRADING_SITE/terminal/"
+          curl --fail --silent --show-error --location --max-time 30 --output "$verify/terminal.js" "$LIFEOS_TRADING_SITE/terminal/terminal.js"
+          grep -q "Losai Trade AI" "$verify/terminal.html"
+          grep -q "Simulation only" "$verify/terminal.html"
+          grep -q "losai-edge-gateway.lifeostecinoai.workers.dev" "$verify/terminal.js"
           echo "TRADING_PAGES_DEPLOYMENT=PASS"
+          echo "TRADING_TERMINAL_DEPLOYMENT=PASS"
 
       - name: Smoke test production AAPL OHLC
         env:
