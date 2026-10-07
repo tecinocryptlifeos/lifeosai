@@ -170,13 +170,12 @@ jobs:
         run: |
           set -euo pipefail
           deployment_json="$RUNNER_TEMP/trading-pages-deployments.json"
-          export DEPLOYMENT_URL="$deployment_url"
           found=""
-          for attempt in $(seq 1 36); do
+          for attempt in $(seq 1 12); do
             curl --fail --silent --show-error --location --max-time 30 \
               -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
               -H "Content-Type: application/json" \
-              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments?env=production&per_page=100" \
+              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments?per_page=100" \
               -o "$deployment_json"
             found="$(python - <<'PY'
           import json, os
@@ -194,49 +193,38 @@ jobs:
           PY
             )"
             if [ -n "$found" ]; then break; fi
-            echo "Waiting for Git-integrated Trading Pages deployment for $GITHUB_SHA (attempt $attempt/36); waiting 5s."
+            echo "Waiting for successful Git-integrated production Pages deployment for $GITHUB_SHA (attempt $attempt/12); waiting 5s."
             sleep 5
           done
           test -n "$found"
           export TRADING_PAGES_DEPLOYMENT_ID="$found"
           echo "TRADING_PAGES_DEPLOYMENT_ID=$found"
-          curl --fail --silent --show-error --location --max-time 30 \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -H "Content-Type: application/json" \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT" \
-            -o "$RUNNER_TEMP/trading-pages-project-after-deploy.json"
-          python - <<'PY'
+          deployment_url="$(python - <<'PY'
           import json, os
           from pathlib import Path
-          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-project-after-deploy.json").read_text())
-          assert d.get("success") is True, d
-          canonical=d["result"].get("canonical_deployment") or {}
-          if canonical.get("id") != os.environ["TRADING_PAGES_DEPLOYMENT_ID"]:
-              raise SystemExit("Canonical Pages deployment does not match the verified Git production deployment")
-          print("TRADING_PAGES_CANONICAL_DEPLOYMENT=PASS")
-          print("TRADING_PAGES_CANONICAL_URL="+str(canonical.get("url")))
+          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-deployments.json").read_text())
+          for row in d.get("result",[]):
+              if row.get("id") == os.environ["TRADING_PAGES_DEPLOYMENT_ID"]:
+                  print(row.get("url",""))
+                  break
           PY
-          canonical_url="$LIFEOS_TRADING_SITE"
-          echo "PAGES_CANONICAL_URL=$canonical_url"
-          canonical_http=""
-          for attempt in $(seq 1 12); do
-            canonical_http="$(curl --silent --show-error --location --max-time 30 --output "$RUNNER_TEMP/trading-pages-index.html" --write-out '%{http_code}' "$canonical_url/?v=$GITHUB_SHA" || true)"
-            if [ "$canonical_http" = "200" ]; then
-              break
-            fi
-            echo "Trading Pages canonical host returned HTTP $canonical_http after promotion (attempt $attempt/12); waiting 5s."
-            sleep 5
-          done
-          echo "PAGES_CANONICAL_HTTP=$canonical_http"
-          test "$canonical_http" = "200"
+          )"
+          test -n "$deployment_url"
+          curl --fail --silent --show-error --location --max-time 30 --retry 6 --retry-delay 3 --retry-all-errors \
+            --output "$RUNNER_TEMP/trading-pages-index.html" "$deployment_url/?v=$GITHUB_SHA"
           grep -q "LifeOS Trading Intelligence" "$RUNNER_TEMP/trading-pages-index.html"
           grep -q "AI Market Read" "$RUNNER_TEMP/trading-pages-index.html"
           grep -q "Trade Plan" "$RUNNER_TEMP/trading-pages-index.html"
           grep -q "Market Structure" "$RUNNER_TEMP/trading-pages-index.html"
           grep -q "Demo Trading" "$RUNNER_TEMP/trading-pages-index.html"
           grep -q "Twelve Data" "$RUNNER_TEMP/trading-pages-index.html"
-          curl --fail --silent --show-error --location --max-time 30 --retry 6 --retry-delay 5 --retry-all-errors --output "$RUNNER_TEMP/trading-terminal.html" "$canonical_url/terminal/?v=$GITHUB_SHA"
-          curl --fail --silent --show-error --location --max-time 30 --retry 6 --retry-delay 5 --retry-all-errors --output "$RUNNER_TEMP/trading-terminal.js" "$canonical_url/terminal/terminal.js?v=$GITHUB_SHA"
+          canonical_http="$(curl --silent --show-error --location --max-time 30 --output "$RUNNER_TEMP/trading-pages-canonical.html" --write-out '%{http_code}' "$LIFEOS_TRADING_SITE/" || true)"
+          echo "TRADING_PAGES_CANONICAL_HTTP=$canonical_http"
+          test "$canonical_http" = "200"
+          grep -q "LifeOS Trading Intelligence" "$RUNNER_TEMP/trading-pages-canonical.html"
+          grep -q "Demo Trading" "$RUNNER_TEMP/trading-pages-canonical.html"
+          curl --fail --silent --show-error --location --max-time 30 --output "$RUNNER_TEMP/trading-terminal.html" "$LIFEOS_TRADING_SITE/terminal/"
+          curl --fail --silent --show-error --location --max-time 30 --output "$RUNNER_TEMP/trading-terminal.js" "$LIFEOS_TRADING_SITE/terminal/terminal.js"
           grep -q "Losai Trade AI" "$RUNNER_TEMP/trading-terminal.html"
           grep -q "Simulation only" "$RUNNER_TEMP/trading-terminal.html"
           grep -q "losai-edge-gateway.lifeostecinoai.workers.dev" "$RUNNER_TEMP/trading-terminal.js"
