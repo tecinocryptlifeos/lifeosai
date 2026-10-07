@@ -6,7 +6,7 @@ crypto:[['BTC/USD','Bitcoin'],['ETH/USD','Ethereum'],['SOL/USD','Solana'],['XRP/
 const TF={'1m':['1m',1],'5m':['5m',5],'15m':['15m',15],'30m':['30m',30],'1H':['1h',60],'1D':['1d',1440],'1W':['1wk',10080],'1M':['1mo',43200]};
 const UP='#16c784',DN='#ea3943',MUT='#8a94a6',GRID='rgba(255,255,255,.06)';
 const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch{return d}},sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
-const S={tab:'crypto',type:'crypto',sym:'BTC/USD',tf:'5m',bars:[],n:80,off:0,live:true,disp:null,from:0,t0:0,raf:0,cross:null,err:0,req:0,timer:0,nextAt:0,stale:false,s20:[],s50:[],sig:null};
+const S={tab:'crypto',type:'crypto',sym:'BTC/USD',tf:'5m',bars:[],n:80,off:0,live:true,disp:null,from:0,t0:0,raf:0,cross:null,err:0,req:0,timer:0,nextAt:0,stale:false,s20:[],s50:[],sig:null,quote:null};
 let A=ld('losai_demo_v1',{bal:10000,pos:{},ord:[]}),H=ld('losai_sigs_v1',[]);const LP={};
 const WAT='Africa/Lagos';
 const EXCHANGE_TZ='America/New_York';
@@ -31,7 +31,7 @@ async function pull(){
     S.from=S.disp==null?L.close:S.disp;S.t0=performance.now();if(S.disp==null)S.disp=L.close;
     const prev=LP[S.sym];LP[S.sym]=L.close;
     const age=Date.now()-Date.parse(L.timestamp);S.stale=intr()&&age>Math.max(TF[S.tf][1]*2.5,15)*60000;
-    syncMarketState(L,age);
+    try{S.quote=await quote();}catch{S.quote=null}syncMarketState(L,age);
     msg(S.stale?`Latest candle is delayed (${ft(L.timestamp,true)}).`:'');
     guard();head(prev);acct();runSig();if(!S.raf){S.raf=1;requestAnimationFrame(loop)}else draw();
   }catch(e){if(id!==S.req)return;S.err++;msg(S.bars.length?'Update failed ('+e.message+'). Retrying…':'Cannot load '+S.sym+': '+e.message+'. Retrying…');stat()}
@@ -42,16 +42,17 @@ function loop(){const L=last();if(!L){S.raf=0;return}const t=Math.min(1,(perform
 function syncMarketState(L,age){
   const name=$('marketName'),qa=$('quoteAge'),ms=$('marketState');
   if(name)name.textContent=S.sym;
-  if(qa)qa.textContent=!L?'Waiting for candle':S.stale?'Delayed · last candle '+ft(L.timestamp,true):'Latest candle · '+ft(L.timestamp,true);
-  if(ms)ms.textContent=!L?'Market data connecting':S.stale?'Delayed market data · latest candle '+ft(L.timestamp,true):'Market data live · candle age '+Math.max(0,Math.round(age/1000))+'s';
+  if(qa)qa.textContent=S.quote?'Live quote · '+ft(S.quote.timestamp,true):(!L?'Waiting for candle':S.stale?'Delayed · last candle '+ft(L.timestamp,true):'Latest candle · '+ft(L.timestamp,true));
+  if(ms)ms.textContent=!L?'Market data connecting':S.quote?'Live quote · '+ft(S.quote.timestamp,true):S.stale?'Delayed market data · latest candle '+ft(L.timestamp,true):'Market data live · candle age '+Math.max(0,Math.round(age/1000))+'s';
 }
 function stat(){const e=$('stat');let c='stat',t='PAUSED';if(S.err&&!S.bars.length){t='OFFLINE';c+=' shut'}else if(!S.bars.length)t='CONNECTING';else if(S.stale){t='DELAYED';c+=' shut'}else if(S.live){t='LIVE';c+=' live'}e.className=c;e.textContent=t;const L=last(),age=L?Date.now()-Date.parse(L.timestamp):0;syncMarketState(L,age)}
 function head(prev){
-  const B=S.bars,L=last();let ref;if(intr()){const d=L.timestamp.slice(0,10);ref=(B.find(b=>b.timestamp.slice(0,10)===d)||B[0]).open}else ref=(B[B.length-2]||L).close;
-  $('hs').textContent=S.sym;const p=$('px');p.textContent=f(L.close);p.className='hp'+(prev==null||prev===L.close?'':L.close>prev?' u':' d');
-  const d=L.close-ref,pc=d/ref*100;$('chg').textContent=(d>=0?'+':'')+f(d)+' ('+(d>=0?'+':'')+pc.toFixed(2)+'%)';$('chg').className='hc '+(d>=0?'u':'d');
-  $('sp').textContent=$('bp').textContent=f(L.close);
+  const B=S.bars,L=last(),px=S.quote?.price??L.close;let ref;if(intr()){const d=L.timestamp.slice(0,10);ref=(B.find(b=>b.timestamp.slice(0,10)===d)||B[0]).open}else ref=(B[B.length-2]||L).close;
+  $('hs').textContent=S.sym;const p=$('px');p.textContent=f(px);p.className='hp'+(prev==null||prev===px?'':px>prev?' u':' d');
+  const d=px-ref,pc=d/ref*100;$('chg').textContent=(d>=0?'+':'')+f(d)+' ('+(d>=0?'+':'')+pc.toFixed(2)+'%)';$('chg').className='hc '+(d>=0?'u':'d');
+  $('sp').textContent=$('bp').textContent=f(px);
 }
+async function quote(){const r=await fetch(`${API}/api/market-quote?type=${S.type}&symbol=${encodeURIComponent(S.sym)}`,{cache:'no-store'});const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok||!Number.isFinite(Number(j.price))||Number(j.price)<=0)throw new Error(j.error||('HTTP '+r.status));return {price:Number(j.price),timestamp:j.timestamp||new Date().toISOString(),source:j.source||'MARKET DATA'};}
 /* ---------- chart ---------- */
 const cv=$('cv'),cx=cv.getContext('2d');
 function draw(){
@@ -106,7 +107,7 @@ function exec(sym,sg,px,why){
 function trade(side){
   const L=last();if(!L)return toast('Wait for market data to load first.');
   const q=+$('qty').value;if(!(q>0))return toast('Enter a quantity above 0.');
-  const px=L.close,sg=side==='BUY'?q:-q,p=A.pos[S.sym],opening=!p||Math.sign(p.q)===Math.sign(sg);
+  const px=S.quote?.price??L.close,sg=side==='BUY'?q:-q,p=A.pos[S.sym],opening=!p||Math.sign(p.q)===Math.sign(sg);
   const sl=+$('sl').value||0,tp=+$('tp').value||0;
   if(opening){
     if(side==='BUY'&&((sl&&sl>=px)||(tp&&tp<=px)))return toast('For a BUY: stop loss must be below and take profit above the price.');
@@ -116,7 +117,7 @@ function trade(side){
   exec(S.sym,sg,px,side);const np=A.pos[S.sym];if(np&&Math.sign(np.q)===Math.sign(sg)){np.sl=sl||null;np.tp=tp||null}
   toast(side+' '+q+' '+S.sym+' @ '+f(px));acct();draw();
 }
-function closeAll(){const p=A.pos[S.sym],L=last();if(!p)return toast('No open '+S.sym+' position to close.');exec(S.sym,-p.q,L.close,'CLOSE');toast('Closed '+S.sym+' @ '+f(L.close));acct();draw()}
+function closeAll(){const p=A.pos[S.sym],L=last();if(!p)return toast('No open '+S.sym+' position to close.');const px=S.quote?.price??L.close;exec(S.sym,-p.q,px,'CLOSE');toast('Closed '+S.sym+' @ '+f(px));acct();draw()}
 function guard(){
   const p=A.pos[S.sym],L=last();if(!p)return;const b=S.bars.filter(x=>Date.parse(x.timestamp)>p.t),lo=Math.min(L.close,...b.map(x=>x.low)),hi=Math.max(L.close,...b.map(x=>x.high)),lg=p.q>0;let h=null;
   if(p.sl&&(lg?lo<=p.sl:hi>=p.sl))h=[p.sl,'STOP LOSS'];else if(p.tp&&(lg?hi>=p.tp:lo<=p.tp))h=[p.tp,'TAKE PROFIT'];
