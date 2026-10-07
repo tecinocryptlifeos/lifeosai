@@ -156,11 +156,11 @@ jobs:
             -X PATCH \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             -H "Content-Type: application/json" \
-            --data '{"production_branch":"main","production_deployments_enabled":false}' \
+            --data '{"production_branch":"main","production_deployments_enabled":true}' \
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT" \
             -o "$RUNNER_TEMP/trading-pages-project-updated.json"
-          echo "TRADING_PAGES_PRODUCTION_AUTODEPLOY=DISABLED"
-          echo "TRADING_PAGES_MANUAL_DEPLOYMENT=AUTHORITATIVE"
+          echo "TRADING_PAGES_PRODUCTION_AUTODEPLOY=ENABLED"
+          echo "TRADING_PAGES_GIT_DEPLOYMENT=AUTHORITATIVE"
           echo "TRADING_PAGES_PRODUCTION_ENVIRONMENT=PASS"
 
       - name: Verify Trading Pages production deployment
@@ -172,11 +172,11 @@ jobs:
           deployment_json="$RUNNER_TEMP/trading-pages-deployments.json"
           export DEPLOYMENT_URL="$deployment_url"
           found=""
-          for attempt in $(seq 1 12); do
+          for attempt in $(seq 1 36); do
             curl --fail --silent --show-error --location --max-time 30 \
               -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
               -H "Content-Type: application/json" \
-              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments?env=production&per_page=25" \
+              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments?env=production&per_page=100" \
               -o "$deployment_json"
             found="$(python - <<'PY'
           import json, os
@@ -184,7 +184,9 @@ jobs:
           d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-deployments.json").read_text())
           target=None
           for row in d.get("result",[]):
-              if os.environ["DEPLOYMENT_URL"] in (row.get("aliases") or []) and row.get("environment") == "production" and row.get("latest_stage",{}).get("status") == "success":
+              trigger=row.get("deployment_trigger") or {}
+              metadata=trigger.get("metadata") or row.get("metadata") or {}
+              if metadata.get("commit_hash") == os.environ["GITHUB_SHA"] and row.get("environment") == "production" and row.get("latest_stage",{}).get("status") == "success":
                   target=row
                   break
           if target:
@@ -192,7 +194,7 @@ jobs:
           PY
             )"
             if [ -n "$found" ]; then break; fi
-            echo "Waiting for manual Trading Pages production deployment $DEPLOYMENT_URL (attempt $attempt/12); waiting 5s."
+            echo "Waiting for Git-integrated Trading Pages deployment for $GITHUB_SHA (attempt $attempt/36); waiting 5s."
             sleep 5
           done
           test -n "$found"
@@ -210,7 +212,7 @@ jobs:
           assert d.get("success") is True, d
           canonical=d["result"].get("canonical_deployment") or {}
           if canonical.get("id") != os.environ["TRADING_PAGES_DEPLOYMENT_ID"]:
-              raise SystemExit("Canonical Pages deployment does not match the manual production deployment")
+              raise SystemExit("Canonical Pages deployment does not match the verified Git production deployment")
           print("TRADING_PAGES_CANONICAL_DEPLOYMENT=PASS")
           print("TRADING_PAGES_CANONICAL_URL="+str(canonical.get("url")))
           PY
