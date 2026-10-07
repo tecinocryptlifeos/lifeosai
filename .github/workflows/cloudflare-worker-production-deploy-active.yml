@@ -185,7 +185,7 @@ jobs:
           deployment_url="$(grep -Eo 'https://[a-f0-9]+\.lifeos-trade-system\.pages\.dev' "$deploy_log" | tail -n 1 || true)"
           test -n "$deployment_url"
           echo "TRADING_PAGES_DEPLOYMENT_URL=$deployment_url"
-          echo "Generated Pages deployment URL is informational; canonical site is the production authority."
+          echo "Generated Pages deployment URL is the production target for this deployment."
           curl --fail --silent --show-error --location --max-time 30 \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             -H "Content-Type: application/json" \
@@ -205,6 +205,33 @@ jobs:
           assert latest.get("latest_stage",{}).get("status") == "success", latest
           PY
           echo "TRADING_PAGES_LATEST_DEPLOYMENT=PASS"
+          deployment_id="$(python - <<'PY'
+          import json, os
+          from pathlib import Path
+          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-latest.json").read_text())
+          latest=d["result"][0]
+          aliases=latest.get("aliases") or []
+          if os.environ["DEPLOYMENT_URL"] not in aliases:
+              raise SystemExit("Latest Pages deployment does not match the deployment just created")
+          print(latest["id"])
+          PY
+          )" 
+          export DEPLOYMENT_ID="$deployment_id"
+          export DEPLOYMENT_URL="$deployment_url"
+          curl --fail --silent --show-error --location --max-time 30 \
+            -X POST \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$LIFEOS_TRADING_PAGES_PROJECT/deployments/$deployment_id/rollback" \
+            -o "$RUNNER_TEMP/trading-pages-promoted.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-promoted.json").read_text())
+          assert d.get("success") is True, d
+          print("TRADING_PAGES_PRODUCTION_TARGET="+str(d["result"].get("url")))
+          PY
+          echo "TRADING_PAGES_PRODUCTION_PROMOTION=PASS"
           curl --fail --silent --show-error --location --max-time 30 --retry 12 --retry-delay 5 --retry-all-errors --output "$verify/index.html" "$deployment_url/?v=$GITHUB_SHA"
           test -s "$verify/index.html"
           echo "TRADING_CANONICAL_HTTP=200"
