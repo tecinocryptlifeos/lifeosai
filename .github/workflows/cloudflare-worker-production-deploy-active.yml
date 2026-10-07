@@ -198,6 +198,7 @@ jobs:
             sleep 5
           done
           test -n "$found"
+          export TRADING_PAGES_DEPLOYMENT_ID="$found"
           echo "TRADING_PAGES_DEPLOYMENT_ID=$found"
           curl --fail --silent --show-error --location --max-time 30 \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
@@ -215,14 +216,7 @@ jobs:
           print("TRADING_PAGES_CANONICAL_DEPLOYMENT=PASS")
           print("TRADING_PAGES_CANONICAL_URL="+str(canonical.get("url")))
           PY
-          canonical_url="$(python - <<'PY'
-          import json, os
-          from pathlib import Path
-          d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/trading-pages-project-after-deploy.json").read_text())
-          print((d["result"].get("canonical_deployment") or {}).get("url",""))
-          PY
-          )"
-          test -n "$canonical_url"
+          canonical_url="$LIFEOS_TRADING_SITE"
           echo "PAGES_CANONICAL_URL=$canonical_url"
           canonical_http="$(curl --silent --show-error --location --max-time 30 --output "$RUNNER_TEMP/trading-pages-index.html" --write-out '%{http_code}' "$canonical_url/?v=$GITHUB_SHA" || true)"
           echo "PAGES_CANONICAL_HTTP=$canonical_http"
