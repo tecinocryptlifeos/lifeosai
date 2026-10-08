@@ -65,7 +65,9 @@ function draw(){
   if(cv.width!==Math.round(w*d)||cv.height!==Math.round(h*d)){cv.width=Math.round(w*d);cv.height=Math.round(h*d)}
   cx.setTransform(d,0,0,d,0,0);cx.clearRect(0,0,w,h);const B=S.bars;if(!B.length)return;
   const n=Math.min(S.n,B.length);S.off=Math.max(0,Math.min(S.off,B.length-n));
-  const end=B.length-S.off,st=end-n,li=B.length-1,PW=w-72,TH=h-22,VH=Math.round(TH*.15),CH=TH-VH-8,bw=PW/n;
+  const end=B.length-S.off,st=end-n,li=B.length-1,PW=w-72,TH=h-22,VH=Math.round(TH*.15),CH=TH-VH-8;
+  // Reserve a deliberate future-space gutter so the latest candle is never pinned to the right edge.
+  const futureGap=Math.max(56,Math.min(110,PW*.14)),plotW=Math.max(120,PW-futureGap),bw=plotW/n;
   const W=B.slice(st,end).map((b,i)=>st+i===li&&S.disp!=null?{...b,close:S.disp,high:Math.max(b.high,S.disp),low:Math.min(b.low,S.disp)}:b);
   let lo=Math.min(...W.map(b=>b.low)),hi=Math.max(...W.map(b=>b.high));const pd=(hi-lo||hi*.001)*.08;lo-=pd;hi+=pd;
   const Y=p=>CH-(p-lo)/(hi-lo)*CH,X=i=>i*bw+bw/2;
@@ -83,19 +85,20 @@ const sw=swingPoints(B);if(S.patterns.levels){for(const z of [...sw.hi.slice(-3)
   const lb=B[li],lp=S.disp==null?lb.close:S.disp;line(lp,lp>=lb.open?UP:DN,f(lp),[4,3]);
   const po=A.pos[S.sym];if(po){line(po.avg,'#4c8dff',(po.q>0?'LONG ':'SHORT ')+f(po.avg),[6,4]);if(po.sl)line(po.sl,DN,'SL '+f(po.sl),[2,3]);if(po.tp)line(po.tp,UP,'TP '+f(po.tp),[2,3])}
   const c=S.cross;let sel=lb;
-  if(c&&c.x<PW&&c.y<TH){const i=Math.min(n-1,Math.max(0,Math.floor(c.x/bw)));sel=W[i];cx.strokeStyle='rgba(255,255,255,.3)';cx.setLineDash([3,3]);cx.beginPath();cx.moveTo(X(i),0);cx.lineTo(X(i),TH);cx.moveTo(0,c.y);cx.lineTo(PW,c.y);cx.stroke();cx.setLineDash([]);
+  if(c&&c.x<plotW&&c.y<TH){const i=Math.min(n-1,Math.max(0,Math.floor(c.x/bw)));sel=W[i];cx.strokeStyle='rgba(255,255,255,.3)';cx.setLineDash([3,3]);cx.beginPath();cx.moveTo(X(i),0);cx.lineTo(X(i),TH);cx.moveTo(0,c.y);cx.lineTo(PW,c.y);cx.stroke();cx.setLineDash([]);
     if(c.y<CH){const p=lo+(CH-c.y)/CH*(hi-lo);cx.fillStyle='#2a3558';cx.fillRect(PW,c.y-9,72,18);cx.fillStyle='#fff';cx.textBaseline='middle';cx.fillText(p.toFixed(dp(p)),PW+5,c.y)}}
   $('ohlc').textContent=`${ft(sel.timestamp,true)}  O ${f(sel.open)}  H ${f(sel.high)}  L ${f(sel.low)}  C ${f(sel.close)}  Vol ${Math.round(sel.volume||0).toLocaleString()}`;
 }
 const zoom=(k,anchorX)=>{const oldN=Math.min(S.n,S.bars.length||1),oldOff=S.off,oldEnd=S.bars.length-oldOff,ratio=anchorX==null?.5:Math.max(0,Math.min(1,anchorX)),anchorIndex=Math.max(0,Math.min(S.bars.length-1,Math.floor((oldEnd-oldN)+ratio*oldN)));S.n=Math.round(Math.max(15,Math.min(300,S.n*k)));const newN=Math.min(S.n,S.bars.length||1),targetEnd=anchorIndex+Math.round((1-ratio)*newN);S.off=Math.max(0,Math.min(S.bars.length-newN,S.bars.length-targetEnd));draw()};
-const P=new Map();let lx=0,pdist=0;
-cv.onpointerdown=e=>{cv.setPointerCapture(e.pointerId);P.set(e.pointerId,e);lx=e.clientX;pdist=0};
+const P=new Map();let lx=0,pdist=0,drawStart=null;
+cv.onpointerdown=e=>{cv.setPointerCapture(e.pointerId);P.set(e.pointerId,e);lx=e.clientX;pdist=0;
+  if(S.drawMode&&P.size===1){const r=cv.getBoundingClientRect();drawStart={x:e.clientX-r.left,y:e.clientY-r.top};}};
 cv.onpointermove=e=>{const r=cv.getBoundingClientRect();S.cross={x:e.clientX-r.left,y:e.clientY-r.top};
   if(P.has(e.pointerId)){P.set(e.pointerId,e);
     if(P.size===2){const[a,b]=[...P.values()],d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);if(pdist){const r=cv.getBoundingClientRect(),ax=((a.clientX+b.clientX)/2-r.left)/r.width;zoom(pdist/d,ax)}pdist=d}
-    else{const bw=(cv.clientWidth-72)/Math.min(S.n,S.bars.length||1),k=Math.trunc((e.clientX-lx)/bw);if(k){S.off+=k;lx+=k*bw}}}
+    else if(!S.drawMode){const bw=Math.max(1,(cv.clientWidth-72-Math.max(56,Math.min(110,(cv.clientWidth-72)*.14)))/Math.min(S.n,S.bars.length||1)),k=Math.trunc((e.clientX-lx)/bw);if(k){S.off+=k;lx+=k*bw}}}
   draw()};
-cv.onpointerup=cv.onpointercancel=e=>{if(e.type==='pointerup'&&S.drawMode&&P.size===1){const r=cv.getBoundingClientRect(),a={x:lx-r.left,y:e.clientY-r.top},b={x:e.clientX-r.left,y:e.clientY-r.top},n=Math.min(S.n,S.bars.length||1),bw=(cv.clientWidth-72)/Math.max(1,n),end=S.bars.length-S.off,st=end-n,ix=x=>st+Math.max(0,Math.min(n-1,Math.floor(x/bw))),price=y=>{const W=S.bars.slice(st,end),hi=Math.max(...W.map(b=>b.high)),lo=Math.min(...W.map(b=>b.low)),pd=(hi-lo||hi*.001)*.08,LL=lo-pd,HH=hi+pd,CH=(cv.clientHeight-22)*.85;return LL+(CH-y)/CH*(HH-LL)};const p1=price(a.y),p2=price(b.y);if(S.drawMode==='hline')S.drawings.push({kind:'hline',price:p1});else if(Math.abs(b.x-a.x)>8)S.drawings.push({kind:'trend',i1:ix(a.x),i2:ix(b.x),p1,p2});S.drawMode=null;$('trendTool').classList.remove('on');$('hlineTool').classList.remove('on')}P.delete(e.pointerId);pdist=0;if(e.pointerType==='touch')S.cross=null;draw()};
+cv.onpointerup=cv.onpointercancel=e=>{if(e.type==='pointerup'&&S.drawMode&&P.size===1){const r=cv.getBoundingClientRect(),a=drawStart||{x:lx-r.left,y:e.clientY-r.top},b={x:e.clientX-r.left,y:e.clientY-r.top},n=Math.min(S.n,S.bars.length||1),plotW=Math.max(120,cv.clientWidth-72-Math.max(56,Math.min(110,(cv.clientWidth-72)*.14))),bw=plotW/Math.max(1,n),end=S.bars.length-S.off,st=end-n,ix=x=>st+Math.max(0,Math.min(n-1,Math.floor(x/bw))),price=y=>{const W=S.bars.slice(st,end),hi=Math.max(...W.map(b=>b.high)),lo=Math.min(...W.map(b=>b.low)),pd=(hi-lo||hi*.001)*.08,LL=lo-pd,HH=hi+pd,CH=(cv.clientHeight-22)*.85;return LL+(CH-y)/CH*(HH-LL)};const p1=price(a.y),p2=price(b.y);if(S.drawMode==='hline')S.drawings.push({kind:'hline',price:p1});else if(Math.abs(b.x-a.x)>8)S.drawings.push({kind:'trend',i1:ix(a.x),i2:ix(b.x),p1,p2});S.drawMode=null;$('trendTool').classList.remove('on');$('hlineTool').classList.remove('on')}P.delete(e.pointerId);pdist=0;drawStart=null;if(e.pointerType==='touch')S.cross=null;draw()};
 cv.onpointerleave=()=>{S.cross=null;draw()};
 cv.addEventListener('wheel',e=>{e.preventDefault();const r=cv.getBoundingClientRect();zoom(e.deltaY>0?1.15:1/1.15,(e.clientX-r.left)/r.width)},{passive:false});
 $('zi').onclick=()=>zoom(1/1.25,.5);$('zo').onclick=()=>zoom(1.25,.5);$('zr').onclick=()=>{S.off=0;S.n=80;draw()};
