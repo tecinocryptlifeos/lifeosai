@@ -53,7 +53,7 @@ async function alpacaFetchBars(env,symbol,type,interval,limit) {
   if (!alpacaConfigured(env)) throw new Error("Alpaca credentials are not configured");
   const url=new URL(type==="crypto"?ALPACA_CRYPTO_BASE:ALPACA_STOCK_BASE+"/"+encodeURIComponent(symbol)+"/bars");
   if(type==="crypto") url.searchParams.set("symbols",symbol);
-  url.searchParams.set("timeframe",ALPACA_TIMEFRAMES[interval]); url.searchParams.set("limit",String(limit)); url.searchParams.set("sort","asc");
+  url.searchParams.set("timeframe",ALPACA_TIMEFRAMES[interval]); url.searchParams.set("limit",String(limit)); url.searchParams.set("sort","desc");
   const range = alpacaDateRange(interval);
   url.searchParams.set("start",range.start); url.searchParams.set("end",range.end);
   if(type==="stock") url.searchParams.set("feed",String(env.ALPACA_DATA_FEED||ALPACA_FEED));
