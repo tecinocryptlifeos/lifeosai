@@ -6,7 +6,7 @@ crypto:[['BTC/USD','Bitcoin'],['ETH/USD','Ethereum'],['SOL/USD','Solana'],['XRP/
 const TF={'1m':['1m',1],'5m':['5m',5],'15m':['15m',15],'30m':['30m',30],'1H':['1h',60],'1D':['1d',1440],'1W':['1wk',10080],'1M':['1mo',43200]};
 const UP='#16c784',DN='#ea3943',MUT='#8a94a6',GRID='rgba(255,255,255,.06)';
 const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch{return d}},sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
-const S={tab:'crypto',type:'crypto',sym:'BTC/USD',tf:'5m',bars:[],n:80,off:0,live:true,disp:null,from:0,t0:0,raf:0,cross:null,err:0,req:0,timer:0,nextAt:0,stale:false,s20:[],s50:[],sig:null,quote:null};
+const S={tab:'crypto',type:'crypto',sym:'BTC/USD',tf:'5m',bars:[],n:80,off:0,live:true,disp:null,from:0,t0:0,raf:0,cross:null,err:0,req:0,timer:0,nextAt:0,stale:false,s20:[],s50:[],sig:null,quote:null,studies:{sma20:false,sma50:false,rsi:false,atr:false},patterns:{structure:false,levels:false,breaks:false},drawMode:null,drawings:[]};
 let A=ld('losai_demo_v1',{bal:10000,pos:{},ord:[]}),H=ld('losai_sigs_v1',[]);const LP={};
 const WAT='Africa/Lagos';
 const EXCHANGE_TZ='America/New_York';
@@ -54,6 +54,11 @@ function head(prev){
 }
 async function quote(){const r=await fetch(`${API}/api/market-quote?type=${S.type}&symbol=${encodeURIComponent(S.sym)}`,{cache:'no-store'});const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok||!Number.isFinite(Number(j.price))||Number(j.price)<=0)throw new Error(j.error||('HTTP '+r.status));return {price:Number(j.price),timestamp:j.timestamp||new Date().toISOString(),source:j.source||'MARKET DATA'};}
 /* ---------- chart ---------- */
+function rsi14(B){if(B.length<15)return null;let g=0,l=0;for(let i=B.length-14;i<B.length;i++){const d=B[i].close-B[i-1].close;if(d>0)g+=d;else l-=d}return l===0?100:100-100/(1+g/l)}
+function atr14(B){if(B.length<15)return null;let s=0;for(let i=B.length-14;i<B.length;i++)s+=Math.max(B[i].high-B[i].low,Math.abs(B[i].high-B[i-1].close),Math.abs(B[i].low-B[i-1].close));return s/14}
+function swingPoints(B){const hi=[],lo=[];for(let i=2;i<B.length-2;i++){if(B[i].high>=B[i-1].high&&B[i].high>=B[i+1].high)hi.push({i,p:B[i].high});if(B[i].low<=B[i-1].low&&B[i].low<=B[i+1].low)lo.push({i,p:B[i].low})}return {hi:hi.slice(-8),lo:lo.slice(-8)}}
+function drawLine(a,b,dash){cx.save();cx.strokeStyle='#9aa6bd';cx.lineWidth=1.5;cx.setLineDash(dash||[5,4]);cx.beginPath();cx.moveTo(a.x,a.y);cx.lineTo(b.x,b.y);cx.stroke();cx.restore()}
+
 const cv=$('cv'),cx=cv.getContext('2d');
 function draw(){
   const w=cv.clientWidth,h=cv.clientHeight,d=devicePixelRatio||1;if(!w||!h)return;
@@ -72,7 +77,8 @@ function draw(){
   W.forEach((b,i)=>{const x=X(i),c=b.close>=b.open?UP:DN;cx.strokeStyle=cx.fillStyle=c;cx.beginPath();cx.moveTo(x,Y(b.high));cx.lineTo(x,Y(b.low));cx.stroke();
     cx.fillRect(x-bw*.35,Y(Math.max(b.open,b.close)),Math.max(1,bw*.7),Math.max(1,Math.abs(Y(b.open)-Y(b.close))));
     if(b.volume){cx.globalAlpha=.35;const vh=b.volume/vm*VH;cx.fillRect(x-bw*.35,TH-vh,Math.max(1,bw*.7),vh);cx.globalAlpha=1}});
-  for(const[arr,col]of[[S.s20,'#f5a623'],[S.s50,'#4c8dff']]){cx.strokeStyle=col;cx.beginPath();let s=0;W.forEach((_,i)=>{const v=arr[st+i];if(v==null)return;s?cx.lineTo(X(i),Y(v)):(cx.moveTo(X(i),Y(v)),s=1)});cx.stroke()}
+  if(S.studies.sma20)for(const[arr,col]of[[S.s20,'#f5a623']]){cx.strokeStyle=col;cx.lineWidth=1.2;cx.beginPath();let s=0;W.forEach((_,i)=>{const v=arr[st+i];if(v==null)return;s?cx.lineTo(X(i),Y(v)):(cx.moveTo(X(i),Y(v)),s=1)});cx.stroke()}if(S.studies.sma50)for(const[arr,col]of[[S.s50,'#4c8dff']]){cx.strokeStyle=col;cx.lineWidth=1.2;cx.beginPath();let s=0;W.forEach((_,i)=>{const v=arr[st+i];if(v==null)return;s?cx.lineTo(X(i),Y(v)):(cx.moveTo(X(i),Y(v)),s=1)});cx.stroke()}
+const sw=swingPoints(B);if(S.patterns.levels){for(const z of [...sw.hi.slice(-3),...sw.lo.slice(-3)]){const y=Y(z.p);cx.strokeStyle='rgba(138,148,166,.45)';cx.setLineDash([2,4]);cx.beginPath();cx.moveTo(0,y);cx.lineTo(PW,y);cx.stroke();cx.setLineDash([])}}if(S.patterns.structure&&sw.hi.length>=2&&sw.lo.length>=2){const a=sw.lo.slice(-2),b=sw.hi.slice(-2);drawLine({x:X(a[0].i-st),y:Y(a[0].p)},{x:X(a[1].i-st),y:Y(a[1].p)});drawLine({x:X(b[0].i-st),y:Y(b[0].p)},{x:X(b[1].i-st),y:Y(b[1].p)})}if(S.patterns.breaks&&S.sig&&S.sig.break!=='NONE'){cx.fillStyle=S.sig.break.includes('BULLISH')?UP:DN;cx.font='700 11px system-ui';cx.fillText(S.sig.break,X(Math.max(0,n-14)),18)}for(const d of S.drawings){if(d.kind==='hline'){const y=Y(d.price);if(y>=0&&y<=CH)drawLine({x:0,y},{x:PW,y})}else{const x1=X(d.i1-st),x2=X(d.i2-st);if(x1>=-bw&&x2<=PW+bw)drawLine({x:x1,y:Y(d.p1)},{x:x2,y:Y(d.p2)})}}if(S.studies.rsi||S.studies.atr){const a=[];if(S.studies.rsi){const v=rsi14(B);if(v!=null)a.push('RSI 14 '+v.toFixed(1))}if(S.studies.atr){const v=atr14(B);if(v!=null)a.push('ATR 14 '+f(v))}$('indicatorReadout').textContent=a.join('  ·  ')}else $('indicatorReadout').textContent=''
   const line=(p,col,txt,da)=>{if(p<lo||p>hi)return;const y=Y(p);cx.setLineDash(da);cx.strokeStyle=col;cx.beginPath();cx.moveTo(0,y);cx.lineTo(PW,y);cx.stroke();cx.setLineDash([]);cx.fillStyle=col;cx.fillRect(PW,y-9,72,18);cx.fillStyle='#fff';cx.textBaseline='middle';cx.fillText(txt,PW+5,y)};
   const lb=B[li],lp=S.disp==null?lb.close:S.disp;line(lp,lp>=lb.open?UP:DN,f(lp),[4,3]);
   const po=A.pos[S.sym];if(po){line(po.avg,'#4c8dff',(po.q>0?'LONG ':'SHORT ')+f(po.avg),[6,4]);if(po.sl)line(po.sl,DN,'SL '+f(po.sl),[2,3]);if(po.tp)line(po.tp,UP,'TP '+f(po.tp),[2,3])}
@@ -89,10 +95,14 @@ cv.onpointermove=e=>{const r=cv.getBoundingClientRect();S.cross={x:e.clientX-r.l
     if(P.size===2){const[a,b]=[...P.values()],d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);if(pdist){const r=cv.getBoundingClientRect(),ax=((a.clientX+b.clientX)/2-r.left)/r.width;zoom(pdist/d,ax)}pdist=d}
     else{const bw=(cv.clientWidth-72)/Math.min(S.n,S.bars.length||1),k=Math.trunc((e.clientX-lx)/bw);if(k){S.off+=k;lx+=k*bw}}}
   draw()};
-cv.onpointerup=cv.onpointercancel=e=>{P.delete(e.pointerId);pdist=0;if(e.pointerType==='touch')S.cross=null;draw()};
+cv.onpointerup=cv.onpointercancel=e=>{if(e.type==='pointerup'&&S.drawMode&&P.size===1){const r=cv.getBoundingClientRect(),a={x:lx-r.left,y:e.clientY-r.top},b={x:e.clientX-r.left,y:e.clientY-r.top},n=Math.min(S.n,S.bars.length||1),bw=(cv.clientWidth-72)/Math.max(1,n),end=S.bars.length-S.off,st=end-n,ix=x=>st+Math.max(0,Math.min(n-1,Math.floor(x/bw))),price=y=>{const W=S.bars.slice(st,end),hi=Math.max(...W.map(b=>b.high)),lo=Math.min(...W.map(b=>b.low)),pd=(hi-lo||hi*.001)*.08,LL=lo-pd,HH=hi+pd,CH=(cv.clientHeight-22)*.85;return LL+(CH-y)/CH*(HH-LL)};const p1=price(a.y),p2=price(b.y);if(S.drawMode==='hline')S.drawings.push({kind:'hline',price:p1});else if(Math.abs(b.x-a.x)>8)S.drawings.push({kind:'trend',i1:ix(a.x),i2:ix(b.x),p1,p2});S.drawMode=null;$('trendTool').classList.remove('on');$('hlineTool').classList.remove('on')}P.delete(e.pointerId);pdist=0;if(e.pointerType==='touch')S.cross=null;draw()};
 cv.onpointerleave=()=>{S.cross=null;draw()};
-cv.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY>0?1.15:1/1.15)},{passive:false});
+cv.addEventListener('wheel',e=>{e.preventDefault();const r=cv.getBoundingClientRect();zoom(e.deltaY>0?1.15:1/1.15,(e.clientX-r.left)/r.width)},{passive:false});
 $('zi').onclick=()=>zoom(1/1.25,.5);$('zo').onclick=()=>zoom(1.25,.5);$('zr').onclick=()=>{S.off=0;S.n=80;draw()};
+function togglePanel(which){const p=$('toolPanel');p.hidden=!p.hidden;['indicatorPanel','patternPanel','drawPanel'].forEach(id=>$(id).hidden=id!==which);['indBtn','patBtn','drawBtn'].forEach(id=>$(id).classList.toggle('active',id[0]===which[0]))}
+$('indBtn').onclick=()=>togglePanel('indicator');$('patBtn').onclick=()=>togglePanel('pattern');$('drawBtn').onclick=()=>togglePanel('draw');
+$('iSma20').onchange=e=>{S.studies.sma20=e.target.checked;draw()};$('iSma50').onchange=e=>{S.studies.sma50=e.target.checked;draw()};$('iRsi').onchange=e=>{S.studies.rsi=e.target.checked;draw()};$('iAtr').onchange=e=>{S.studies.atr=e.target.checked;draw()};$('pStructure').onchange=e=>{S.patterns.structure=e.target.checked;draw()};$('pLevels').onchange=e=>{S.patterns.levels=e.target.checked;draw()};$('pBreaks').onchange=e=>{S.patterns.breaks=e.target.checked;draw()};
+$('trendTool').onclick=()=>{S.drawMode=S.drawMode==='trend'?null:'trend';$('trendTool').classList.toggle('on',S.drawMode==='trend');$('hlineTool').classList.remove('on')};$('hlineTool').onclick=()=>{S.drawMode=S.drawMode==='hline'?null:'hline';$('hlineTool').classList.toggle('on',S.drawMode==='hline');$('trendTool').classList.remove('on')};$('clearDraw').onclick=()=>{S.drawings=[];draw()};
 addEventListener('resize',draw);
 /* ---------- demo account ---------- */
 const save=()=>sv('losai_demo_v1',A);
