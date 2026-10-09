@@ -5,6 +5,7 @@ on:
       - "trading_api/**"
       - "trading_intelligence/**"
       - "tests/unit/test_trading_planner_api.py"
+      - "web/lifeos_voice/trade-planner.html"
       - "requirements-api.txt"
       - "Dockerfile.trading-api"
       - ".github/workflows/trading-planner.yml"
@@ -13,6 +14,7 @@ on:
       - "trading_api/**"
       - "trading_intelligence/**"
       - "tests/unit/test_trading_planner_api.py"
+      - "web/lifeos_voice/trade-planner.html"
       - "requirements-api.txt"
       - "Dockerfile.trading-api"
       - ".github/workflows/trading-planner.yml"
@@ -32,6 +34,6 @@ jobs:
       - name: Compile API modules
         run: python -m compileall -q trading_api trading_intelligence
       - name: Run planner unit tests
-        run: python -m unittest tests.unit.test_trading_planner_api -v
+        run: python -m unittest discover -s tests/unit -p 'test_trading_planner_api.py' -v
       - name: Validate Dockerfile exists
         run: test -s Dockerfile.trading-api
