@@ -41,7 +41,7 @@ function validSymbol(value){
   if(!/^[A-Z0-9_.:/-]{2,20}$/.test(symbol))throw new GatewayError(400,"INVALID_SYMBOL","A valid instrument symbol is required.");
   return symbol;
 }
-function intervalMs(interval){return ({ "1m":60000,"5m":300000,"15m":900000,"30m":1800000,"1h":3600000,"1d":86400000,"1wk":604800000 })[interval]||3600000;}
+function intervalMs(interval){return ({ "1m":60000,"5m":300000,"10m":600000,"15m":900000,"30m":1800000,"1h":3600000,"1d":86400000,"1wk":604800000 })[interval]||3600000;}
 async function rows(request,env,table,params){
   const query=new URLSearchParams(params);
   const result=await rest(request,env,table,query);
