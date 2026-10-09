@@ -2,6 +2,7 @@ import unittest
 from datetime import datetime, timezone
 from trading_api.planner import session_for, build_plan
 from trading_api.schemas import PlanRequest
+from trading_api.main import app
 
 class PlannerTests(unittest.TestCase):
     instrument={"symbol":"EURUSD","asset_class":"forex","pip_size":0.0001,"price_decimals":5,"contract_size":100000,"display_name":"Euro / US Dollar"}
@@ -26,5 +27,10 @@ class PlannerTests(unittest.TestCase):
             build_plan(PlanRequest(symbol="EURUSD",timeframe="H1",direction="buy",entry=1.1,stop=1.096),self.instrument,{"account_balance":0},[])
     def test_weekend_session_is_explicit(self):
         self.assertEqual(session_for(datetime(2026,3,14,12,tzinfo=timezone.utc)),"weekend")
+    def test_api_exposes_no_order_execution_route(self):
+        paths={route.path for route in app.routes}
+        self.assertIn("/health",paths)
+        self.assertIn("/plan",paths)
+        self.assertFalse(any("order" in path.lower() or "execute" in path.lower() for path in paths))
 
 if __name__=="__main__": unittest.main()
