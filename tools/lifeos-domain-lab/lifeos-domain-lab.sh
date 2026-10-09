@@ -119,7 +119,7 @@ probe() {
 
 dns() {
   local host
-  host="$(normalize_host "${1:-lifeos-trade-pages.dev}")" || return $?
+  host="$(normalize_host "${1:-lifeos-trade-system.pages.dev}")" || return $?
   need_dns || return 1
   echo "DNS records observed for $host"
   local type
@@ -132,7 +132,7 @@ dns() {
 
 tls() {
   local host
-  host="$(normalize_host "${1:-lifeos-trade-pages.dev}")" || return $?
+  host="$(normalize_host "${1:-lifeos-trade-system.pages.dev}")" || return $?
   if ! has openssl; then
     echo "Missing openssl. On Termux run: pkg install openssl" >&2
     return 1
@@ -250,8 +250,8 @@ shift || true
 case "$command" in
   doctor) doctor ;;
   probe) probe "${1:-$ORIGIN}" ;;
-  dns) dns "${1:-lifeos-trade-pages.dev}" ;;
-  tls) tls "${1:-lifeos-trade-pages.dev}" ;;
+  dns) dns "${1:-lifeos-trade-system.pages.dev}" ;;
+  tls) tls "${1:-lifeos-trade-system.pages.dev}" ;;
   email) email "${1:-}" ;;
   candidates) candidates ;;
   report) report "${1:-$ORIGIN}" ;;
