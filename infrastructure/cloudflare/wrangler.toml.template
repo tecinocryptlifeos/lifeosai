@@ -10,9 +10,9 @@ send_metrics = false
 [observability]
 enabled = true
 
-# Production has no scheduled handler. Explicitly remove any stale cron trigger.
+# Hourly, daily, and weekly market-structure scans. Cron schedules are UTC.
 [triggers]
-crons = []
+crons = ["0 * * * *", "0 0 * * *", "0 0 * * 1"]
 
 [vars]
 LIFEOS_ALLOWED_ORIGINS = "__LIFEOS_ALLOWED_ORIGINS__"
