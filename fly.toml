@@ -1,0 +1,31 @@
+app = "lifeosai-trading-planner"
+primary_region = "jnb"
+
+[build]
+  dockerfile = "Dockerfile.trading-api"
+
+[env]
+  PYTHONUNBUFFERED = "1"
+  PYTHONDONTWRITEBYTECODE = "1"
+  SUPABASE_JWT_AUDIENCE = "authenticated"
+  SUPABASE_JWT_ALGORITHM = "HS256"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "15s"
+    method = "GET"
+    path = "/health"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory = "512mb"
