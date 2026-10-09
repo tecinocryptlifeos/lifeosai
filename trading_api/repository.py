@@ -47,6 +47,10 @@ async def get_risk_profile(token: str):
 async def get_open_trades(token: str):
     return await _get(token,"trading_trades",{"select":"risk_amount,pnl_amount","status":"eq.open"})
 
+async def get_closed_trades_today(token: str):
+    midnight=datetime.now(timezone.utc).replace(hour=0,minute=0,second=0,microsecond=0).isoformat()
+    return await _get(token,"trading_trades",{"select":"pnl_amount,closed_at","status":"eq.closed","closed_at":f"gte.{midnight}","limit":"1000"})
+
 async def get_closed_trades(token: str, days: int=365):
     since=(datetime.now(timezone.utc)-timedelta(days=max(1,min(days,3650)))).isoformat()
     return await _get(token,"trading_trades",{"select":"closed_at,pnl_amount,risk_amount,session","status":"eq.closed","closed_at":f"gte.{since}","order":"closed_at.asc","limit":"2000"})
