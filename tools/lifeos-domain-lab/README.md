@@ -31,9 +31,9 @@ If you already have the repository cloned, use `git fetch origin` and check out 
 
 ```bash
 # Inspect the existing deployment
-bash lifeos-domain-lab.sh probe lifeos-trade-pages.dev
-bash lifeos-domain-lab.sh dns lifeos-trade-pages.dev
-bash lifeos-domain-lab.sh tls lifeos-trade-pages.dev
+bash lifeos-domain-lab.sh probe lifeos-trade-system.pages.dev
+bash lifeos-domain-lab.sh dns lifeos-trade-system.pages.dev
+bash lifeos-domain-lab.sh tls lifeos-trade-system.pages.dev
 
 # Inspect a candidate namespace after you submit/receive it
 bash lifeos-domain-lab.sh dns trade.lifeos.is-a.dev
@@ -44,13 +44,13 @@ bash lifeos-domain-lab.sh tls trade.lifeos.is-a.dev
 bash lifeos-domain-lab.sh email lifeos.example
 
 # Capture a timestamped report under $HOME/lifeos-domain-lab-reports
-bash lifeos-domain-lab.sh report lifeos-trade-pages.dev
+bash lifeos-domain-lab.sh report lifeos-trade-system.pages.dev
 ```
 
 Set a different origin or report directory without editing the script:
 
 ```bash
-LIFEOS_ORIGIN=https://lifeos-trade-pages.dev LIFEOS_LAB_REPORT_DIR="$HOME/lifeos-reports" bash lifeos-domain-lab.sh report
+LIFEOS_ORIGIN=https://lifeos-trade-system.pages.dev LIFEOS_LAB_REPORT_DIR="$HOME/lifeos-reports" bash lifeos-domain-lab.sh report
 ```
 
 ## Candidate namespaces and policy checks
