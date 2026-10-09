@@ -6,7 +6,7 @@ A read-only diagnostic lab for evaluating legitimate free namespaces and attachi
 
 - Current origin HTTP response/redirect chain and response headers.
 - DNS records (A, AAAA, CNAME, NS, MX, TXT) for any hostname you specify.
-- TLS certificate dates, issuer/subject, and hostname verification for HTTPS hosts.
+- TLS handshake status, certificate-chain verification, and hostname verification for HTTPS hosts (where supported by the device's OpenSSL).
 - Email DNS basics: MX, SPF TXT, and DMARC TXT.
 - DNS/TLS observations for candidate names. DNS absence is **not proof** a name is available or can be registered.
 
