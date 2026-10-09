@@ -1,6 +1,7 @@
 const INTERVALS = {
   "1m": { interval: "1min", resolution: "1", lookbackSeconds: 7 * 86400 },
   "5m": { interval: "5min", resolution: "5", lookbackSeconds: 60 * 86400 },
+  "10m": { interval: "10min", resolution: "10", lookbackSeconds: 60 * 86400 },
   "15m": { interval: "15min", resolution: "15", lookbackSeconds: 60 * 86400 },
   "30m": { interval: "30min", resolution: "30", lookbackSeconds: 60 * 86400 },
   "1h": { interval: "1h", resolution: "60", lookbackSeconds: 730 * 86400 },
@@ -15,7 +16,7 @@ const ALPACA_CRYPTO_QUOTES = "https://data.alpaca.markets/v1beta3/crypto/us/late
 const ALPACA_STOCK_QUOTES = "https://data.alpaca.markets/v2/stocks";
 const ALPACA_FEED = "iex";
 const ALPACA_TIMEFRAMES = {"1m":"1Min","5m":"5Min","15m":"15Min","30m":"30Min","1h":"1Hour","1d":"1Day","1wk":"1Week","1mo":"1Month"};
-function validateSymbol(value, type = "stock") {
+export function validateSymbol(value, type = "stock") {
   const symbol = String(value || "").trim().toUpperCase();
   if (!TYPES.has(type)) throw new Error("Unsupported market type");
   if (!symbol || symbol.length > 40 || !/^[A-Z0-9_.:/-]+$/.test(symbol)) throw new Error("Invalid symbol");
@@ -126,7 +127,7 @@ export async function marketData(request, env) {
   const interval = url.searchParams.get("interval") || "1d", target = INTERVALS[interval];
   if (!target) throw new Error("Unsupported interval");
   const outputsize = Math.min(Math.max(Number(url.searchParams.get("outputsize") || 60), minimumBars(interval)), 5000);
-  if ((type === "stock" || type === "crypto") && alpacaConfigured(env)) {
+  if ((type === "stock" || type === "crypto") && interval !== "10m" && alpacaConfigured(env)) {
     const result = await alpacaFetchBars(env,symbol,type,interval,outputsize);
     result.provider_symbol=symbol;
     result.data_feed=type==="stock"?String(env.ALPACA_DATA_FEED||ALPACA_FEED):"us";
