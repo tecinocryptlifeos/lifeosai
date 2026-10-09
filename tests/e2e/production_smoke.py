@@ -79,7 +79,7 @@ for path in ("/api/chat-decision", "/api/gemini-live-token"):
     check("protected endpoint " + path, status in (401, 403),
           f"HTTP {status}; expected rejection without a session token")
 
-print(f"SMOKE_SUMMARY passed={10 - len(failures)}/10 failures={len(failures)}")
+print(f"SMOKE_SUMMARY passed={11 - len(failures)}/11 failures={len(failures)}")
 if failures:
     print("FAILED_CHECKS=" + ", ".join(failures))
     sys.exit(1)
