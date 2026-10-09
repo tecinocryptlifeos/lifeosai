@@ -47,7 +47,7 @@ function head(prev){
 async function qpull(){
   clearTimeout(S.qt);const id=S.req;if(!S.live||document.hidden||!S.bars.length)return;
   try{const r=await fetch(`${API}/api/market-quote?type=${S.type}&symbol=${encodeURIComponent(S.sym)}`,{cache:'no-store'}),j=await r.json();
-    if(id!==S.req||!r.ok||!j.ok)throw 0;mergeQuote(+j.price,Date.parse(j.timestamp)||Date.now())}catch{}
+    if(id!==S.req||!r.ok||!j.ok)throw 0;if(j.source){S.src=j.source;$("src").textContent=S.src}mergeQuote(+j.price,Date.parse(j.timestamp)||Date.now())}catch{}
   if(id===S.req&&S.live&&!document.hidden)S.qt=setTimeout(qpull,S.type==='forex'?30000:5000);
 }
 function mergeQuote(px,ts){
