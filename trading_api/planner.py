@@ -15,7 +15,7 @@ def session_for(now: datetime) -> str:
     if 0 <= hour < 9: return "asia"
     return "off_hours"
 
-def build_plan(req: PlanRequest, instrument: dict, profile: dict, open_trades: list[dict]) -> PlanResponse:
+def build_plan(req: PlanRequest, instrument: dict, profile: dict, open_trades: list[dict], closed_today: list[dict] | None = None) -> PlanResponse:
     equity=float(profile.get("account_balance") or 0)
     if equity <= 0: raise ValueError("account balance must be positive")
     entry, stop=req.entry, req.stop
@@ -27,7 +27,7 @@ def build_plan(req: PlanRequest, instrument: dict, profile: dict, open_trades: l
     now=datetime.now(timezone.utc)
     session=session_for(now)
     if session=="weekend" and instrument.get("asset_class")=="forex": vetoes.append("forex planning is blocked during the weekend")
-    realized_or_unrealized=sum(float(x.get("pnl_amount") or 0) for x in open_trades)
+    realized_or_unrealized=sum(float(x.get("pnl_amount") or 0) for x in (closed_today or [])) + sum(float(x.get("pnl_amount") or 0) for x in open_trades)
     daily_limit=float(profile.get("max_daily_loss_percent") or 3.0)/100
     if realized_or_unrealized < -(equity*daily_limit): vetoes.append("daily loss limit appears breached; verify account-day accounting")
     open_risk=sum(float(x.get("risk_amount") or 0) for x in open_trades)
@@ -41,8 +41,8 @@ def build_plan(req: PlanRequest, instrument: dict, profile: dict, open_trades: l
     decision=position_size(equity,entry,stop,policy)
     if not decision.allowed: vetoes.append(decision.reason)
     distance=abs(entry-stop)
-    risk_amount=decision.risk_amount if decision.allowed else 0.0
     quantity=decision.quantity if decision.allowed and not vetoes else 0.0
+    risk_amount=decision.risk_amount if quantity > 0 else 0.0
     reward=abs(req.target-entry) if req.target is not None else None
     rr=(reward/distance) if reward is not None and distance>0 else None
     pip=float(instrument["pip_size"])
