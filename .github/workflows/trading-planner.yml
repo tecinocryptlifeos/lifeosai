@@ -8,6 +8,8 @@ on:
       - "web/lifeos_voice/trade-planner.html"
       - "requirements-api.txt"
       - "Dockerfile.trading-api"
+      - "fly.toml"
+      - ".github/workflows/trading-api-fly-deploy.yml"
       - ".github/workflows/trading-planner.yml"
   pull_request:
     paths:
@@ -35,5 +37,8 @@ jobs:
         run: python -m compileall -q trading_api trading_intelligence
       - name: Run planner unit tests
         run: python -m unittest discover -s tests/unit -p 'test_trading_planner_api.py' -v
-      - name: Validate Dockerfile exists
-        run: test -s Dockerfile.trading-api
+      - name: Validate deployment manifests
+        run: |
+          test -s Dockerfile.trading-api
+          test -s .github/workflows/trading-api-fly-deploy.yml
+          python -c "import tomllib; tomllib.load(open('fly.toml', 'rb'))"
