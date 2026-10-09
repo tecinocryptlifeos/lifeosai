@@ -4,7 +4,7 @@ A read-only diagnostic lab for evaluating legitimate free namespaces and attachi
 
 ## What it tests
 
-- Current origin HTTP response/redirect chain and response headers.
+- Current origin HTTP response status, redirect destination, remote IP, and curl's TLS verification result.
 - DNS records (A, AAAA, CNAME, NS, MX, TXT) for any hostname you specify.
 - TLS handshake status, certificate-chain verification, and hostname verification for HTTPS hosts (where supported by the device's OpenSSL).
 - Email DNS basics: MX, SPF TXT, and DMARC TXT.
@@ -82,6 +82,6 @@ The $0 objective remains valid: find a namespace that **actually delegates a hos
 ## Safety and scope
 
 - All commands are diagnostic; no DNS writes, PR submissions, registrar changes, email sending, or production deployment.
-- Reports can include public hostnames and response headers. Review a report before publishing it.
+- Reports include public hostnames and HTTP/TLS outcomes. Review a report before publishing it.
 - Never paste API tokens, passwords, mail credentials, or private keys into reports.
 - DNS query results are snapshots and may differ by resolver/region; registration eligibility and provider rules require manual confirmation.
