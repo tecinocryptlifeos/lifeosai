@@ -97,3 +97,8 @@ const liveButton = $("lv");
 if (liveButton) liveButton.addEventListener("click", () => setTimeout(() => {
   if (S.live) { connectStream(); loadIntelligence(); } else closeMarketStream();
 }, 0));
+
+// Start the overlay and stream on initial page load; reconnect logic handles symbol changes.
+connectStream();
+loadIntelligence();
+setInterval(() => { if (S.live && !document.hidden) connectStream(); }, 5000);
