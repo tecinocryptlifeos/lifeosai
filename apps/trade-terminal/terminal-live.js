@@ -24,8 +24,7 @@ function connectStream() {
   socket.addEventListener("open", () => {
     if (S.ws !== socket) return;
     S.wsRetry = 0;
-    clearTimeout(S.qt);
-    // Keep the displayed source tied to the quote endpoint used by the candle feed.
+    // Leave quote polling enabled so displayed prices use the candle provider.
     S.wsHeartbeat = setInterval(() => {
       if (socket.readyState === WebSocket.OPEN) {
         try { socket.send(JSON.stringify({ action: "heartbeat" })); } catch {}
