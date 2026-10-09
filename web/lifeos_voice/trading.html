@@ -63,14 +63,14 @@ button{cursor:pointer}
 <div class="app">
 <header class="top">
   <div class="logo">LifeOS <span>Trading Intelligence</span></div>
-  <div class="market-chip"><span class="dot" id="dot"></span><b id="ticker">AAPL</b></div>
+  <div class="market-chip"><span class="dot" id="dot"></span><b id="ticker">SELECT MARKET</b></div>
   <div class="live" id="live">CONNECTING</div>
   <div class="clock" id="clock">—</div>
 </header>
 
 <div class="controls">
   <select id="type" class="control"><option value="stock">Stocks</option><option value="forex">Forex</option><option value="crypto">Crypto</option></select>
-  <input id="symbol" class="control symbol" value="AAPL" maxlength="40" aria-label="Market symbol">
+  <input id="symbol" class="control symbol" value="" placeholder="Search or enter symbol" maxlength="40" aria-label="Market symbol">
   <select id="catalog" class="control" aria-label="Market catalog"><option>Loading symbols…</option></select>
   <select id="interval" class="control" aria-label="Chart interval">
     <option value="1m">1m</option><option value="5m">5m</option><option value="15m">15m</option><option value="30m">30m</option><option value="1h">1H</option><option value="1d" selected>1D</option><option value="1wk">1W</option><option value="1mo">1M</option>
@@ -82,7 +82,7 @@ button{cursor:pointer}
 <main class="workspace">
 <section class="chartbox">
   <div class="charthead">
-    <div class="pair" id="name">AAPL</div><div class="price" id="price">—</div><div class="change" id="change">—</div>
+    <div class="pair" id="name">Select a market</div><div class="price" id="price">—</div><div class="change" id="change">—</div>
     <div class="muted" id="time">—</div>
   </div>
   <canvas id="chart" aria-label="OHLC candlestick chart"></canvas>
@@ -211,14 +211,15 @@ function render(b){
 }
 
 async function load(showToast=false){
-  const type=$("type").value,symbol=$("symbol").value.trim().toUpperCase()||"AAPL",interval=$("interval").value;
+  const type=$("type").value,symbol=$("symbol").value.trim().toUpperCase(),interval=$("interval").value;
+  if(!symbol){$("live").textContent="SELECT MARKET";$("error").textContent="Choose an instrument from the market catalogue or enter its symbol."; $("error").style.display="block";return;}
   $("ticker").textContent=symbol;$("name").textContent=symbol;$("live").textContent="REFRESHING";$("dot").style.background="var(--gold)";$("error").style.display="none";
   try{
     const r=await fetch(API+"/api/market-data?type="+encodeURIComponent(type)+"&symbol="+encodeURIComponent(symbol)+"&interval="+encodeURIComponent(interval)+"&_="+Date.now(),{cache:"no-store"});
     const d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||"Market data unavailable");
     previousBars=current;lastFetch=Date.now();render(d.bars);
     if(previousBars.length)animateTransition(previousBars,d.bars);
-    $("live").textContent="LIVE • "+interval.toUpperCase();$("live").style.color="var(--up)";$("dot").style.background="var(--up)";
+    $("live").textContent="DATA LOADED • "+interval.toUpperCase();$("live").style.color="var(--up)";$("dot").style.background="var(--up)";
     if(showToast)toast("Market data refreshed");
   }catch(e){
     $("live").textContent="DATA ERROR";$("live").style.color="var(--down)";$("dot").style.background="var(--down)";
@@ -240,11 +241,12 @@ async function catalog(loadAfter=false){
     }));
     const selected=$("symbol").value.trim().toUpperCase();
     const match=symbols.find(x=>String(x.symbol||"").toUpperCase()===selected);
-    $("symbol").value=match?match.symbol:symbols[0].symbol;
-    $("catalog").value=$("symbol").value;
+    if(match){$("symbol").value=match.symbol;$("catalog").value=match.symbol;}
+    else if(!selected){$("symbol").value=symbols[0].symbol;$("catalog").value=symbols[0].symbol;}
+    else {$("catalog").value="";}
   }catch(e){
     $("catalog").replaceChildren(new Option("Catalog unavailable",""));
-    if(loadAfter)toast("Symbol list unavailable; trying the default symbol");
+    if(loadAfter)toast("Symbol catalogue unavailable; no demo symbol was selected");
   }
   if(loadAfter)await load(true);
 }
@@ -274,15 +276,14 @@ $("load").onclick=()=>load(true);$("buy").onclick=()=>trade("LONG");$("sell").on
 $("signal").onclick=()=>{if(current.length){render(current);toast("Market read recalculated")}else toast("Load market data first")};
 $("catalog").onchange=e=>{if(e.target.value&&e.target.value!=="Catalog unavailable"){$("symbol").value=e.target.value;load(true)}};
 $("type").onchange=()=>{
-  const type=$("type").value;
-  $("symbol").value=type==="stock"?"AAPL":type==="forex"?"EUR/USD":"BTC/USD";
-  catalog(true);
+  $("symbol").value="";$("ticker").textContent="SELECT MARKET";$("name").textContent="Select a market";
+  current=[];draw(current,plan);catalog(true);
 };
 $("interval").onchange=()=>load(true);
 $("symbol").addEventListener("keydown",e=>{if(e.key==="Enter")load(true)});
 addEventListener("resize",()=>draw(current,plan));
 setInterval(()=>{if(document.visibilityState==="visible")load(false)},REFRESH_MS);
-saveDemo(demoState());catalog();load(false);
+saveDemo(demoState());catalog(true);
 </script>
 </body>
 </html>
