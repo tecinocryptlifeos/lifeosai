@@ -47,7 +47,7 @@ canvas{width:100%;height:360px;display:block;background:#0a0d12;border-radius:6p
 <script>
 /* Set before this script: window.LIFEOS_TRADING_API = "https://your-api.example"; */
 const API=(window.LIFEOS_TRADING_API||"").replace(/\/$/,"");
-const $=id=>document.getElementById(id);let bars=[],decimals=5,tokenCache=null;
+const $=id=>document.getElementById(id);let bars=[],decimals=5;
 async function getToken(){
  if(window.LIFEOS_TOKEN)return window.LIFEOS_TOKEN;
  if(window.supabase?.auth){const {data,error}=await window.supabase.auth.getSession();if(!error&&data?.session?.access_token)return data.session.access_token;}
@@ -73,8 +73,12 @@ function draw(){
  view.forEach((b,i)=>{const x=pad.l+(i+.5)*bw,up=b.close>=b.open;g.strokeStyle=up?"#3fb950":"#f85149";g.fillStyle=g.strokeStyle;g.beginPath();g.moveTo(x,y(b.high));g.lineTo(x,y(b.low));g.stroke();const top=y(Math.max(b.open,b.close)),height=Math.max(1,Math.abs(y(b.open)-y(b.close)));g.fillRect(x-body/2,top,body,height)});
 }
 async function loadInstruments(){
- try{const list=await request("/instruments");$("symbol").innerHTML=list.map(i=>'<option value="'+String(i.symbol).replace(/[^a-zA-Z0-9._-]/g,"")+'">'+String(i.symbol)+' — '+String(i.display_name)+'</option>').join("");if(!list.length)throw Error("No active instruments visible under this account");await loadBars();}
- catch(e){$("symbol").innerHTML='<option value="">Unavailable</option>';$("barstatus").textContent=e.message}
+ try{
+  const list=await request("/instruments"),select=$("symbol");select.replaceChildren();
+  for(const item of list){const option=document.createElement("option");option.value=String(item.symbol);option.textContent=String(item.symbol)+" — "+String(item.display_name);select.append(option)}
+  if(!list.length)throw Error("No active instruments visible under this account");
+  await loadBars();
+ }catch(e){$("symbol").replaceChildren();$("barstatus").textContent=e.message}
 }
 async function loadBars(){
  const sym=$("symbol").value;if(!sym)return;
