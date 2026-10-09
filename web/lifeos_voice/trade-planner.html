@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LifeOS Trade Planner</title>
+<style>
+:root{color-scheme:dark;--bg:#0d1117;--panel:#161b22;--line:#30363d;--text:#e6edf3;--muted:#8b949e;--blue:#58a6ff;--green:#3fb950;--red:#f85149;--amber:#d29922}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,sans-serif}
+header{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid var(--line)}
+header strong{font-size:16px}header small{color:var(--muted)}.tag{border:1px solid var(--blue);border-radius:999px;padding:3px 9px;color:var(--blue);font-size:11px}
+main{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,390px);gap:14px;padding:14px;max-width:1500px;margin:auto}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:15px;margin-bottom:14px;min-width:0}
+h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 12px}
+.row{display:flex;gap:10px;margin-bottom:10px}.row>div{flex:1;min-width:0}
+label{display:block;color:var(--muted);font-size:11px;margin-bottom:4px}
+input,select,button{font:inherit;width:100%;border:1px solid var(--line);border-radius:6px;padding:9px;background:#0d1117;color:var(--text)}
+button{cursor:pointer;background:#1f6feb;border-color:#1f6feb;font-weight:600}button:disabled{opacity:.55;cursor:wait}
+canvas{width:100%;height:360px;display:block;background:#0a0d12;border-radius:6px}
+.muted{color:var(--muted);font-size:12px}.kv{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding:7px 0}.kv span{color:var(--muted)}.status{padding:10px;border-radius:7px;margin:10px 0;font-weight:650}.good{color:var(--green);border:1px solid #238636;background:#0d2115}.bad{color:var(--red);border:1px solid #6e2626;background:#2b1111}.warning{color:var(--amber)}#message{overflow-wrap:anywhere}.spacer{height:6px}
+@media(max-width:850px){main{grid-template-columns:1fr}.row{gap:7px}canvas{height:290px}}
+</style>
+</head>
+<body>
+<header><strong>LifeOS Trade Planner</strong><span class="tag">PLANNING ONLY · NO ORDER EXECUTION</span><span class="muted" id="health">API status: checking</span></header>
+<main>
+<section>
+<div class="panel">
+<h2>Market data</h2>
+<div class="row"><div><label for="symbol">Instrument</label><select id="symbol"><option value="">Loading instruments…</option></select></div><div><label for="timeframe">Timeframe</label><select id="timeframe"><option>M5</option><option>M15</option><option>M30</option><option selected>H1</option><option>H4</option><option>D1</option><option>W1</option></select></div></div>
+<canvas id="chart" aria-label="OHLC price chart"></canvas>
+<p class="muted" id="barstatus">Live bars require a configured market-data provider.</p>
+</div>
+<div class="panel"><h2>Planner notes</h2><p class="muted">This initial integration checks account-based position sizing, price geometry, configured exposure limits, and basic session timing. It does not validate a technical setup or predict profitability. Costs, slippage, and conversion are not included.</p></div>
+</section>
+<aside>
+<div class="panel">
+<h2>Setup inputs</h2>
+<div class="row"><div><label for="direction">Direction</label><select id="direction"><option value="buy">Buy</option><option value="sell">Sell</option></select></div><div><label for="entry">Entry price</label><input id="entry" type="number" min="0" step="any" required></div></div>
+<div class="row"><div><label for="stop">Stop price</label><input id="stop" type="number" min="0" step="any" required></div><div><label for="target">Target price (optional)</label><input id="target" type="number" min="0" step="any"></div></div>
+<button id="evaluate">Evaluate risk plan</button>
+<div id="message" role="status" aria-live="polite" class="muted" style="margin-top:10px">Sign in through the host application, then evaluate a plan.</div>
+<div id="result"></div>
+</div>
+<div class="panel"><h2>Connection</h2><div class="kv"><span>Authenticated session</span><b id="authstate">Not checked</b></div><div class="kv"><span>Market data</span><b id="marketstate">Unknown</b></div><p class="muted">Set <code>window.LIFEOS_TRADING_API</code> and provide a signed-in Supabase session through <code>window.supabase</code> or <code>window.LIFEOS_TOKEN</code> before loading this page.</p></div>
+</aside>
+</main>
+<script>
+/* Set before this script: window.LIFEOS_TRADING_API = "https://your-api.example"; */
+const API=(window.LIFEOS_TRADING_API||"").replace(/\/$/,"");
+const $=id=>document.getElementById(id);let bars=[],decimals=5,tokenCache=null;
+async function getToken(){
+ if(window.LIFEOS_TOKEN)return window.LIFEOS_TOKEN;
+ if(window.supabase?.auth){const {data,error}=await window.supabase.auth.getSession();if(!error&&data?.session?.access_token)return data.session.access_token;}
+ return null;
+}
+async function request(path,opts={}){
+ if(!API)throw Error("API URL is not configured");
+ const token=await getToken();$("authstate").textContent=token?"Signed in":"Not signed in";
+ if(!token)throw Error("Sign in through the host application first");
+ const response=await fetch(API+path,{...opts,headers:{...(opts.headers||{}),Authorization:"Bearer "+token,...(opts.body?{"Content-Type":"application/json"}:{})}});
+ let data={};try{data=await response.json()}catch{}
+ if(!response.ok)throw Error(data.detail||("Request failed: HTTP "+response.status));
+ return data;
+}
+function draw(){
+ const c=$("chart"),dpr=window.devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;c.width=w*dpr;c.height=h*dpr;
+ const g=c.getContext("2d");g.scale(dpr,dpr);g.clearRect(0,0,w,h);
+ if(!bars.length){g.fillStyle="#8b949e";g.font="13px system-ui";g.fillText("No market bars available",14,24);return}
+ const pad={l:8,r:70,t:12,b:12},pw=w-pad.l-pad.r,ph=h-pad.t-pad.b,view=bars.slice(-Math.max(20,Math.floor(pw/7)));
+ let lo=Math.min(...view.map(b=>b.low)),hi=Math.max(...view.map(b=>b.high));if(hi===lo){hi+=1;lo-=1}const margin=(hi-lo)*.06;lo-=margin;hi+=margin;
+ const y=p=>pad.t+(hi-p)/(hi-lo)*ph,bw=pw/view.length,body=Math.max(1,Math.min(10,bw*.65));
+ for(let i=0;i<5;i++){const yy=pad.t+ph*i/4;g.strokeStyle="#202832";g.beginPath();g.moveTo(pad.l,yy);g.lineTo(pad.l+pw,yy);g.stroke();g.fillStyle="#8b949e";g.font="10px monospace";g.fillText((hi-(hi-lo)*i/4).toFixed(decimals),pad.l+pw+5,yy+3)}
+ view.forEach((b,i)=>{const x=pad.l+(i+.5)*bw,up=b.close>=b.open;g.strokeStyle=up?"#3fb950":"#f85149";g.fillStyle=g.strokeStyle;g.beginPath();g.moveTo(x,y(b.high));g.lineTo(x,y(b.low));g.stroke();const top=y(Math.max(b.open,b.close)),height=Math.max(1,Math.abs(y(b.open)-y(b.close)));g.fillRect(x-body/2,top,body,height)});
+}
+async function loadInstruments(){
+ try{const list=await request("/instruments");$("symbol").innerHTML=list.map(i=>'<option value="'+String(i.symbol).replace(/[^a-zA-Z0-9._-]/g,"")+'">'+String(i.symbol)+' — '+String(i.display_name)+'</option>').join("");if(!list.length)throw Error("No active instruments visible under this account");await loadBars();}
+ catch(e){$("symbol").innerHTML='<option value="">Unavailable</option>';$("barstatus").textContent=e.message}
+}
+async function loadBars(){
+ const sym=$("symbol").value;if(!sym)return;
+ try{const d=await request("/bars?symbol="+encodeURIComponent(sym)+"&timeframe="+encodeURIComponent($("timeframe").value)+"&limit=300");bars=d.bars||[];decimals=d.instrument.price_decimals||5;$("marketstate").textContent=bars.length?"Bars received":"No bars";$("barstatus").textContent=bars.length?bars.length+" bars · "+(d.last_bar_is_forming?"latest candle may still be forming":"latest candle reported closed"):"No bars returned";if(bars.length&&!$("entry").value)$("entry").value=Number(bars[bars.length-1].close).toFixed(decimals);draw();}
+ catch(e){bars=[];draw();$("marketstate").textContent="Unavailable";$("barstatus").textContent=e.message}
+}
+function showPlan(p){
+ const r=$("result");r.replaceChildren();const status=document.createElement("div");status.className="status "+(p.allowed?"good":"bad");status.textContent=(p.allowed?"PLAN PASSES BASIC GUARDS":"PLAN BLOCKED")+" — "+p.reason;r.append(status);
+ const fields=[["Account equity",p.equity],["Estimated quantity",p.quantity],["Risk amount",p.risk_amount],["Risk fraction",Number(p.risk_fraction*100).toFixed(3)+"%"],["Stop distance",p.stop_distance],["Stop distance (pips)",p.stop_distance_pips],["Risk / reward",p.risk_reward],["Potential gross profit",p.potential_profit],["Session",p.session]];
+ for(const [label,value] of fields){if(value===null||value===undefined)continue;const line=document.createElement("div");line.className="kv";const a=document.createElement("span"),b=document.createElement("b");a.textContent=label;b.textContent=typeof value==="number"?Number(value).toLocaleString(undefined,{maximumFractionDigits:6}):String(value);line.append(a,b);r.append(line)}
+ for(const note of [...(p.vetoes||[]),...(p.warnings||[])]){const x=document.createElement("p");x.className="muted";x.textContent=note;r.append(x)}
+}
+$("evaluate").addEventListener("click",async()=>{
+ const button=$("evaluate");button.disabled=true;$("message").textContent="Evaluating…";$("result").replaceChildren();
+ try{const entry=Number($("entry").value),stop=Number($("stop").value),target=$("target").value===""?null:Number($("target").value);
+ if(!Number.isFinite(entry)||entry<=0||!Number.isFinite(stop)||stop<=0||(target!==null&&(!Number.isFinite(target)||target<=0)))throw Error("Enter valid positive prices");
+ const p=await request("/plan",{method:"POST",body:JSON.stringify({symbol:$("symbol").value,timeframe:$("timeframe").value,direction:$("direction").value,entry,stop,target})});showPlan(p);$("message").textContent="Plan evaluation completed.";
+ }catch(e){$("message").textContent=e.message}
+ finally{button.disabled=false}
+});
+$("symbol").addEventListener("change",()=>{bars=[];draw();loadBars()});$("timeframe").addEventListener("change",loadBars);window.addEventListener("resize",draw);
+(async()=>{try{const h=await fetch(API+"/health");const data=await h.json();$("health").textContent="API: "+data.status;$("marketstate").textContent=data.market_data_configured?"Configured":"Not configured";}catch{$("health").textContent="API: not reachable"}await loadInstruments()})();
+</script>
+</body></html>
