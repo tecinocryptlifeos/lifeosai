@@ -3,7 +3,7 @@
 # It never writes DNS, changes hosting, submits registrations, or sends email.
 set -uo pipefail
 
-DEFAULT_ORIGIN="https://lifeos-trade-pages.dev"
+DEFAULT_ORIGIN="https://lifeos-trade-system.pages.dev"
 ORIGIN="${LIFEOS_ORIGIN:-$DEFAULT_ORIGIN}"
 REPORT_DIR="${LIFEOS_LAB_REPORT_DIR:-$HOME/lifeos-domain-lab-reports}"
 
@@ -21,7 +21,7 @@ Usage:
   bash lifeos-domain-lab.sh report [HOST]
 
 Environment:
-  LIFEOS_ORIGIN             Origin URL (default: https://lifeos-trade-pages.dev)
+  LIFEOS_ORIGIN             Origin URL (default: https://lifeos-trade-system.pages.dev)
   LIFEOS_LAB_REPORT_DIR     Report directory (default: ~/lifeos-domain-lab-reports)
 
 All checks are observational. DNS absence is not proof that a name is available.
