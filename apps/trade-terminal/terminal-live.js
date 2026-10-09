@@ -25,8 +25,7 @@ function connectStream() {
     if (S.ws !== socket) return;
     S.wsRetry = 0;
     clearTimeout(S.qt);
-    S.src = "Twelve Data WebSocket";
-    $("src").textContent = S.src;
+    // Keep the displayed source tied to the quote endpoint used by the candle feed.
     S.wsHeartbeat = setInterval(() => {
       if (socket.readyState === WebSocket.OPEN) {
         try { socket.send(JSON.stringify({ action: "heartbeat" })); } catch {}
@@ -38,8 +37,9 @@ function connectStream() {
     if (S.ws !== socket) return;
     let data;
     try { data = JSON.parse(event.data); } catch { return; }
-    if (data.type === "tick" && Number.isFinite(Number(data.price))) {
-      mergeQuote(Number(data.price), Date.parse(data.timestamp) || Date.now());
+    if (data.type === "tick") {
+      // Ignore stream ticks here: this socket may use a different provider/feed
+      // than the candles. qpull() updates the chart from the matching quote API.
     } else if (data.type === "status") {
       $("src").textContent = "STREAM ERROR";
       qpull();
