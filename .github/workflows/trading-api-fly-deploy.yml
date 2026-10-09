@@ -1,0 +1,74 @@
+name: trading-api-fly-deploy
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      SUPABASE_JWT_SECRET: ${{ secrets.SUPABASE_JWT_SECRET }}
+      MARKET_DATA_URL: ${{ secrets.MARKET_DATA_URL }}
+      MARKET_DATA_KEY: ${{ secrets.MARKET_DATA_KEY }}
+      CORS_ORIGINS: ${{ secrets.CORS_ORIGINS }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Validate deployment configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          required=(FLY_API_TOKEN SUPABASE_URL SUPABASE_ANON_KEY SUPABASE_JWT_SECRET MARKET_DATA_URL CORS_ORIGINS)
+          missing=()
+          for name in "${required[@]}"; do
+            if [[ -z "${!name:-}" ]]; then missing+=("$name"); fi
+          done
+          if (("${#missing[@]}" > 0)); then
+            printf 'Missing GitHub Actions secret(s): %s\n' "${missing[*]}" >&2
+            exit 1
+          fi
+          test -s fly.toml
+          test -s Dockerfile.trading-api
+          echo "DEPLOY_CONFIGURATION=PASS"
+      - name: Confirm target app exists
+        run: flyctl status --app lifeosai-trading-planner
+      - name: Set server-side secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          keys = ["SUPABASE_URL","SUPABASE_ANON_KEY","SUPABASE_JWT_SECRET","MARKET_DATA_URL","CORS_ORIGINS"]
+          if os.environ.get("MARKET_DATA_KEY"):
+              keys.append("MARKET_DATA_KEY")
+          Path(os.environ["RUNNER_TEMP"] + "/fly-secrets.env").write_text(
+              "".join(f"{key}={os.environ[key]}\n" for key in keys)
+          )
+          PY
+          chmod 600 "$RUNNER_TEMP/fly-secrets.env"
+          flyctl secrets import --app lifeosai-trading-planner < "$RUNNER_TEMP/fly-secrets.env"
+          rm -f "$RUNNER_TEMP/fly-secrets.env"
+      - name: Deploy container
+        run: flyctl deploy --app lifeosai-trading-planner --config fly.toml --dockerfile Dockerfile.trading-api --remote-only
+      - name: Verify live health endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 12); do
+            if curl --fail --silent --show-error --max-time 10 https://lifeosai-trading-planner.fly.dev/health -o "$RUNNER_TEMP/trading-health.json"; then break; fi
+            sleep 5
+          done
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path(__import__("os").environ["RUNNER_TEMP"]+"/trading-health.json").read_text())
+          assert d.get("status") == "ok", d
+          assert d.get("order_execution") is False, d
+          assert d.get("market_data_configured") is True, d
+          print("TRADING_API_HEALTH=PASS")
+          PY
