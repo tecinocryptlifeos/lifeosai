@@ -32,7 +32,8 @@ async def plan(req: PlanRequest,caller: Caller=Depends(current_user)):
     instrument=await repository.get_instrument(caller.token,req.symbol)
     profile=await repository.get_risk_profile(caller.token)
     open_trades=await repository.get_open_trades(caller.token)
-    try: return build_plan(req,instrument,profile,open_trades)
+    closed_today=await repository.get_closed_trades_today(caller.token)
+    try: return build_plan(req,instrument,profile,open_trades,closed_today)
     except ValueError as exc: raise HTTPException(400,str(exc)) from None
 
 @app.post("/journal")
