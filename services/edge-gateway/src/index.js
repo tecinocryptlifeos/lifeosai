@@ -13,6 +13,8 @@ import { issueDecisionIntelligence } from "./decision-engine.js";
 import { currentOriginState } from "./health.js";
 import { publicConfig, updateProfile, verifySession } from "./supabase.js";
 import { marketData, marketQuote, marketSymbols } from "./market-data.js";
+import { marketStream } from "./market-stream.js";
+import { scheduledTradingAnalysis, tradingAnalysis, tradingBars, tradingInstruments, tradingJournal, tradingPerformance, tradingPlan } from "./trading-api.js";
 
 function preflightResponse(request, env) {
   const headers = responseHeaders(request, env, new Headers({
@@ -66,6 +68,12 @@ async function handleRequest(request, env) {
     }
   }
 
+  if (request.method === "GET" && pathname === "/api/market-stream") {
+    if (!requestOriginAllowed(request, env)) throw new GatewayError(403, "ORIGIN_NOT_ALLOWED", "This browser origin is not allowed.");
+    try { return await marketStream(request, env); }
+    catch (error) { throw new GatewayError(502, "MARKET_STREAM_UNAVAILABLE", error.message || "Live market stream unavailable."); }
+  }
+
   if (request.method === "GET" && pathname === "/api/gemini-live-status") {
     return jsonResponse(request, env, 200, geminiStatus(env));
   }
@@ -74,6 +82,26 @@ async function handleRequest(request, env) {
     throw new GatewayError(403, "ORIGIN_NOT_ALLOWED", "This browser origin is not allowed.");
   }
   if (request.method === "OPTIONS") return preflightResponse(request, env);
+
+  if (request.method === "GET" && pathname === "/api/trading-analysis") {
+    try { return jsonResponse(request, env, 200, await tradingAnalysis(request, env)); }
+    catch (error) { if (error instanceof GatewayError) throw error; throw new GatewayError(503, "TRADING_ANALYSIS_UNAVAILABLE", error.message || "Trading analysis unavailable."); }
+  }
+  if (request.method === "GET" && ["/api/trading/instruments", "/instruments"].includes(pathname)) {
+    return jsonResponse(request, env, 200, await tradingInstruments(request, env));
+  }
+  if (request.method === "GET" && ["/api/trading/bars", "/bars"].includes(pathname)) {
+    return jsonResponse(request, env, 200, await tradingBars(request, env));
+  }
+  if (request.method === "POST" && ["/api/trading/plan", "/plan"].includes(pathname)) {
+    return jsonResponse(request, env, 200, await tradingPlan(request, env));
+  }
+  if (request.method === "POST" && ["/api/trading/journal", "/journal"].includes(pathname)) {
+    return jsonResponse(request, env, 201, await tradingJournal(request, env));
+  }
+  if (request.method === "GET" && ["/api/trading/performance", "/performance"].includes(pathname)) {
+    return jsonResponse(request, env, 200, await tradingPerformance(request, env));
+  }
 
   if (request.method === "GET" && pathname === "/health") {
     return publicHealth(request, env, await currentOriginState(env));
@@ -136,6 +164,10 @@ export default {
     } catch (error) {
       return errorResponse(request, env, error);
     }
+  },
+  async scheduled(controller, env) {
+    try { await scheduledTradingAnalysis(controller, env); }
+    catch (error) { console.error("Scheduled trading analysis failed:", error?.message || error); throw error; }
   },
 };
 

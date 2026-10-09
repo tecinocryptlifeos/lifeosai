@@ -105,7 +105,7 @@ class GrowthReadinessStaticTests(unittest.TestCase):
         self.assertIn('LIFEOS_API_ORIGIN = "' + API_ORIGIN + '"', blueprint)
         self.assertIn('LIFEOS_GEMINI_LIVE_PRIMARY_MODEL = "gemini-2.5-flash-preview-native-audio-dialog"', blueprint)
         self.assertIn('LIFEOS_GEMINI_LIVE_FALLBACK_MODEL = "gemini-2.0-flash-live-001"', blueprint)
-        self.assertIn("crons = []", blueprint)
+        self.assertIn('crons = ["0 * * * *", "0 0 * * *", "0 0 * * 1"]', blueprint)
 
     def test_private_interface_files_never_embed_advertising_code(self):
         for name in ("admin.html", "chat.html", "gemini_live.html"):
