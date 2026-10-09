@@ -1,0 +1,12 @@
+FROM python:3.12-slim
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+WORKDIR /app
+COPY requirements-api.txt .
+RUN pip install --no-cache-dir -r requirements-api.txt
+COPY trading_intelligence/ ./trading_intelligence/
+COPY trading_api/ ./trading_api/
+RUN useradd --create-home --uid 10001 app && chown -R app:app /app
+USER app
+EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"
+CMD ["uvicorn","trading_api.main:app","--host","0.0.0.0","--port","8000"]
