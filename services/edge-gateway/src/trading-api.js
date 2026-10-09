@@ -136,6 +136,16 @@ export async function tradingPerformance(request,env){
   const wins=pnls.filter(x=>x>0),losses=pnls.filter(x=>x<0),grossWin=wins.reduce((a,b)=>a+b,0),grossLoss=Math.abs(losses.reduce((a,b)=>a+b,0));
   return {ok:true,summary:{total_trades:pnls.length,winning_trades:wins.length,losing_trades:losses.length,win_rate_percent:pnls.length?100*wins.length/pnls.length:null,net_pnl:pnls.reduce((a,b)=>a+b,0),profit_factor:grossLoss?grossWin/grossLoss:null,expectancy_r:rs.length?rs.reduce((a,b)=>a+b,0)/rs.length:null},r_multiples_count:rs.length,note:"Only closed rows visible under the caller's Supabase row-level security are included. Historical results do not predict future performance."};
 }
+function refreshCachedAnalysis(result){
+  const now=Date.now(),a=result.analysis||{},execution=a.execution||{},alignment=a.alignment||{};
+  const ms5=300000-(now%300000),ms1=60000-(now%60000);
+  const secondsTo5mClose=Math.ceil(ms5/1000),secondsTo1mClose=Math.ceil(ms1/1000);
+  const closingWindow=ms5<=10000&&ms1<=10000;
+  const direction=a.macro?.weekly?.direction||"neutral";
+  const ready=Number(a.quality_score)>=80&&alignment.macro&&alignment.setup&&alignment.pattern&&alignment.trigger&&alignment.close&&execution.entry!==null&&execution.stop!==null;
+  const signal=ready&&closingWindow?(direction==="bullish"?"BUY":direction==="bearish"?"SELL":null):null;
+  return {...result,cache:"HIT",analysis:{...a,status:signal?"SIGNAL":"HOLD",signal,reason:signal?"All three analysis layers align in the candle-closing window.":Number(a.quality_score)>=80&&!closingWindow?"Confluence score meets the rule threshold; waiting for the final 10 seconds of the aligned 5-minute and 1-minute candle close.":a.reason,execution:{...execution,closing_window:closingWindow,seconds_to_5m_close:secondsTo5mClose,seconds_to_1m_close:secondsTo1mClose,confirmation:closingWindow?"CLOSING_WINDOW":"WAIT_FOR_CLOSE"}}};
+}
 export async function tradingAnalysis(request,env){
   const url=new URL(request.url),type=url.searchParams.get("type")||"stock",symbol=validSymbol(url.searchParams.get("symbol")||"AAPL");
   if(!["stock","forex","crypto"].includes(type))throw new GatewayError(400,"INVALID_MARKET_TYPE","Unsupported market type.");
@@ -143,7 +153,7 @@ export async function tradingAnalysis(request,env){
   if(env.ORIGIN_STATE?.get){
     try{
       const cached=await env.ORIGIN_STATE.get(cacheKey,{type:"json"});
-      if(cached&&Date.now()-Date.parse(cached.cached_at)<300000)return {...cached,cache:"HIT",analysis:{...cached.analysis,execution:{...cached.analysis.execution,seconds_to_5m_close:Math.ceil((300000-(Date.now()%300000))/1000),seconds_to_1m_close:Math.ceil((60000-(Date.now()%60000))/1000),closing_window:(300000-(Date.now()%300000))<=10000&&(60000-(Date.now()%60000))<=10000}}};
+      if(cached&&Date.now()-Date.parse(cached.cached_at)<300000)return refreshCachedAnalysis(cached);
     }catch{}
   }
   const intervals=["1wk","1d","1h","15m","10m","30m","5m","1m"];
