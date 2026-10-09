@@ -226,13 +226,27 @@ async function load(showToast=false){
   }
 }
 
-async function catalog(){
+async function catalog(loadAfter=false){
   try{
     const type=$("type").value,exchange=type==="stock"?"US":type==="forex"?"oanda":"BINANCE";
     const r=await fetch(API+"/api/market-symbols?type="+type+"&exchange="+exchange,{cache:"no-store"}),d=await r.json();
-    if(!d.ok)throw Error(d.error||"Catalog unavailable");
-    $("catalog").innerHTML=d.symbols.slice(0,200).map(x=>'<option value="'+String(x.symbol).replace(/"/g,"&quot;")+'">'+(x.displaySymbol||x.symbol)+" — "+(x.description||"")+"</option>").join("");
-  }catch(e){$("catalog").innerHTML='<option>Catalog unavailable</option>'}
+    if(!r.ok||!d.ok||!Array.isArray(d.symbols)||!d.symbols.length)throw Error(d.error||"Catalog unavailable");
+    const symbols=d.symbols.slice(0,200);
+    $("catalog").replaceChildren(...symbols.map(x=>{
+      const option=document.createElement("option");
+      option.value=String(x.symbol||"");
+      option.textContent=String(x.displaySymbol||x.symbol||"")+" — "+String(x.description||"");
+      return option;
+    }));
+    const selected=$("symbol").value.trim().toUpperCase();
+    const match=symbols.find(x=>String(x.symbol||"").toUpperCase()===selected);
+    $("symbol").value=match?match.symbol:symbols[0].symbol;
+    $("catalog").value=$("symbol").value;
+  }catch(e){
+    $("catalog").replaceChildren(new Option("Catalog unavailable",""));
+    if(loadAfter)toast("Symbol list unavailable; trying the default symbol");
+  }
+  if(loadAfter)await load(true);
 }
 
 function demoState(){return JSON.parse(localStorage.getItem("lifeosDemoTrading")||'{"balance":10000,"position":"FLAT","qty":0,"entry":0}')}
@@ -259,7 +273,11 @@ function closeDemo(){
 $("load").onclick=()=>load(true);$("buy").onclick=()=>trade("LONG");$("sell").onclick=()=>trade("SHORT");$("close").onclick=closeDemo;
 $("signal").onclick=()=>{if(current.length){render(current);toast("Market read recalculated")}else toast("Load market data first")};
 $("catalog").onchange=e=>{if(e.target.value&&e.target.value!=="Catalog unavailable"){$("symbol").value=e.target.value;load(true)}};
-$("type").onchange=()=>{catalog();$("symbol").value=$("type").value==="stock"?"AAPL":$("type").value==="forex"?"OANDA:1":"BINANCE:BTCUSDT";load(true)};
+$("type").onchange=()=>{
+  const type=$("type").value;
+  $("symbol").value=type==="stock"?"AAPL":type==="forex"?"EUR/USD":"BTC/USD";
+  catalog(true);
+};
 $("interval").onchange=()=>load(true);
 $("symbol").addEventListener("keydown",e=>{if(e.key==="Enter")load(true)});
 addEventListener("resize",()=>draw(current,plan));
