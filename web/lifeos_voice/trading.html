@@ -139,9 +139,10 @@ button{cursor:pointer}
 <script>
 const API="https://losai-edge-gateway.lifeostecinoai.workers.dev";
 const REFRESH_MS=20000;
+const QUOTE_REFRESH_MS=5000;
 const $=id=>document.getElementById(id);
 const money=v=>Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-let current=[],plan=null,lastFetch=0,previousBars=[],animationStart=0,animationFrom=null,animationTo=null;
+let current=[],plan=null,lastFetch=0,lastQuoteFetch=0,previousBars=[],animationStart=0,animationFrom=null,animationTo=null,quoteTimer=null,quoteBusy=false;
 
 function sma(a,n){return a.map((_,i)=>i+1<n?null:a.slice(i-n+1,i+1).reduce((x,y)=>x+y,0)/n)}
 function toast(msg){const t=$("toast");t.textContent=msg;t.style.display="block";clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.style.display="none",2600)}
@@ -205,7 +206,7 @@ function render(b){
   $("bias").textContent=s.direction?s.direction+" SIGNAL":s.status;$("bias").className="bias "+(s.direction==="LONG"?"long":s.direction==="SHORT"?"short":"wait");
   $("reason").textContent=s.reason;$("entry").textContent=s.entry?money(s.entry):"—";$("tp").textContent=s.takeProfit?money(s.takeProfit):"—";$("sl").textContent=s.stop?money(s.stop):"—";$("rr").textContent=s.rewardRisk?s.rewardRisk+"R":"—";
   $("structure").innerHTML=s.support?'<div>Support <i>'+money(s.support)+'</i></div><div>Resistance <i>'+money(s.resistance)+'</i></div>':'No confirmed swing levels yet.';
-  $("ticketPrice").textContent="Price "+money(last.close);$("dataStatus").textContent="Updated "+new Date().toLocaleTimeString("en-GB",{timeZone:"Africa/Lagos",hour12:false})+" WAT";
+  $("ticketPrice").textContent="Price "+money(last.close);$("dataStatus").textContent="Candles updated "+new Date().toLocaleTimeString("en-GB",{timeZone:"Africa/Lagos",hour12:false})+" WAT";
   draw(b,s);
   updateDemo();
 }
@@ -219,12 +220,42 @@ async function load(showToast=false){
     const d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||"Market data unavailable");
     previousBars=current;lastFetch=Date.now();render(d.bars);
     if(previousBars.length)animateTransition(previousBars,d.bars);
-    $("live").textContent="DATA LOADED • "+interval.toUpperCase();$("live").style.color="var(--up)";$("dot").style.background="var(--up)";
+    $("live").textContent="CANDLES LOADED • "+interval.toUpperCase();$("live").style.color="var(--up)";$("dot").style.background="var(--up)";
     if(showToast)toast("Market data refreshed");
   }catch(e){
     $("live").textContent="DATA ERROR";$("live").style.color="var(--down)";$("dot").style.background="var(--down)";
     $("error").textContent=e.message||"Market data unavailable";$("error").style.display="block";toast("Market data could not be refreshed");
   }
+}
+
+async function refreshQuote(){
+  const type=$("type").value,symbol=$("symbol").value.trim().toUpperCase();
+  if(!symbol||quoteBusy||document.visibilityState!=="visible")return;
+  quoteBusy=true;
+  try{
+    const r=await fetch(API+"/api/market-quote?type="+encodeURIComponent(type)+"&symbol="+encodeURIComponent(symbol)+"&_="+Date.now(),{cache:"no-store"});
+    const q=await r.json();
+    if(!r.ok||!q.ok||!Number.isFinite(Number(q.price))||Number(q.price)<=0)throw Error(q.error||"Latest quote unavailable");
+    const price=Number(q.price),stamp=new Date(q.timestamp);
+    lastQuoteFetch=Date.now();
+    if(current.length){
+      const old=current.at(-1),next={...old,close:price,high:Math.max(old.high,price),low:Math.min(old.low,price)};
+      current=[...current.slice(0,-1),next];
+      render(current);
+    }
+    $("price").textContent=money(price);$("last").textContent=money(price);$("ticketPrice").textContent="Price "+money(price);
+    $("time").textContent=Number.isNaN(stamp.getTime())?"Quote time unavailable":stamp.toISOString().replace(".000Z"," UTC");
+    const prior=current.length>1?current.at(-2).close:price,delta=price-prior,pct=prior?delta/prior*100:0;
+    $("change").textContent=(delta>=0?"+":"")+money(delta)+" ("+(pct>=0?"+":"")+pct.toFixed(2)+"%)";
+    $("change").style.color=delta>=0?"var(--up)":"var(--down)";
+    $("dataStatus").textContent="QUOTE "+String(q.source||"provider").toUpperCase()+" • "+new Date().toLocaleTimeString("en-GB",{timeZone:"Africa/Lagos",hour12:false})+" WAT";
+    $("live").textContent="QUOTE UPDATED";
+    $("live").style.color="var(--up)";$("dot").style.background="var(--up)";
+    if(current.length)draw(current,plan);
+  }catch(e){
+    $("live").textContent="QUOTE DELAYED";$("live").style.color="var(--gold2)";
+    $("dataStatus").textContent="Latest quote unavailable; last verified value retained";
+  }finally{quoteBusy=false}
 }
 
 async function catalog(loadAfter=false){
@@ -283,7 +314,8 @@ $("interval").onchange=()=>load(true);
 $("symbol").addEventListener("keydown",e=>{if(e.key==="Enter")load(true)});
 addEventListener("resize",()=>draw(current,plan));
 setInterval(()=>{if(document.visibilityState==="visible")load(false)},REFRESH_MS);
-saveDemo(demoState());catalog(true);
+quoteTimer=setInterval(refreshQuote,QUOTE_REFRESH_MS);
+saveDemo(demoState());catalog(true).then(()=>refreshQuote());
 </script>
 </body>
 </html>
