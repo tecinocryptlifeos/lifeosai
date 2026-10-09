@@ -45,7 +45,7 @@ for path in ("/", "/chat", "/voice", "/trading.html"):
     html_ok = status == 200 and b"<html" in body.lower()
     check("site " + path, html_ok, f"HTTP {status}, content-type={content_type}, bytes={len(body)}")
 
-status, body, content_type = request(API + "/health")
+status, body, content_type = request(API + "/health", headers={"Origin": SITE})
 try:
     health = json.loads(body)
 except Exception:
