@@ -1,0 +1,118 @@
+name: Sophia Decision Intelligence provider check
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/sophia-decision-intelligence-provider-check.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sophia-decision-provider-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify-gemini-text-provider:
+    name: Verify Sophia text-model credentials and fallback
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probe the exact Gemini text models used by Sophia
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          import urllib.error
+          import urllib.request
+
+          api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+          if not api_key:
+              raise SystemExit("SOPHIA_PROVIDER_CHECK=FAIL reason=GEMINI_API_KEY_MISSING")
+
+          models = ("gemini-3.8-flash", "gemini-3.5-flash-lite")
+          failures = []
+
+          for model in models:
+              for use_search in (True, False):
+                  payload = {
+                      "systemInstruction": {
+                          "parts": [{
+                              "text": "You are running a LifeOS Decision Intelligence availability check. Reply with one short confirmation."
+                          }]
+                      },
+                      "contents": [{
+                          "role": "user",
+                          "parts": [{
+                              "text": "Confirm that text generation is available."
+                          }]
+                      }],
+                      "generationConfig": {
+                          "maxOutputTokens": 24,
+                          "thinkingConfig": {"thinkingLevel": "low"},
+                      },
+                  }
+                  if use_search:
+                      payload["tools"] = [{"google_search": {}}]
+
+                  request = urllib.request.Request(
+                      f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+                      data=json.dumps(payload).encode("utf-8"),
+                      headers={
+                          "Content-Type": "application/json",
+                          "x-goog-api-key": api_key,
+                      },
+                      method="POST",
+                  )
+
+                  mode = "search" if use_search else "no_search"
+                  try:
+                      with urllib.request.urlopen(request, timeout=20) as response:
+                          status = response.status
+                          data = json.loads(response.read().decode("utf-8"))
+                  except urllib.error.HTTPError as error:
+                      status = error.code
+                      try:
+                          data = json.loads(error.read().decode("utf-8"))
+                      except Exception:
+                          data = {}
+                  except Exception as error:
+                      failures.append(f"{model}/{mode}:transport_{type(error).__name__}")
+                      break
+
+                  candidates = data.get("candidates") or []
+                  parts = (candidates[0].get("content") or {}).get("parts") or [] if candidates else []
+                  reply = "\n".join(
+                      str(part.get("text", "")).strip()
+                      for part in parts
+                      if isinstance(part, dict) and part.get("thought") is not True
+                  ).strip()
+
+                  if 200 <= status < 300 and reply:
+                      print(f"SOPHIA_PROVIDER_CHECK=PASS model={model} mode={mode}")
+                      print("SOPHIA_PROVIDER_PREFLIGHT=PASS")
+                      raise SystemExit(0)
+
+                  provider_error = data.get("error") or {}
+                  error_status = str(provider_error.get("status", "UNKNOWN"))[:64]
+                  error_message = " ".join(str(provider_error.get("message", "")).split())[:180]
+                  failures.append(
+                      f"{model}/{mode}:http_{status}:{error_status}:{error_message or 'no_text_response'}"
+                  )
+
+                  # Match Sophia's production retry policy: retry without Search for
+                  # provider errors commonly caused by grounding access or quota.
+                  if use_search and status in (400, 403, 429):
+                      continue
+                  break
+
+          for failure in failures:
+              print("SOPHIA_PROVIDER_ATTEMPT=" + failure)
+          raise SystemExit("SOPHIA_PROVIDER_PREFLIGHT=FAIL")
+          PY
