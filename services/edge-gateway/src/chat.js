@@ -9,8 +9,10 @@ const MAX_USER_MESSAGE_CHARACTERS = 1400;
 const MAX_ASSISTANT_MESSAGE_CHARACTERS = 1000;
 
 const DEFAULT_CHAT_MODELS = Object.freeze([
-  "gemini-3.8-flash",
+  // The provider probe confirmed this model can still return text when Search
+  // grounding quota is exhausted and Gemini 3.8 is temporarily unavailable.
   "gemini-3.5-flash-lite",
+  "gemini-3.8-flash",
   "gemini-2.5-flash",
   "gemini-2.5-flash-lite",
 ]);
@@ -90,14 +92,17 @@ function configuredModels(env) {
     "",
   );
 
-  // Keep configured models first, but always retain supported modern fallbacks.
+  // Preserve the first three configured choices, but reserve room for the
+  // two modern fallbacks so a long configured list cannot remove them.
+  const preferred = [
+    ...new Set(configured.split(",").map(normalizeModel).filter(Boolean)),
+  ].slice(0, 3);
+
   // Gemini 2.5 access is restricted for projects without prior active usage.
   const models = [
-    ...configured.split(","),
+    ...preferred,
     ...DEFAULT_CHAT_MODELS,
-  ]
-    .map(normalizeModel)
-    .filter(Boolean);
+  ];
 
   return [...new Set(models)].slice(0, 5);
 }
