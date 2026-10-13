@@ -102,9 +102,9 @@ jobs:
                   provider_error = data.get("error") or {}
                   error_status = str(provider_error.get("status", "UNKNOWN"))[:64]
                   error_message = " ".join(str(provider_error.get("message", "")).split())[:180]
-                  failures.append(
-                      f"{model}/{mode}:http_{status}:{error_status}:{error_message or 'no_text_response'}"
-                  )
+                  failure = f"{model}/{mode}:http_{status}:{error_status}:{error_message or 'no_text_response'}"
+                  failures.append(failure)
+                  print("SOPHIA_PROVIDER_ATTEMPT_FAILURE=" + failure, flush=True)
 
                   # Match Sophia's production retry policy: retry without Search for
                   # provider errors commonly caused by grounding access or quota.
