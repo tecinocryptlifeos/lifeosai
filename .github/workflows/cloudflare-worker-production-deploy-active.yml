@@ -82,7 +82,9 @@ jobs:
           import json, os
           from pathlib import Path
           d=json.loads(Path(os.environ["RUNNER_TEMP"]+"/alpaca-credential-check.json").read_text())
-          assert isinstance(d.get("bars"), list) and d["bars"], "Alpaca returned no AAPL bars"
+          bars=d.get("bars")
+          if isinstance(bars, dict): bars=bars.get("AAPL")
+          assert isinstance(bars, list) and bars, "Alpaca returned no AAPL bars"
           print("ALPACA_CREDENTIALS=PASS")
           PY
 
