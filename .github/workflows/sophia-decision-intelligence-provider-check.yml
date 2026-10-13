@@ -3,7 +3,7 @@ name: Sophia Decision Intelligence provider check
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, diagnostics/sophia-decision-provider-20261013]
     paths:
       - ".github/workflows/sophia-decision-intelligence-provider-check.yml"
 
