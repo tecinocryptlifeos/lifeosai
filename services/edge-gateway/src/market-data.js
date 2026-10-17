@@ -165,7 +165,7 @@ export async function marketQuote(request, env) {
     return {ok:true,source:"Alpaca",provider_symbol:symbol,market_type:type,price,bid:Number.isFinite(bid)?bid:null,ask:Number.isFinite(ask)?ask:null,timestamp,fetched_at:new Date().toISOString(),data_feed:type==="stock"?String(env.ALPACA_DATA_FEED||ALPACA_FEED):"us"};
   }
   const data = await twelveDataFetch("/quote", env, {symbol: requestedSymbol});
-  const price = Number(data.close ?? data.price);
+  const price = Number(data.price ?? data.close);
   if (!Number.isFinite(price) || price <= 0) throw new Error("Latest quote has no usable price");
   const timestamp = data.datetime ? normalizeTimestamp(data.datetime) : new Date().toISOString();
   return {ok:true,source:"Twelve Data",provider_symbol:symbol,market_type:type,price,bid:Number(data.bid ?? NaN),ask:Number(data.ask ?? NaN),timestamp,fetched_at:new Date().toISOString()};

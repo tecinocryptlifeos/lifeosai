@@ -6,7 +6,7 @@ crypto:[['BTC/USD','Bitcoin'],['ETH/USD','Ethereum'],['SOL/USD','Solana'],['XRP/
 const TF={'1m':['1m',1],'5m':['5m',5],'15m':['15m',15],'30m':['30m',30],'1H':['1h',60],'1D':['1d',1440],'1W':['1wk',10080],'1M':['1mo',43200]};
 const UP='#16c784',DN='#ea3943',MUT='#8a94a6',GRID='rgba(255,255,255,.06)';
 const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch{return d}},sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
-const S={tab:'crypto',type:'crypto',sym:'BTC/USD',tf:'5m',bars:[],n:80,off:0,live:true,disp:null,from:0,t0:0,raf:0,cross:null,err:0,req:0,timer:0,nextAt:0,stale:false,s20:[],s50:[],sg:[],sel:null,drag:0,stats:null,tool:null,tmp:null,qt:0,geo:null,rs:[],brk:[],pv:[],old:0,src:''};
+const S={tab:'crypto',type:'crypto',sym:'BTC/USD',tf:'5m',bars:[],n:80,off:0,vZoom:1,live:true,disp:null,from:0,t0:0,raf:0,cross:null,err:0,req:0,timer:0,nextAt:0,stale:false,s20:[],s50:[],sg:[],sel:null,drag:0,stats:null,tool:null,tmp:null,qt:0,geo:null,rs:[],brk:[],pv:[],old:0,src:''};
 S.ind=Object.assign({sma20:1,sma50:1,rsi:0,vol:1,sig:1,swing:0,bos:0},ld('losai_ind_v1',{}));let DR=ld('losai_draw_v1',{});
 const ago=ms=>{const m=Math.round(ms/60000);return m>=2880?Math.round(m/1440)+' days':m>=120?Math.round(m/60)+' hours':m+' minutes'};
 let A=ld('losai_demo_v1',{bal:10000,pos:{},ord:[]}),H=ld('losai_sigs_v1',[]);const LP={};
@@ -47,7 +47,7 @@ function head(prev){
 async function qpull(){
   clearTimeout(S.qt);const id=S.req;if(!S.live||document.hidden||!S.bars.length)return;
   try{const r=await fetch(`${API}/api/market-quote?type=${S.type}&symbol=${encodeURIComponent(S.sym)}`,{cache:'no-store'}),j=await r.json();
-    if(id!==S.req||!r.ok||!j.ok)throw 0;mergeQuote(+j.price,Date.parse(j.timestamp)||Date.now())}catch{}
+    if(id!==S.req||!r.ok||!j.ok)throw 0;if(j.source){S.src=j.source;$("src").textContent=S.src}mergeQuote(+j.price,Date.parse(j.timestamp)||Date.now())}catch{}
   if(id===S.req&&S.live&&!document.hidden)S.qt=setTimeout(qpull,S.type==='forex'?30000:5000);
 }
 function mergeQuote(px,ts){
@@ -75,9 +75,9 @@ function draw(){
   if(cv.width!==Math.round(w*d)||cv.height!==Math.round(h*d)){cv.width=Math.round(w*d);cv.height=Math.round(h*d)}
   cx.setTransform(d,0,0,d,0,0);cx.clearRect(0,0,w,h);const B=S.bars;if(!B.length)return;
   const I=S.ind,n=Math.min(S.n,B.length);S.off=Math.max(0,Math.min(S.off,B.length-n));
-  const end=B.length-S.off,st=end-n,li=B.length-1,AX=72,PW=w-AX,TH=h-22,VH=I.vol?Math.round(TH*.14):0,RH=I.rsi?Math.round(TH*.18):0,CH=TH-VH-RH-(VH?6:0)-(RH?6:0),bw=PW/n;
+  const end=B.length-S.off,st=end-n,li=B.length-1,AX=72,PW=w-AX,RIGHT=Math.min(110,PW*.16),CPW=PW-RIGHT,TH=h-22,VH=I.vol?Math.round(TH*.14):0,RH=I.rsi?Math.round(TH*.18):0,CH=TH-VH-RH-(VH?6:0)-(RH?6:0),bw=CPW/n;
   const W=B.slice(st,end).map((b,i)=>st+i===li&&S.disp!=null?{...b,close:S.disp,high:Math.max(b.high,S.disp),low:Math.min(b.low,S.disp)}:b);
-  let lo=Math.min(...W.map(b=>b.low)),hi=Math.max(...W.map(b=>b.high));const pd=(hi-lo||hi*.001)*.08;lo-=pd;hi+=pd;
+  let lo=Math.min(...W.map(b=>b.low)),hi=Math.max(...W.map(b=>b.high));const pd=(hi-lo||hi*.001)*.08;lo-=pd;hi+=pd;const mid=(lo+hi)/2,half=(hi-lo)/(2*S.vZoom);lo=mid-half;hi=mid+half;
   const Y=p=>CH-(p-lo)/(hi-lo)*CH,X=i=>i*bw+bw/2;S.geo={lo,hi,CH,st,n,bw,PW,TH};
   const ix=ts=>{const t=Date.parse(ts);let j=0,m=1e18;B.forEach((b,i)=>{const e=Math.abs(Date.parse(b.timestamp)-t);if(e<m){m=e;j=i}});return j};
   cx.font='11px system-ui,sans-serif';cx.textBaseline='middle';cx.textAlign='left';
@@ -105,7 +105,7 @@ function draw(){
   const lb=B[li],lp=S.disp==null?lb.close:S.disp;line(lp,lp>=lb.open?UP:DN,f(lp),[4,3]);
   const po=A.pos[S.sym];if(po){line(po.avg,'#4c8dff',(po.q>0?'LONG ':'SHORT ')+f(po.avg),[6,4]);if(po.sl)line(po.sl,DN,'SL '+f(po.sl),[2,3]);if(po.tp)line(po.tp,UP,'TP '+f(po.tp),[2,3])}
   const c=S.cross;let sel=lb;
-  if(c&&c.x<PW&&c.y<TH){const i=Math.min(n-1,Math.max(0,Math.floor(c.x/bw)));sel=W[i];cx.strokeStyle='rgba(255,255,255,.3)';cx.setLineDash([3,3]);cx.beginPath();cx.moveTo(X(i),0);cx.lineTo(X(i),TH);cx.moveTo(0,c.y);cx.lineTo(PW,c.y);cx.stroke();cx.setLineDash([]);
+  if(c&&c.x<PW&&c.y<TH){const i=Math.min(n-1,Math.max(0,Math.floor(Math.min(c.x,CPW-1)/bw)));sel=W[i];cx.strokeStyle='rgba(255,255,255,.3)';cx.setLineDash([3,3]);cx.beginPath();cx.moveTo(X(i),0);cx.lineTo(X(i),TH);cx.moveTo(0,c.y);cx.lineTo(PW,c.y);cx.stroke();cx.setLineDash([]);
     if(c.y<CH){const p=lo+(CH-c.y)/CH*(hi-lo);cx.fillStyle='#2a3558';cx.fillRect(PW,c.y-9,AX,18);cx.fillStyle='#fff';cx.textBaseline='middle';cx.fillText(p.toFixed(dp(p)),PW+5,c.y)}}
   const card=(g,b,x)=>{const u=g.d>0,T=[(u?'BUY':'SELL')+' · '+g.cnt+' of 6 checks agree',...NM.map((nm,k)=>(g.v[k]===g.d?'✓ ':g.v[k]?'✗ ':'– ')+nm+': '+g.det[k]),'Click the marker for the full plan'];
     cx.font='11px system-ui,sans-serif';const w2=Math.max(...T.map(t=>cx.measureText(t).width))+18,h2=T.length*16+12,bx=Math.min(Math.max(4,x-w2/2),PW-w2-4);let by=u?Y(b.high)-h2-14:Y(b.low)+44;if(by<4)by=Y(b.low)+44;if(by+h2>TH-2)by=Math.max(4,Y(b.high)-h2-14);
@@ -115,13 +115,13 @@ function draw(){
   const hg=c&&c.x<PW&&c.y<TH&&I.sig?S.sg.find(z=>z.i===st+Math.min(n-1,Math.max(0,Math.floor(c.x/bw)))):null;if(hg)card(hg,W[hg.i-st],X(hg.i-st));
   $('ohlc').textContent=S.sym+' · '+S.tf+'   '+ft(sel.timestamp,true)+'   O '+f(sel.open)+'   H '+f(sel.high)+'   L '+f(sel.low)+'   C '+f(sel.close)+'   Vol '+Math.round(sel.volume||0).toLocaleString();
 }
-const zoom=k=>{S.n=Math.round(Math.max(15,Math.min(300,S.n*k)));draw()};
+const zoom=k=>{S.n=Math.round(Math.max(15,Math.min(300,S.n*k)));S.vZoom=Math.max(.5,Math.min(8,S.vZoom/k));draw()};
 const P=new Map();let lx=0,pdist=0;
 cv.onpointerdown=e=>{cv.setPointerCapture(e.pointerId);P.set(e.pointerId,e);lx=e.clientX;pdist=0;S.drag=0};
 cv.onpointermove=e=>{const r=cv.getBoundingClientRect();S.cross={x:e.clientX-r.left,y:e.clientY-r.top};
   if(P.has(e.pointerId)){P.set(e.pointerId,e);
     if(P.size===2){const[a,b]=[...P.values()],d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);if(pdist)zoom(pdist/d);pdist=d;S.drag=1}
-    else{const bw=(cv.clientWidth-72)/Math.min(S.n,S.bars.length||1),k=Math.trunc((e.clientX-lx)/bw);if(k){S.off+=k;lx+=k*bw;S.drag=1}}}
+    else{const bw=(cv.clientWidth-72-Math.min(110,(cv.clientWidth-72)*.16))/Math.min(S.n,S.bars.length||1),k=Math.trunc((e.clientX-lx)/bw);if(k){S.off+=k;lx+=k*bw;S.drag=1}}}
   draw()};
 cv.onpointerup=cv.onpointercancel=e=>{P.delete(e.pointerId);pdist=0;if(e.pointerType==='touch')S.cross=null;draw()};
 cv.onpointerleave=()=>{S.cross=null;draw()};
@@ -236,7 +236,7 @@ $('lv').onclick=()=>{S.live=!S.live;$('lv').className=S.live?'on':'';if(S.live)p
 $('rf').onclick=()=>{toast('Refreshing market data…');pull()};
 $('use').onclick=$('use2').onclick=useIdea;$('pv').onclick=()=>step(-1);$('nx').onclick=()=>step(1);$('rk').onchange=rIdea;
 cv.addEventListener('click',e=>{if(S.drag||!S.geo)return;const r=cv.getBoundingClientRect(),G=S.geo,x=e.clientX-r.left,y=e.clientY-r.top;if(x>G.PW||y>G.CH)return;
-  const k=Math.min(S.bars.length-1,G.st+Math.floor(x/G.bw)),p=G.lo+(G.CH-y)/G.CH*(G.hi-G.lo),svd=()=>sv('losai_draw_v1',DR);
+  const k=Math.min(S.bars.length-1,G.st+Math.floor(Math.min(x,G.PW-Math.min(110,G.PW*.16)-1)/G.bw)),p=G.lo+(G.CH-y)/G.CH*(G.hi-G.lo),svd=()=>sv('losai_draw_v1',DR);
   if(S.tool==='h'){(DR[S.sym]=DR[S.sym]||[]).push({k:'h',p});svd();setTool(null);draw();return}
   if(S.tool==='t'){const t=S.bars[k].timestamp;if(!S.tmp){S.tmp={t,p};toast('Now tap the second point.')}else{(DR[S.sym]=DR[S.sym]||[]).push({k:'t',t1:S.tmp.t,p1:S.tmp.p,t2:t,p2:p});S.tmp=null;svd();setTool(null)}draw();return}
   if(!S.ind.sig)return;const g=S.sg.find(z=>Math.abs(z.i-k)<=1);if(g){S.sel=g;rIdea();draw()}});
