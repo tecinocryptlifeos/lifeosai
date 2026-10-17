@@ -1,0 +1,37 @@
+name: LifeOS production read-only smoke tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/lifeos-end-to-end-smoke-20261009
+    paths:
+      - "tests/e2e/production_smoke.py"
+      - ".github/workflows/lifeos-production-smoke.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lifeos-production-readonly-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    name: Verify public site and edge gateway
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile smoke test
+        run: python -m py_compile tests/e2e/production_smoke.py
+      - name: Run read-only live checks
+        env:
+          LIFEOS_SMOKE_SITE: https://lifeosai.pages.dev
+          LIFEOS_SMOKE_API: https://losai-edge-gateway.lifeostecinoai.workers.dev
+        run: python tests/e2e/production_smoke.py
